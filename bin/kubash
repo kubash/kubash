@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
-: ${KUBASH_HOSTS_CSV:=$KUBASH_DIR/hosts.csv}
-: ${KUBASH_HOSTS:=$KUBASH_DIR/hosts}
+: ${KUBASH_HOSTS_CSV:=$KUBASH_DIR/gen/hosts.csv}
+: ${KUBASH_HOSTS:=$KUBASH_DIR/gen/hosts}
 : ${VERBOSITY:=0}
 : ${KVM_IMAGE_DIR:=/var/lib/libvirt/images}
 : ${KUBASH_BUILDS_TMP:=$KVM_IMAGE_DIR/kubashtmp}
@@ -423,16 +423,16 @@ provisioner () {
   squawk 1 " provisioner"
   slurpy="$(grep -v '^#' $KUBASH_DIR/provision.list)"
   squawk 8 "$slurpy"
-  if [ -e "$KUBASH_DIR/hosts.csv" ]; then
+  if [ -e "$KUBASH_HOSTS_CSV" ]; then
     horizontal_rule
-    echo "$KUBASH_DIR/hosts.csv exists! Destroy existing cluster and remove before proceeding!"
+    echo "$KUBASH_HOSTS_CSV exists! Destroy existing cluster and remove before proceeding!"
     if [ "$ANSWER_YES" = "yes" ]; then
-      rm hosts.csv
+      rm -v $KUBASH_HOSTS_CSV
     else
-      rm -i hosts.csv
+      rm -iv $KUBASH_HOSTS_CSV
     fi
   fi
-  touch hosts.csv
+  touch $KUBASH_HOSTS_CSV
   while IFS="," read -r $provision_csv_list
   do
       squawk 19 "qemu-provisioner $K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network $K8S_mac $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath"
@@ -462,9 +462,9 @@ provisioner () {
         done
         fi
       fi
-      squawk 5 "adding to hosts.csv"
+      squawk 5 "adding to $KUBASH_HOSTS_CSV"
       squawk 6 "$K8S_node,$K8S_user,$K8S_node_ip,$K8S_node_port,$K8S_role,$K8S_su_user"
-      echo "$K8S_node,$K8S_user,$K8S_node_ip,$K8S_node_port,$K8S_role,$K8S_su_user,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort" >> $KUBASH_DIR/hosts.csv
+      echo "$K8S_node,$K8S_user,$K8S_node_ip,$K8S_node_port,$K8S_role,$K8S_su_user,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort" >> $KUBASH_HOSTS_CSV
       K8S_node_ip=''
   done <<< "$slurpy"
 }
@@ -967,7 +967,7 @@ do_init_master () {
 
   while IFS="," read -r $hosts_csv_columns
   do
-    if [[ $K8S_role == "init_master" ]]; then
+    if [ "$K8S_role" = "init_master" ]; then
       if [ "$do_master_count" -lt "1" ]; then
         master_init_join $K8S_node $K8S_node_ip $K8S_user $K8S_node_port
       else
@@ -1091,7 +1091,7 @@ preppy () {
 }
 
 do_decom () {
-  read -p "This will destroy all VMs defined in the hosts.csv. Are you sure? [y/N] " -n 1 -r
+  read -p "This will destroy all VMs defined in the $KUBASH_HOSTS_CSV. Are you sure? [y/N] " -n 1 -r
   echo    # (optional) move to a new line
   if [[ $REPLY =~ ^[Yy]$ ]]
   then
