@@ -1,0 +1,100 @@
+#!/bin/bash
+: ${KUBASH_DIR:=$HOME/.kubash}
+: ${KUBASH_BIN:=$KUBASH_DIR/bin}
+
+# Check if a command exists
+check_cmd () {
+  if ! type "$1" > /dev/null; then
+    echo "$1 was not found in your path!"
+    echo "To proceed please install $1 to your path and try again!"
+    exit 1
+  fi
+}
+
+# Check if a command exists, and if not install it
+check_install () {
+  if ! type "$1" > /dev/null; then
+    echo "Installing $1"
+    cd ~/.kubash
+    make $1
+  else
+    echo "$1 is already installed"
+  fi
+}
+
+flight_checks () {
+  # Let's display everything on stderr.
+  exec 1>&2
+  UNAME=$(uname)
+
+  if [ "$UNAME" = "CYGWIN_NT-10.0" ] ; then
+    PLATFORM="os.cygwin.x86_64"
+    echo "WARNING: Cygwin is not supported at this time!"
+    exit 1
+  fi
+
+  if [ "$UNAME" == "Linux" ] ; then
+    if [[ $VERBOSITY -gt '1' ]]; then
+      echo " $UNAME is a Supported OS"
+    fi
+  elif [ "$UNAME" == "Darwin" -o "$UNAME" == "FreeBSD" ] ; then
+    if [[ $VERBOSITY -gt '1' ]]; then
+      echo " $UNAME is not a Supported OS"
+      exit 1
+    fi
+  elif [ "$UNAME" ">" "MINGW" -a "$UNAME" "<" "MINGX" ] ; then
+    if [[ $VERBOSITY -gt '1' ]]; then
+      echo " $UNAME is not a Supported OS"
+      exit 1
+    fi
+  else
+    echo " $UNAME is not a Supported OS"
+    echo "Sorry, this OS is not supported yet via this installer."
+    exit 1
+  fi
+
+  if [ "$UNAME" = "Linux" ] ; then
+    ### Linux ###
+    LINUX_ARCH=$(uname -m)
+    if [ "${LINUX_ARCH}" = "x86_64" ] ; then
+      PLATFORM="os.linux.x86_64"
+    else
+      echo "Unusable architecture: ${LINUX_ARCH}"
+      echo "ReactioNstall only supports x86_64 for now on Linux."
+      exit 1
+    fi
+  fi
+
+  # make reqs
+  if [ "$PLATFORM" = "os.linux.x86_64" ] ; then
+    echo "Installing on Linux"
+  fi
+}
+
+main () {
+  check_cmd git
+  check_cmd ssh
+  check_cmd ansible
+  check_cmd curl
+  check_cmd uname
+  check_cmd go
+  check_cmd parallel
+  check_cmd 'grep'
+  check_cmd 'sed'
+
+  flight_checks
+
+  if [ ! -d $KUBASH_DIR ]; then
+    git clone https://github.com/joshuacox/kubash.git $KUBASH_DIR
+  else
+    cd $KUBASH_DIR
+    git pull
+  fi
+  $KUBASH_BIN/kubash --auto-dotfiles
+  check_install helm
+  check_install packer
+  #check_install crictl
+  echo 'logout and log back in, or source your RC files'
+}
+
+main "$@"

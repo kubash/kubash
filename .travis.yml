@@ -1,0 +1,48 @@
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+      services:
+      - docker
+      cache:
+        directories:
+        - $HOME/.minikube
+        - $HOME/.kube
+        - $HOME/.kubash
+        - .git
+        - /usr/local
+      env:
+        - MINIKUBE_MEMORY=7777
+        - MINIKUBE_CPU=4
+        - MINIKUBE_DRIVER=none
+
+language: bash
+
+addons:
+  apt:
+    packages:
+      - curl
+      - socat
+      - time
+      - devscripts
+      - ansible
+      - parallel
+      - golang
+
+before_install:
+# install nsenter which is required for port forwarding
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
+  - make bats
+  - make example
+
+script:
+  - bash scripts/dotfiles
+  - bash scripts/chkdirs
+  - /usr/bin/time -v make -e linuxreqs
+  - sudo chown -R $USER /usr/local
+  - sudo mkdir -p /etc/kubernetes
+  - sudo chown -R $USER /etc/kubernetes
+  - /bin/bash -l -c "/usr/bin/time -v make -e ci"
+  - /bin/bash -l -c "echo kubash openebs"
+  - bats .tests.bats

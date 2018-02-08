@@ -1,0 +1,14 @@
+hosts
+hosts.csv
+masters.list
+nodes.list
+provision.list
+join.sh
+*/packer_cache
+libexec
+share
+.minikube.made
+*.rn
+*.ns
+node_modules
+package-lock.json

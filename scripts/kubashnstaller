@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+: ${KUBASH_DIR:=$HOME/.kubash}
+: ${KUBASH_BIN:=$KUBASH_DIR/bin}
+: ${VERBOSITY:=0}
+TARGET=$1
+
+set -e
+set -u
+
+if type "$TARGET" > /dev/null; then
+  if [ $VERBOSITY -gt '0' ]; then
+    echo "$TARGET found in path"
+  fi
+  if [ ! -e $KUBASH_BIN/$TARGET ]; then
+    ln -s $(which $TARGET) $KUBASH_BIN/$TARGET
+    if [ $VERBOSITY -gt '0' ]; then
+      ls -al $KUBASH_BIN/$TARGET
+    fi
+  fi
+else
+  if [ $VERBOSITY -gt '0' ]; then
+    echo "$TARGET not found attempting to make..."
+  fi
+    make -e $KUBASH_BIN/$TARGET
+fi

@@ -1,0 +1,6 @@
+#name,role,cpuCount,Memory,network,mac,provisionerHost,provisionerUser,provisionerPort,provisionerBasePath,os,virt
+master1,init_master,2,4096,default,52:54:00:e2:8c:11,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
+master2,master,2,4096,default,52:54:00:e2:8c:12,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node1,node,2,4096,default,52:54:00:e2:8c:13,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node2,node,2,4096,default,52:54:00:e2:8c:14,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node3,node,2,4096,default,52:54:00:e2:8c:15,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu

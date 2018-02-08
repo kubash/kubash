@@ -1,0 +1,6 @@
+helm
+kubectl
+kubeadm
+kubelet
+packer
+bats

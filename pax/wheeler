@@ -1,0 +1,7 @@
+#!/bin/sh -eux
+: ${K8S_SU_USER:=coopadmin}
+
+groupadd -r wheel
+echo %wheel ALL=NOPASSWD:ALL > /etc/sudoers.d/wheel
+chmod 0440 /etc/sudoers.d/wheel
+sudo gpasswd -a $K8S_SU_USER wheel

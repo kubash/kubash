@@ -1,0 +1,53 @@
+#!/bin/bash
+: ${KUBASH_DIR:=$HOME/.kubash}
+: ${KUBASH_BIN:=$KUBASH_DIR/bin}
+: ${VERBOSITY:=0}
+
+chkdir () {
+  if [ ! -w $1 ] ; then
+    sudo mkdir -p $1
+    sudo chown $USER. $1
+  fi
+  if [ ! -w $1 ] ; then
+    errror
+    echo "Cannot write to $1, please check your permissions"
+    exit 2
+  fi
+}
+
+# these vars are used by the following functions
+LINE_TO_ADD=''
+TARGET_FILE_FOR_ADD=$HOME/.profile
+
+check_if_line_exists()
+{
+  if [[ $VERBOSITY -gt '7' ]]; then
+    echo "Checking for '$LINE_TO_ADD'  in $TARGET_FILE_FOR_ADD"
+  fi
+  grep -qsFx "$LINE_TO_ADD" $TARGET_FILE_FOR_ADD
+}
+
+add_line_to()
+{
+  if [[ $VERBOSITY -gt '5' ]]; then
+    echo "Adding '$LINE_TO_ADD'  to $TARGET_FILE_FOR_ADD"
+  fi
+  TARGET_FILE=$TARGET_FILE_FOR_ADD
+    [ -w "$TARGET_FILE" ] || TARGET_FILE=$TARGET_FILE_FOR_ADD
+    printf "%s\n" "$LINE_TO_ADD" >> "$TARGET_FILE"
+}
+
+dotfiles_install () {
+  echo 'Adjusting dotfiles'
+  touch $HOME/.zshrc
+  touch $HOME/.bashrc
+  # here we'll make a bin dir in $HOME and add it to path
+  chkdir $KUBASH_BIN
+  LINE_TO_ADD="$(printf "export PATH=%s:\$PATH" $KUBASH_BIN)"
+  TARGET_FILE_FOR_ADD=$HOME/.bashrc
+  check_if_line_exists || add_line_to
+  TARGET_FILE_FOR_ADD=$HOME/.zshrc
+  check_if_line_exists || add_line_to
+}
+
+dotfiles_install

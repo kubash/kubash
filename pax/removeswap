@@ -1,0 +1,11 @@
+#!/bin/sh -eux
+
+commenter () {
+  COMMENT_THIS_LINE=$1
+  FILE_TO_COMMENT=$2
+  sed -i "s%^$COMMENT_THIS_LINE%#$COMMENT_THIS_LINE%" $FILE_TO_COMMENT
+}
+
+commenter '/dev/mapper/vagrant--vg-swap_1' /etc/fstab
+commenter '/dev/fd0' /etc/fstab
+commenter '/dev/mapper/debian--9--vg-swap_1' /etc/fstab
