@@ -1,2 +1,31 @@
 #!/bin/sh -eux
 curl https://raw.githubusercontent.com/joshuacox/roustabout/master/KubadmNstall|bash
+
+## Show IP address in /etc/issue
+cat << EOF > /usr/local/bin/get-ip-address
+#!/bin/bash
+echo -n 'IP address = '
+/sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
+echo -n 'SSH is on port: '
+grep Port /etc/ssh/sshd_config 
+EOF
+
+chmod +x /usr/local/bin/get-ip-address
+
+cat << EOF > /etc/network/if-up.d/show-ip-address
+#!/bin/sh
+if [ "\$METHOD" = loopback ]; then
+    exit 0
+fi
+
+# Only run from ifup.
+if [ "\$MODE" != start ]; then
+    exit 0
+fi
+
+cp /etc/issue-standard /etc/issue
+/usr/local/bin/get-ip-address >> /etc/issue
+echo "" >> /etc/issue
+EOF
+
+chmod +x /etc/network/if-up.d/show-ip-address

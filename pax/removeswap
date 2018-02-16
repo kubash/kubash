@@ -6,6 +6,8 @@ commenter () {
   sed -i "s%^$COMMENT_THIS_LINE%#$COMMENT_THIS_LINE%" $FILE_TO_COMMENT
 }
 
-commenter '/dev/mapper/vagrant--vg-swap_1' /etc/fstab
+commenter '/dev/sr0' /etc/fstab
 commenter '/dev/fd0' /etc/fstab
+commenter '/dev/mapper/centos-swap' /etc/fstab
+commenter '/dev/mapper/vagrant--vg-swap_1' /etc/fstab
 commenter '/dev/mapper/debian--9--vg-swap_1' /etc/fstab

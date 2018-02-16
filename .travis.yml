@@ -23,6 +23,7 @@ addons:
   apt:
     packages:
       - curl
+      - rsync 
       - socat
       - time
       - devscripts

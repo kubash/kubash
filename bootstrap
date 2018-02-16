@@ -90,9 +90,12 @@ main () {
     cd $KUBASH_DIR
     git pull
   fi
-  $KUBASH_BIN/kubash --auto-dotfiles
+  cd $KUBASH_DIR
+  git submodule update --init
+  $KUBASH_BIN/kubash dotfiles
   check_install helm
   check_install packer
+  check_install oc
   #check_install crictl
   echo 'logout and log back in, or source your RC files'
 }

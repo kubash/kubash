@@ -133,6 +133,17 @@ example:
 pax/ubuntu/builds/ubuntu-16.04.libvirt.box:
 	TMPDIR=/tiamat/tmp packer build -only=qemu kubash-ubuntu-16.04-amd64.json
 
+oc: $(KUBASH_BIN)
+	@scripts/kubashnstaller oc
+
+$(KUBASH_BIN)/oc:
+	$(eval TMP := $(shell mktemp -d --suffix=OCTMP))
+	cd $(TMP) \
+	&& curl -sL https://github.com/openshift/origin/releases/download/v3.9.0-alpha.3/openshift-origin-client-tools-v3.9.0-alpha.3-78ddc10-linux-64bit.tar.gz | tar zxvf -
+	mv -v $(TMP)/openshift-origin-client-tools*/oc $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+	
+
 bats: $(KUBASH_BIN)
 	@scripts/kubashnstaller bats
 

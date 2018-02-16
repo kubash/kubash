@@ -234,7 +234,7 @@
       "expect_disconnect": true,
       "scripts": [
         "../keyer",
-        "../wheeler",
+        "../kubashgrouper",
         "../removeswap"
       ],
       "type": "shell"

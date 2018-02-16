@@ -206,11 +206,11 @@
     }
   ],
   "variables": {
-    "box_basename": "centos-7.4",
+    "box_basename": "openshift-7.4",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
-    "kubeadm_install": "{{ env `KUBEADM_INSTALL`}}",
+    "kubeadm_install": "openshift",
     "cpus": "1",
     "disk_size": "65536",
     "git_revision": "__unknown_git_revision__",
@@ -226,9 +226,9 @@
     "memory": "1024",
     "mirror": "http://mirrors.kernel.org/centos",
     "mirror_directory": "7.4.1708/isos/x86_64",
-    "name": "centos-7.4",
+    "name": "openshift-7.4",
     "no_proxy": "{{env `no_proxy`}}",
-    "template": "centos-7.4-x86_64",
+    "template": "openshift-7.4-x86_64",
     "version": "TIMESTAMP"
   }
 }

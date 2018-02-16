@@ -16,53 +16,26 @@ if [ ! -z  "$KEYS_TO_ADD" ]; then
 else
   echo 'no KEYS_TO_ADD given'
 fi
-sudo mkdir -p /root/.ssh
-sudo chmod 700 /root/.ssh
-sudo cp $TMP/keys /root/.ssh/authorized_keys
-sudo chmod 600 $TMP/keys /root/.ssh/authorized_keys
+mkdir -p /root/.ssh
+chmod 700 /root/.ssh
+cp $TMP/keys /root/.ssh/authorized_keys
+chmod 600 $TMP/keys /root/.ssh/authorized_keys
 
-sudo ls -lh /root/.ssh
-sudo cat /root/.ssh/authorized_keys
+ls -lh /root/.ssh
+#cat /root/.ssh/authorized_keys
 
 useradd $K8S_SU_USER
-sudo gpasswd -a $K8S_SU_USER docker
-sudo gpasswd -a $K8S_SU_USER sudo
+groupadd -rf docker
+gpasswd -a $K8S_SU_USER docker
+groupadd -rf sudo
+gpasswd -a $K8S_SU_USER sudo
 mkdir -p /home/$K8S_SU_USER
 chmod 777 $TMP
-sudo mkdir -p /home/coopadmin/.ssh
-sudo chmod 700 /home/coopadmin/.ssh
-sudo cp $TMP/keys /home/coopadmin/.ssh/authorized_keys
-sudo chmod 600 $TMP/keys /home/coopadmin/.ssh/authorized_keys
-sudo -u $K8S_SU_USER ls -lh $TMP
+mkdir -p /home/coopadmin/.ssh
+chmod 700 /home/coopadmin/.ssh
+cp $TMP/keys /home/coopadmin/.ssh/authorized_keys
+chmod 600 $TMP/keys /home/coopadmin/.ssh/authorized_keys
 chown -R $K8S_SU_USER. /home/$K8S_SU_USER
 chown -R $K8S_SU_USER. $TMP
-
-cat << EOF > /usr/local/bin/get-ip-address
-#!/bin/bash
-echo -n 'IP address = '
-/sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
-echo -n 'SSH is on port: '
-grep Port /etc/ssh/sshd_config 
-EOF
-
-chmod +x /usr/local/bin/get-ip-address
-
-cat << EOF > /etc/network/if-up.d/show-ip-address
-#!/bin/sh
-if [ "\$METHOD" = loopback ]; then
-    exit 0
-fi
-
-# Only run from ifup.
-if [ "\$MODE" != start ]; then
-    exit 0
-fi
-
-cp /etc/issue-standard /etc/issue
-/usr/local/bin/get-ip-address >> /etc/issue
-echo "" >> /etc/issue
-EOF
-
-chmod +x /etc/network/if-up.d/show-ip-address
 
 rm -Rf $TMP

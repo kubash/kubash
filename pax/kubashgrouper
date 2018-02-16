@@ -1,0 +1,7 @@
+#!/bin/sh -eux
+: ${K8S_SU_USER:=coopadmin}
+
+groupadd -r kubash
+echo %kubash ALL=NOPASSWD:ALL > /etc/sudoers.d/kubash
+chmod 0440 /etc/sudoers.d/kubash
+gpasswd -a $K8S_SU_USER kubash

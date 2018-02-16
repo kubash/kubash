@@ -2,6 +2,18 @@
 
 `kubash build`
 
+### Environment Variables
+
+First you should set an ssh key to be added to the `authorized_keys` on the hosts, either set the directly as
+```
+export KEYS_TO_ADD='ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTY68No= adminuser@testbox'
+```
+
+Or alternatively give it an url to a set of keys
+```
+export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
+```
+
 ### builder options
 
 `--builder packer` This will build images using packer
@@ -17,6 +29,8 @@
 `--target-os fedora` This will build fedora images
 
 `--target-os centos` This will build centos images
+
+`--target-os openshift` This will build openshift images
 
 `--target-os coreos` This will build coreos images (* no packer build for this)
 

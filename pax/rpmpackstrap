@@ -1,2 +1,44 @@
 #!/bin/sh -eux
-curl https://raw.githubusercontent.com/joshuacox/roustabout/master/RHkubeNstall|bash
+TMP=$(mktemp -d)
+PRE_INSTALL_PKGS='epel-release'
+INSTALL_PKGS='docker ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct isci-initiator-utils yum-utils'
+
+cd $TMP
+wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum install -y epel-release-latest-7.noarch.rpm
+
+yum clean all
+yum update -y
+yum repolist enabled
+
+yum install -y $PRE_INSTALL_PKGS
+yum install -y $INSTALL_PKGS
+
+if [ "$KUBEADM_INSTALL" = "openshift" ]; then
+  # leaving clean for now, let ansible initialize
+  #yum install -y centos-release-openshift-origin origin-clients
+  echo 'Sticking to default centos'
+elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
+  # leaving clean for now, let ansible initialize
+  echo 'Sticking to default centos'
+else
+  curl -s https://raw.githubusercontent.com/joshuacox/roustabout/master/RHkubeNstall|bash
+fi
+
+#pip install --upgrade pip
+
+#edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
+sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
+  /etc/sysconfig/docker
+systemctl enable docker
+systemctl start docker
+
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sysctl --system
+
+# remove temp
+cd
+rm -Rf $TMP

@@ -1,0 +1,6 @@
+[submodule "submodules/openshift-ansible"]
+	path = submodules/openshift-ansible
+	url = https://github.com/openshift/openshift-ansible.git
+[submodule "submodules/kubespray"]
+	path = submodules/kubespray
+	url = https://github.com/kubernetes-incubator/kubespray.git

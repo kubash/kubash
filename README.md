@@ -4,6 +4,12 @@ Kubash
 [![Build Status](https://travis-ci.org/joshuacox/kubash.svg?branch=master)](https://travis-ci.org/joshuacox/kubash)
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/joshuacox/kubash.svg?columns=all)](https://waffle.io/joshuacox/kubash)
 
+Build production ready clusters using a variety of technologies along the way.
+
+By default, this will build a ubuntu image using packer, then rebase that image for your nodes. Then initialize them using kubeadm, and install charts using helm.
+
+There are also alternative methods available for the steps, for coreos there is an alternative builder that merely downloads the official images.  And initializing directly with kubeadm can be alternatively done through ansible and either the openshift or kubespray methods.  Other provisioning beyond KVM/qemu is also being looked at, suggestions welcome in the issues.
+
 ### Oneliner
 
 Install with one easy line
@@ -51,6 +57,8 @@ grab - Grab the .kube/config from the master
 hosts - Write ansible hosts file
 
 dry - Perform dry run
+
+copy - copy the built images to the provisioning hosts
 ```
 
 ### Options
