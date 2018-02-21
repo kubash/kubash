@@ -127,8 +127,9 @@ go-build-docker:
 	rmdir $(TMP)
 
 example:
-	cp -iv hosts.csv.example hosts.csv
-	cp -iv provision.list.example provision.list
+	mkdir -p clusters/default/hosts.csv
+	cp -iv hosts.csv.example clusters/default/hosts.csv
+	cp -iv provision.csv.example clusters/default/provision.csv
 
 pax/ubuntu/builds/ubuntu-16.04.libvirt.box:
 	TMPDIR=/tiamat/tmp packer build -only=qemu kubash-ubuntu-16.04-amd64.json
@@ -259,3 +260,18 @@ tests:
 fail_tests:
 	@echo 'These are tests which fail and can be considered future fixes'
 	bats .fails.bats
+
+ct: /usr/local/bin/ct
+
+/usr/local/bin/ct:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval CT_VERSION := v0.7.0)
+	cd $(TMP) \
+	&& curl -L -o ct \
+	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
+	&& chmod +x ct \
+	&& mv ct /usr/local/bin/
+	rm -Rf $(TMP)
+
+submodules/openebs:
+	cd submodules; git clone https://github.com/openebs/openebs.git

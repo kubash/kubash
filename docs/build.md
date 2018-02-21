@@ -32,7 +32,7 @@ export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
 
 `--target-os openshift` This will build openshift images
 
-`--target-os coreos` This will build coreos images (* no packer build for this)
+`--target-os coreos` This will build coreos images (* no packer build for this*)
 
 ### Target build
 
@@ -43,3 +43,7 @@ For the packer build you can specify alternate json files to use
 For the coreos option this sets the channel (stable,beta,alpha)
 
 `--target-build beta`
+
+### Asciinema example run
+
+[![asciicast](https://asciinema.org/a/164070.png)](https://asciinema.org/a/164070)

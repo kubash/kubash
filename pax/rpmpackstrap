@@ -1,7 +1,7 @@
 #!/bin/sh -eux
 TMP=$(mktemp -d)
 PRE_INSTALL_PKGS='epel-release'
-INSTALL_PKGS='docker ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct isci-initiator-utils yum-utils'
+INSTALL_PKGS='docker ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'
 
 cd $TMP
 wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
@@ -23,6 +23,9 @@ elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   echo 'Sticking to default centos'
 else
   curl -s https://raw.githubusercontent.com/joshuacox/roustabout/master/RHkubeNstall|bash
+  swapoff --all
+  kubeadm init
+  kubeadm reset
 fi
 
 #pip install --upgrade pip

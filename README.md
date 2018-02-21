@@ -10,6 +10,27 @@ By default, this will build a ubuntu image using packer, then rebase that image 
 
 There are also alternative methods available for the steps, for coreos there is an alternative builder that merely downloads the official images.  And initializing directly with kubeadm can be alternatively done through ansible and either the openshift or kubespray methods.  Other provisioning beyond KVM/qemu is also being looked at, suggestions welcome in the issues.
 
+### Provisioners
+
+KVM/qemu is used first and foremost because it is standard and built into Linux itself.
+I intend to add virtualbox, vmware, etc builders and provisioners in the future.
+
+### Builders
+
+Right now you can build these OSs as your base image:
+
+1. Ubuntu
+1. Debian
+1. Centos
+1. CoreOS
+
+Packer will build ubuntu, debian, and centos. And
+there is also a basic downloader for the CoreOS images.
+
+### Initializers
+
+Although this script can just utilize ssh to run the kubeadm commands directly on the VMs, you can optionally use kubespray or openshifts ansible playbooks instead, I have had various issues with both and that's why i wrote this script so I can choose amongst a few different methods in my regular daily builds (I'm the sort of guy who likes to spin up clusters while sipping my morning coffee).
+
 ### Oneliner
 
 Install with one easy line
@@ -29,14 +50,12 @@ kubash COMMAND
 
 ### Commands:
 
-```
-commands:
 
-build - build a base image
+[build](./docs/build.md) - build a base image
 
-provision - provision individual nodes
+[provision](./docs/provision.md) - provision individual nodes
 
-init - initialize the cluster
+[init](./docs/init.md) - initialize the cluster
 
 decommission - tear down the cluster and decommission nodes
 
@@ -59,7 +78,6 @@ hosts - Write ansible hosts file
 dry - Perform dry run
 
 copy - copy the built images to the provisioning hosts
-```
 
 ### Options
 
@@ -110,9 +128,6 @@ And you can also add a debug flag:
 kubash --debug --verbosity 100 init
 ```
 
-### Detailed documentation on the commands
-
-[build](./docs/build.md)
 
 try `kubash COMMAND --help`
 

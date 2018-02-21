@@ -91,7 +91,8 @@ main () {
     git pull
   fi
   cd $KUBASH_DIR
-  git submodule update --init
+  git submodule update --init --recursive
+  make submodules/openebs
   $KUBASH_BIN/kubash dotfiles
   check_install helm
   check_install packer

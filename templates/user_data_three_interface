@@ -1,0 +1,38 @@
+#cloud-config
+passwd:
+  users:
+  - name: $K8S_su_user
+    groups: [ sudo, docker ]
+$SSH_AUTHORIZED_KEYS
+
+storage:
+  files:
+  - path: /etc/hostname
+    filesystem: "root"
+    mode: 0644
+    contents:
+      inline: $K8S_node
+
+networkd:
+  units:
+  - name: 10-ens3.network
+    contents: |
+      [Match]
+      MACAddress=$K8S_mac2
+
+      [Network]
+      Address=$K8S_ip2
+  - name: 11-ens3.network
+    contents: |
+      [Match]
+      MACAddress=$K8S_mac3
+
+      [Network]
+      Address=$K8S_ip3
+  - name: 20-dhcp.network
+    contents: |
+      [Match]
+      name=en*
+
+      [Network]
+      DHCP=yes

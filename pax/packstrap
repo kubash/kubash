@@ -1,5 +1,24 @@
 #!/bin/sh -eux
-curl https://raw.githubusercontent.com/joshuacox/roustabout/master/KubadmNstall|bash
+
+echo 'export GOPATH=$HOME/.go
+export PATH=${GOPATH//://bin:}/bin:$PATH' \
+>> .bashrc
+
+if [ "$KUBEADM_INSTALL" = "openshift" ]; then
+  # leaving clean for now, let ansible initialize
+  #yum install -y centos-release-openshift-origin origin-clients
+  echo 'Sticking to defaults for openshift'
+elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
+  # leaving clean for now, let ansible initialize
+  echo 'Sticking to defaults for kubespray'
+elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
+  curl https://raw.githubusercontent.com/joshuacox/roustabout/master/KubadmNstall|bash
+  swapoff --all
+  kubeadm init
+  kubeadm reset
+else
+  echo 'Sticking to defaults'
+fi
 
 ## Show IP address in /etc/issue
 cat << EOF > /usr/local/bin/get-ip-address

@@ -1,0 +1,7 @@
+#name,role,cpuCount,Memory,network1,mac1,ip1,provisionerHost,provisionerUser,provisionerPort,provisionerBasePath,os,virt[,net2,mac2,ip2,net3,mac3,ip3]
+master1,init_master,2,4096,default,52:54:00:e2:8c:11,dhcp,192.168.0.10,root,22,/var/lib/libvirt/images,ubuntu,qemu
+master2,master,2,4096,default,52:54:00:e2:8c:12,dhcp,192.168.0.11,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node1,node,2,4096,default,52:54:00:e2:8c:13,dhcp,192.168.0.10,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node2,node,2,4096,default,52:54:00:e2:8c:14,dhcp,192.168.0.11,root,22,/var/lib/libvirt/images,ubuntu,qemu
+node3,node,2,8192,default,52:54:00:e2:8c:15,dhcp,192.168.0.13,root,22,/var/lib/libvirt/images,ubuntu,qemu
+ingress1,ingress,2,8192,default,52:54:00:e2:8c:16,dhcp,192.168.0.14,root,22,/var/lib/libvirt/images,ubuntu,qemu,bridge=br0,52:54:00:e2:8d:16,192.168.0.23

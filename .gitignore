@@ -11,3 +11,6 @@ share
 *.ns
 node_modules
 package-lock.json
+clusters/*
+tmp/*
+submodules/openebs

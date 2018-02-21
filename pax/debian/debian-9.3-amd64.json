@@ -200,6 +200,7 @@
         "HOME_DIR=/home/vagrant",
         "http_proxy={{user `http_proxy`}}",
         "https_proxy={{user `https_proxy`}}",
+        "KUBEADM_INSTALL={{ user `kubeadm_install`}}",
         "no_proxy={{user `no_proxy`}}"
       ],
       "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
@@ -245,6 +246,7 @@
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
+    "kubeadm_install": "{{ env `KUBEADM_INSTALL`}}",
     "cpus": "1",
     "disk_size": "65536",
     "git_revision": "__unknown_git_revision__",
