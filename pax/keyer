@@ -6,7 +6,17 @@ cd $TMP
 
 # Keyer
 touch $TMP/keys
-if [ ! -z  "$KEYS_URL" ]; then
+if [ ! -z "$KUBASH_SET_ROOT_PW" ]; then
+	echo "$KUBASH_SET_ROOT_PW" |passwd foo --stdin
+else
+  echo 'no root passwd given, not setting'
+fi
+if [ ! -z "$KUBASH_SET_SU_PW" ]; then
+	echo "$K8S_SU_USER:$KUBASH_SET_SU_PW" | chpasswd
+else
+  echo 'no su passwd given, not setting'
+fi
+if [ ! -z "$KEYS_URL" ]; then
   curl --silent -L "$KEYS_URL"  >> $TMP/keys 
 else
   echo 'no KEYS_URL given'
@@ -24,18 +34,17 @@ chmod 600 $TMP/keys /root/.ssh/authorized_keys
 ls -lh /root/.ssh
 #cat /root/.ssh/authorized_keys
 
-useradd $K8S_SU_USER
+useradd -s /bin/bash $K8S_SU_USER
 groupadd -rf docker
 gpasswd -a $K8S_SU_USER docker
 groupadd -rf sudo
 gpasswd -a $K8S_SU_USER sudo
-mkdir -p /home/$K8S_SU_USER
 chmod 777 $TMP
-mkdir -p /home/coopadmin/.ssh
-chmod 700 /home/coopadmin/.ssh
-cp $TMP/keys /home/coopadmin/.ssh/authorized_keys
-chmod 600 $TMP/keys /home/coopadmin/.ssh/authorized_keys
+mkdir -p /home/$K8S_SU_USER/.ssh
+cp $TMP/keys /home/$K8S_SU_USER/.ssh/authorized_keys
+chmod 600 /home/$K8S_SU_USER/.ssh/authorized_keys
+chmod 700 /home/$K8S_SU_USER/.ssh
+echo 'PATH=/usr/local/bin:$PATH' >> /home/$K8S_SU_USER/.bash_profile
 chown -R $K8S_SU_USER. /home/$K8S_SU_USER
-chown -R $K8S_SU_USER. $TMP
 
 rm -Rf $TMP

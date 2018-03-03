@@ -1,14 +1,38 @@
-# kubash
-Kubash
+# Kubash
+
+Build, provision, initialize, add common components, and tear down a cluster PDQ.
 
 [![Build Status](https://travis-ci.org/joshuacox/kubash.svg?branch=master)](https://travis-ci.org/joshuacox/kubash)
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/joshuacox/kubash.svg?columns=all)](https://waffle.io/joshuacox/kubash)
 
 Build production ready clusters using a variety of technologies along the way.
 
-By default, this will build a ubuntu image using packer, then rebase that image for your nodes. Then initialize them using kubeadm, and install charts using helm.
+By default, this will build an image using packer, then rebase that image for your nodes.
+Then initialize them using kubeadm, and install charts using helm.
 
-There are also alternative methods available for the steps, for coreos there is an alternative builder that merely downloads the official images.  And initializing directly with kubeadm can be alternatively done through ansible and either the openshift or kubespray methods.  Other provisioning beyond KVM/qemu is also being looked at, suggestions welcome in the issues.
+There are also alternative methods available for the steps,
+for coreos there is an alternative builder that merely downloads the official images.
+And for initializing the default is to directly initialize with kubeadm,
+or can be alternatively done through ansible with the 
+[openshift](http://openebs.readthedocs.io/en/latest/install/openshift.html)
+or [kubespray](https://kubespray.io/)
+or [kubeadm2ha](https://github.com/mbert/kubeadm2ha)
+methods.
+
+Other provisioning beyond KVM/qemu is also being looked at, suggestions welcome in the issues.
+Keep in mind this started life a ten line script of me just trying to duplicate the
+[official instructions](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)
+
+After both the kubespray and openshift playbooks
+went sideways on me and I determined I needed to learn
+how to refamiliarize myself with spinning up a cluster with another method.
+Somewhere along the way I came across this
+[google doc](https://docs.google.com/document/d/1rEMFuHo3rBJfFapKBInjCqm2d7xGkXzh0FpFO0cRuqg/edit#)
+
+And I decided to combine all of the above into a unified forkable pipeline that automates the entire proces
+of building the images using a similar method to the one I used for [CoreOS](https://github.com/joshuacox/mkCoreOS),
+using one of the initialization methods in a very repeatable way.
+And throw some of the additional common components I tend to add to every cluster.
 
 ### Provisioners
 
@@ -29,7 +53,11 @@ there is also a basic downloader for the CoreOS images.
 
 ### Initializers
 
-Although this script can just utilize ssh to run the kubeadm commands directly on the VMs, you can optionally use kubespray or openshifts ansible playbooks instead, I have had various issues with both and that's why i wrote this script so I can choose amongst a few different methods in my regular daily builds (I'm the sort of guy who likes to spin up clusters while sipping my morning coffee).
+Although this script can just utilize ssh to run the kubeadm commands directly on the VMs,
+you can optionally use kubespray or openshifts ansible playbooks instead,
+I have had various issues with both and that's why i wrote this script so I can choose amongst a 
+few different methods in my regular daily builds 
+(I'm the sort of guy who likes to spin up clusters while sipping my morning coffee).
 
 ### Oneliner
 
@@ -50,34 +78,21 @@ kubash COMMAND
 
 ### Commands:
 
-
 [build](./docs/build.md) - build a base image
 
 [provision](./docs/provision.md) - provision individual nodes
 
 [init](./docs/init.md) - initialize the cluster
 
-decommission - tear down the cluster and decommission nodes
+[reset](./docs/reset.md) - reset the cluster by running `kubeadm reset` on all the hosts
 
-show - show the analyzed input of the hosts file
+[decommission](./docs/decommission.md) - /tear down the cluster and decommission nodes
 
-ping - Perform ansible ping to all hosts
+[copy](./docs/copy.md) - copy the built images to the provisioning hosts
 
-auto - Full auto will provision and initialize all hosts
+[ping](./docs/ping.md) - /Perform ansible ping to all hosts
 
-masters - Perform initialization of masters
-
-nodes - Perform initialization of nodes
-
-dotfiles - Perform dotfiles auto configuration
-
-grab - Grab the .kube/config from the master
-
-hosts - Write ansible hosts file
-
-dry - Perform dry run
-
-copy - copy the built images to the provisioning hosts
+[auto](./docs/auto.md) - /Full auto will provision and initialize all hosts
 
 ### Options
 
@@ -97,6 +112,8 @@ options:
  --verbosity NUMBER - or you can set the verbosity directly
 
  --debug - adds the debug flag
+
+ --oidc - enable the oidc auths
 ```
 
 There is an example csv file in this repo which shows how to compose this file

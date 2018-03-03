@@ -1,4 +1,4 @@
 #name,role,cpuCount,Memory,network1,mac1,ip1,provisionerHost,provisionerUser,provisionerPort,provisionerBasePath,os,virt[,net2,mac2,ip2,net3,mac3,ip3]
-core_master1,init_master,2,4096,network=k8s,52:54:00:e2:8e:11,,localhost,root,22,/var/lib/libvirt/images,coreos,qemu
+core_master1,primary_master,2,4096,network=k8s,52:54:00:e2:8e:11,,localhost,root,22,/var/lib/libvirt/images,coreos,qemu
 core_node1,node,3,4096,network=k8s,52:54:00:e2:8e:12,,10.0.23.6,root,22,/var/lib/libvirt/images,coreos,qemu
 core_ingress1,node,4,11096,network=k8s,52:54:00:e2:8e:13,,10.0.23.6,root,22,/var/lib/libvirt/images,coreos,qemu,bridge=br1,52:54:00:e2:8e:14,,network=kubenet,,

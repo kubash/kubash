@@ -1,4 +1,4 @@
-# Build
+# build
 
 `kubash build`
 

@@ -1,8 +1,81 @@
 #!/bin/sh -eux
+TMP=$(mktemp -d)
+: ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi ntp software-properties-common'}
+: ${DEB_PACKAGES_TO_INSTALL:='rsync net-tools dnsutils python-pip vim htop iotop iftop'}
+
+cat <<EOF > $TMP/inventory 
+localhost ansible_connection=local
+
+[nodes]
+localhost
+
+[primary-master]
+localhost
+
+[secondary-masters]
+localhost
+
+[masters]
+localhost
+
+[minions]
+localhost
+
+[nginx]
+localhost
+
+[nfs-server]
+localhost
+EOF
+
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sysctl --system
 
 echo 'export GOPATH=$HOME/.go
 export PATH=${GOPATH//://bin:}/bin:$PATH' \
 >> .bashrc
+
+apt-get update
+apt-get install -yqq \
+$DEB_PRE_PACKAGES_TO_INSTALL
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository \
+   "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
+   $(lsb_release -cs) \
+   stable"
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+apt-get update
+apt-get install -y \
+$DEB_PACKAGES_TO_INSTALL
+
+pip install --upgrade pip
+pip install docker-py
+
+apt-get update
+apt-get install -yqq docker-ce=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
+
+# test snap
+if ! test_cmd_loc="$(type -p "snap")" || [ -z "$test_cmd_loc" ]; then
+  echo "snap was not found in your path! skipping"
+  apt-get install -yqq golang
+else
+  snap install --classic go
+fi
+export GOPATH=$HOME/.go
+#go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
+#mv $HOME/go/bin/crictl /usr/local/bin/
+
+apt-mark hold docker-ce
+service open-iscsi restart
+systemctl restart docker
+
+swapoff --all
 
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
   # leaving clean for now, let ansible initialize
@@ -11,9 +84,13 @@ if [ "$KUBEADM_INSTALL" = "openshift" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to defaults for kubespray'
+elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
+  cd $TMP
+  git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
+  cd kubeadm2ha/ansible
+  ansible-playbook -i $TMP/inventory cluster-images.yaml
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
-  curl https://raw.githubusercontent.com/joshuacox/roustabout/master/KubadmNstall|bash
-  swapoff --all
+  apt-get install -yqq kubelet kubeadm kubectl
   kubeadm init
   kubeadm reset
 else
@@ -48,3 +125,5 @@ echo "" >> /etc/issue
 EOF
 
 chmod +x /etc/network/if-up.d/show-ip-address
+
+echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile

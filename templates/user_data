@@ -2,7 +2,7 @@
 #
 passwd:
   users:
-  - name: $K8S_su_user
+  - name: $K8S_provisionerUser
     groups: [ sudo, docker ]
 $SSH_AUTHORIZED_KEYS
 

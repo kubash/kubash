@@ -4,3 +4,6 @@
 [submodule "submodules/kubespray"]
 	path = submodules/kubespray
 	url = https://github.com/kubernetes-incubator/kubespray.git
+[submodule "submodules/kubeadm2ha"]
+	path = submodules/kubeadm2ha
+	url = https://github.com/joshuacox/kubeadm2ha.git

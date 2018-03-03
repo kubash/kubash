@@ -14,3 +14,4 @@ package-lock.json
 clusters/*
 tmp/*
 submodules/openebs
+*/packer_cache

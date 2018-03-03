@@ -5,3 +5,5 @@ kubelet
 packer
 bats
 oc
+cfssl
+cfssljson

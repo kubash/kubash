@@ -1,4 +1,4 @@
-# Init
+# init
 
 `kubash init`
 

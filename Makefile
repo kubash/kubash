@@ -44,7 +44,7 @@ $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 reqs: linuxreqs
 
-linuxreqs: $(KUBASH_BIN) kubectl helm minikube
+linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
@@ -53,7 +53,7 @@ $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
 	@echo 'Installing helm'
 	$(eval TMP := $(shell mktemp -d --suffix=HELMTMP))
-	curl -Lo $(TMP)/helmget --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get
+	curl -sLo $(TMP)/helmget --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get
 	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
 	sudo -E bash -l $(TMP)/helmget
 	rm $(TMP)/helmget
@@ -66,7 +66,7 @@ $(KUBASH_BIN)/kubectl:
 	@echo 'Installing kubectl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) \
-	&& curl -LO https://storage.googleapis.com/kubernetes-release/release/$(MY_KUBE_VERSION)/bin/linux/amd64/kubectl \
+	&& curl -sLO https://storage.googleapis.com/kubernetes-release/release/$(MY_KUBE_VERSION)/bin/linux/amd64/kubectl \
 	&& chmod +x kubectl \
 	&& sudo mv -v kubectl $(KUBASH_BIN)/
 	rmdir $(TMP)
@@ -83,7 +83,7 @@ $(KUBASH_BIN)/minikube:
 	mkdir $(HOME)/.kube || true
 	touch $(HOME)/.kube/config
 	cd $(TMP) \
-	&& curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube $(KUBASH_BIN)/
+	&& curl -sLo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube $(KUBASH_BIN)/
 	rmdir $(TMP)
 
 vanity:
@@ -95,15 +95,11 @@ crictl: $(KUBASH_BIN)
 $(KUBASH_BIN)/crictl: SHELL:=/bin/bash
 $(KUBASH_BIN)/crictl:
 	@echo 'Installing cri-tools'
-	$(eval TMP := $(shell mktemp -d --suffix=CRITMP))
-	cd $(TMP) \
-	  && git clone --depth=1 https://github.com/kubernetes-incubator/cri-tools.git
-	cd $(TMP)/cri-tools \
-	  && make && sudo make install
-	rmdir $(TMP)
+	go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
+	cp ${GOPATH}/bin/crictl $(KUBASH_BIN)/
 
-packer: $(KUBASH_BIN)
-	@scripts/kubashnstaller packer
+# force this to install as centos has another packer from the cracklib-dicts package
+packer: $(KUBASH_BIN) $(KUBASH_BIN)/packer
 
 $(KUBASH_BIN)/packer: SHELL:=/bin/bash
 $(KUBASH_BIN)/packer:
@@ -127,9 +123,15 @@ go-build-docker:
 	rmdir $(TMP)
 
 example:
-	mkdir -p clusters/default/hosts.csv
+	mkdir -p clusters/default
 	cp -iv hosts.csv.example clusters/default/hosts.csv
+	cp -iv users.csv.example clusters/default/users.csv
 	cp -iv provision.csv.example clusters/default/provision.csv
+	cp -iv ca-data.yaml.example clusters/default/ca-data.yaml
+	cp -iv templates/ca-csr.json clusters/default/
+	cp -iv templates/ca-config.json clusters/default/
+	cp -iv templates/client.json clusters/default/
+	cp -iv net_set.example clusters/default/net_set
 
 pax/ubuntu/builds/ubuntu-16.04.libvirt.box:
 	TMPDIR=/tiamat/tmp packer build -only=qemu kubash-ubuntu-16.04-amd64.json
@@ -261,17 +263,25 @@ fail_tests:
 	@echo 'These are tests which fail and can be considered future fixes'
 	bats .fails.bats
 
-ct: /usr/local/bin/ct
+ct: $(KUBASH_BIN)/ct
 
-/usr/local/bin/ct:
+$(KUBASH_BIN)/ct:
 	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
 	$(eval CT_VERSION := v0.7.0)
 	cd $(TMP) \
-	&& curl -L -o ct \
+	&& curl -sL -o ct \
 	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
 	&& chmod +x ct \
-	&& mv ct /usr/local/bin/
+	&& mv ct $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 submodules/openebs:
 	cd submodules; git clone https://github.com/openebs/openebs.git
+
+cfssl:
+	sudo curl -s -o $(KUBASH_BIN)/cfssl https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
+	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+	sudo chmod +x $(KUBASH_BIN)/cfssl*
+
+jinja2:
+	pip install jinja2 jinja2-cli

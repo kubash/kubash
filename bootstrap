@@ -1,6 +1,30 @@
 #!/bin/bash
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
+set -e
+
+squawk () {
+  # This function simplifies error reporting and verbosity
+  # call it by preceding your message with a verbosity level
+  # e.g. `squawk 13 "This is a squawk"`
+  # if the current verbosity level is greater than or equal 
+  # the number given then this function will echo out your message
+  # and pad it with # to let you now how verbose that message was
+  squawk_lvl=$1
+  shift
+  squawk=$1
+  shift
+  squawk_opt=$@
+
+  if [[ "$VERBOSITY" -ge "$squawk_lvl" ]] ; then
+  count_squawk=0
+    while [[ "$count_squawk" -lt "$squawk_lvl" ]]; do
+      echo -n "#"
+      count_squawk=`expr $count_squawk + 1`
+    done
+    echo " $squawk"
+  fi
+}
 
 # Check if a command exists
 check_cmd () {
@@ -14,11 +38,11 @@ check_cmd () {
 # Check if a command exists, and if not install it
 check_install () {
   if ! type "$1" > /dev/null; then
-    echo "Installing $1"
+    squawk 10 "Installing $1"
     cd ~/.kubash
     make $1
   else
-    echo "$1 is already installed"
+    squawk 10 "$1 is already installed"
   fi
 }
 
@@ -35,7 +59,7 @@ flight_checks () {
 
   if [ "$UNAME" == "Linux" ] ; then
     if [[ $VERBOSITY -gt '1' ]]; then
-      echo " $UNAME is a Supported OS"
+      squawk 10 " $UNAME is a Supported OS"
     fi
   elif [ "$UNAME" == "Darwin" -o "$UNAME" == "FreeBSD" ] ; then
     if [[ $VERBOSITY -gt '1' ]]; then
@@ -67,7 +91,7 @@ flight_checks () {
 
   # make reqs
   if [ "$PLATFORM" = "os.linux.x86_64" ] ; then
-    echo "Installing on Linux"
+    squawk 10 "Installing on Linux"
   fi
 }
 
@@ -76,8 +100,11 @@ main () {
   check_cmd ssh
   check_cmd ansible
   check_cmd curl
+  check_cmd unzip
   check_cmd uname
   check_cmd go
+  check_cmd pip
+  check_cmd make
   check_cmd parallel
   check_cmd 'grep'
   check_cmd 'sed'
@@ -85,7 +112,7 @@ main () {
   flight_checks
 
   if [ ! -d $KUBASH_DIR ]; then
-    git clone https://github.com/joshuacox/kubash.git $KUBASH_DIR
+    git clone https://github.com/kubash/kubash.git $KUBASH_DIR
   else
     cd $KUBASH_DIR
     git pull
@@ -93,11 +120,15 @@ main () {
   cd $KUBASH_DIR
   git submodule update --init --recursive
   make submodules/openebs
+  make jinja2
   $KUBASH_BIN/kubash dotfiles
   check_install helm
-  check_install packer
   check_install oc
-  #check_install crictl
+  check_install ct
+  # These need to exist in .kubash/bin/
+  make cfssl
+  make packer
+  check_install crictl
   echo 'logout and log back in, or source your RC files'
 }
 

@@ -1,9 +1,42 @@
 #!/bin/sh -eux
 TMP=$(mktemp -d)
-PRE_INSTALL_PKGS='epel-release'
-INSTALL_PKGS='docker ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'
+: ${PRE_INSTALL_PKGS:='epel-release'}
+: ${INSTALL_PKGS:='golang ebtables ethtool keepalived ntp docker rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
 
 cd $TMP
+cat <<EOF > $TMP/inventory 
+localhost ansible_connection=local
+
+[nodes]
+localhost
+
+[primary-master]
+localhost
+
+[secondary-masters]
+localhost
+
+[masters]
+localhost
+
+[minions]
+localhost
+
+[nginx]
+localhost
+
+[nfs-server]
+localhost
+EOF
+
+cat <<EOF >  /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sysctl --system
+iptables -F
+iptables-save
+
 wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum install -y epel-release-latest-7.noarch.rpm
 
@@ -14,6 +47,11 @@ yum repolist enabled
 yum install -y $PRE_INSTALL_PKGS
 yum install -y $INSTALL_PKGS
 
+pip install --upgrade pip
+pip install docker-py
+
+swapoff --all
+
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
   # leaving clean for now, let ansible initialize
   #yum install -y centos-release-openshift-origin origin-clients
@@ -21,26 +59,33 @@ if [ "$KUBEADM_INSTALL" = "openshift" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to default centos'
-else
+elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
+  cd $TMP
+  git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
+  cd kubeadm2ha/ansible
+  systemctl restart docker
+  ansible-playbook -i $TMP/inventory cluster-images.yaml
+elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
+  systemctl restart docker
   curl -s https://raw.githubusercontent.com/joshuacox/roustabout/master/RHkubeNstall|bash
-  swapoff --all
-  kubeadm init
-  kubeadm reset
+  #kubeadm init
+  #kubeadm reset
+else
+  # Defaults to nothing barebones
+  echo 'barebone'
 fi
-
-#pip install --upgrade pip
 
 #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
 sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
-  /etc/sysconfig/docker
+ /etc/sysconfig/docker
 systemctl enable docker
 systemctl start docker
 
-cat <<EOF >  /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
-sysctl --system
+export GOPATH=$HOME/.go
+#go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
+#mv $HOME/go/bin/crictl /usr/local/bin/
+
+echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
 
 # remove temp
 cd

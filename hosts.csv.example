@@ -1,4 +1,4 @@
-master1,root,10.8.8.205,22,init_master,coopadmin,localhost,root,22
+master1,root,10.8.8.205,22,primary_master,coopadmin,localhost,root,22
 master2,root,10.8.8.206,22,master,coopadmin,localhost,root,22
 node1,root,10.8.8.207,22,node,coopadmin,localhost,root,22
 node2,root,10.8.8.208,22,node,coopadmin,localhost,root,22

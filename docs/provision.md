@@ -1,4 +1,4 @@
-# Provision
+# provision
 
 
 ```
@@ -13,10 +13,10 @@ This file is the main control point for `kubash provision`, each node is listed 
 #name,role,cpuCount,Memory,network,mac,provisionerHost,provisionerUser,provisionerPort,provisionerBasePath,os,virt
 ```
 
-one, and only one node should be denoted `init_master` this is the first node to seed the rest of the cluster
+one, and only one node should be denoted `primary_master` this is the first node to seed the rest of the cluster
 
 ```
-master1,init_master,2,4096,default,52:54:00:e2:8c:11,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
+master1,primary_master,2,4096,default,52:54:00:e2:8c:11,localhost,root,22,/var/lib/libvirt/images,ubuntu,qemu
 ```
 
 Additional masters can then be listed as such:
