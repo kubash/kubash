@@ -30,9 +30,21 @@ export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
 
 `--target-os centos` This will build centos images
 
-`--target-os openshift` This will build openshift images
-
 `--target-os coreos` This will build coreos images (* no packer build for this*)
+
+#### Initializer specific options
+
+`--target-os kubeadm` This will build centos images 
+with the addition of getting the kube repos added and kubeadm etc installed
+
+`--target-os kubeadm2ha` This will build centos images
+with the addition of prepping for the kubeadm2ha ansible playbook
+
+`--target-os kubespray` This will build centos images
+with the addition of prepping for the kubespray ansible playbook
+
+`--target-os openshift` This will build centos images
+with the addition of prepping for the openshift ansible playbook
 
 ### Target build
 

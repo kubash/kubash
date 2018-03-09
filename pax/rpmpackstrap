@@ -1,7 +1,17 @@
 #!/bin/sh -eux
+# https://docs.docker.com/install/linux/docker-ce/centos/
+# https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='golang ebtables ethtool keepalived ntp docker rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${INSTALL_PKGS:='unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${DOCKER_PKG:='docker-ce-17.12.1.ce-1.el7.centos.x86_64'}
+: ${DOCKER_COMPOSE_PKG:='docker-compose-1.9.0-5.el7.noarch'}
+: ${KUBEPKG_VERSION:="1.9.3-0"}
+: ${ETCD_VERSION:="3.2.7-1"}
+: ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION.x86_64"}
+: ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION.x86_64"}
+: ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION.x86_64"}
+: ${ETCD_PKG="etcd-$ETCD_VERSION.el7"}
 
 cd $TMP
 cat <<EOF > $TMP/inventory 
@@ -47,39 +57,80 @@ yum repolist enabled
 yum install -y $PRE_INSTALL_PKGS
 yum install -y $INSTALL_PKGS
 
-pip install --upgrade pip
-pip install docker-py
-
 swapoff --all
 
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+setenforce 0
+
+install_default_docker () {
+  yum install -y docker
+  systemctl enable docker && systemctl start docker
+  
+  systemctl enable docker && systemctl start docker
+  systemctl enable kubelet && systemctl start kubelet
+  
+  pip install --upgrade pip
+  pip install docker-py
+
+  #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
+  sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
+   /etc/sysconfig/docker
+}
+
+install_spec_docker () {
+  # Install docker
+  sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+  # sudo yum-config-manager --enable docker-ce-edge
+  # sudo yum-config-manager --enable docker-ce-test
+  #curl -fsSL https://get.docker.com/ | sh
+  #yum install docker-ce
+  yum install -y $DOCKER_PKG $DOCKER_COMPOSE_PKG $KUBECTL_PKG $KUBEADM_PKG $KUBELET_PKG $ETCD_PKG
+  #yum install -y kubelet kubeadm kubectl
+  echo 'Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"' \
+    >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+  #######
+  
+  systemctl enable docker && systemctl start docker
+  systemctl enable kubelet && systemctl start kubelet
+  
+  pip install --upgrade pip
+  pip install docker-py
+}
+
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
-  # leaving clean for now, let ansible initialize
+  install_default_docker
   #yum install -y centos-release-openshift-origin origin-clients
-  echo 'Sticking to default centos'
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to default centos'
+  install_default_docker
 elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
+  install_spec_docker
   cd $TMP
   git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
   cd kubeadm2ha/ansible
   systemctl restart docker
   ansible-playbook -i $TMP/inventory cluster-images.yaml
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
-  systemctl restart docker
-  curl -s https://raw.githubusercontent.com/joshuacox/roustabout/master/RHkubeNstall|bash
+  install_spec_docker
+  #systemctl restart docker
   #kubeadm init
   #kubeadm reset
 else
   # Defaults to nothing barebones
   echo 'barebone'
+  install_default_docker
 fi
-
-#edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
-sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
- /etc/sysconfig/docker
-systemctl enable docker
-systemctl start docker
 
 export GOPATH=$HOME/.go
 #go get github.com/kubernetes-incubator/cri-tools/cmd/crictl

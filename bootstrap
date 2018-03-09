@@ -1,6 +1,7 @@
 #!/bin/bash
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
+: ${GOPATH:=$HOME/.go}
 set -e
 
 squawk () {
@@ -117,18 +118,20 @@ main () {
     cd $KUBASH_DIR
     git pull
   fi
+  export PATH=$HOME/.kubash/bin:$PATH
   cd $KUBASH_DIR
   git submodule update --init --recursive
   make submodules/openebs
   make jinja2
-  $KUBASH_BIN/kubash dotfiles
+  check_install ct
   check_install helm
   check_install oc
-  check_install ct
   # These need to exist in .kubash/bin/
   make cfssl
   make packer
   check_install crictl
+  sudo pip install netaddr
+  $KUBASH_BIN/kubash dotfiles
   echo 'logout and log back in, or source your RC files'
 }
 

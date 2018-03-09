@@ -10,6 +10,18 @@ Build production ready clusters using a variety of technologies along the way.
 By default, this will build an image using packer, then rebase that image for your nodes.
 Then initialize them using kubeadm, and install charts using helm.
 
+### Oneliner installation
+
+Install with one easy line
+
+```
+curl -L git.io/kubash|bash
+```
+
+Get started by making the example clusters `cd ~/.kubash; make examples; ls -lh clusters`
+
+### Alternative pipelines
+
 There are also alternative methods available for the steps,
 for coreos there is an alternative builder that merely downloads the official images.
 And for initializing the default is to directly initialize with kubeadm,
@@ -20,12 +32,11 @@ or [kubeadm2ha](https://github.com/mbert/kubeadm2ha)
 methods.
 
 Other provisioning beyond KVM/qemu is also being looked at, suggestions welcome in the issues.
-Keep in mind this started life a ten line script of me just trying to duplicate the
+Keep in mind this started life as a ten line script of me just trying to duplicate the
 [official instructions](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)
-
-After both the kubespray and openshift playbooks
-went sideways on me and I determined I needed to learn
-how to refamiliarize myself with spinning up a cluster with another method.
+after both the kubespray and openshift playbooks
+went sideways on me and I determined I needed to 
+refamiliarize myself with spinning up a cluster with another method.
 Somewhere along the way I came across this
 [google doc](https://docs.google.com/document/d/1rEMFuHo3rBJfFapKBInjCqm2d7xGkXzh0FpFO0cRuqg/edit#)
 
@@ -54,45 +65,46 @@ there is also a basic downloader for the CoreOS images.
 ### Initializers
 
 Although this script can just utilize ssh to run the kubeadm commands directly on the VMs,
-you can optionally use kubespray or openshifts ansible playbooks instead,
+you can optionally use kubespray or openshift's ansible playbooks instead,
 I have had various issues with both and that's why i wrote this script so I can choose amongst a 
 few different methods in my regular daily builds 
 (I'm the sort of guy who likes to spin up clusters while sipping my morning coffee).
 
-### Oneliner
+### Configs
 
-Install with one easy line
-
-```
-curl -L git.io/kubash|bash
-```
-
+By default there is now a `.kubash` folder in your home directory.  Inside this directory is a folder called `clusters`, `make example` in the `.kubash` directory will build the default example cluster.
 
 ### Usage
 
 This script automates the setup and maintenance of a kubernetes cluster
 
 ```
-kubash COMMAND
+kubash -n clustername COMMAND
 ```
 
 ### Commands:
 
-[build](./docs/build.md) - build a base image
+[build](./docs/build.md) - Build a base image
 
-[provision](./docs/provision.md) - provision individual nodes
+[build-all](./docs/build.md) - Build all the base images in parallel
 
-[init](./docs/init.md) - initialize the cluster
+[provision](./docs/provision.md) - Provision individual nodes
 
-[reset](./docs/reset.md) - reset the cluster by running `kubeadm reset` on all the hosts
+[init](./docs/init.md) - Initialize the cluster
 
-[decommission](./docs/decommission.md) - /tear down the cluster and decommission nodes
+[reset](./docs/reset.md) - Reset the cluster by running `kubeadm reset` on all the hosts
+
+[decommission](./docs/decommission.md) - Tear down the cluster and decommission nodes
 
 [copy](./docs/copy.md) - copy the built images to the provisioning hosts
 
-[ping](./docs/ping.md) - /Perform ansible ping to all hosts
+[ping](./docs/ping.md) - Perform ansible ping to all hosts
 
-[auto](./docs/auto.md) - /Full auto will provision and initialize all hosts
+[auto](./docs/auto.md) - Full auto will provision and initialize all hosts
+
+hostnamer - Will rehostname all the hosts
+
+refresh - will search for all the hosts using the appropriate method and recreate hosts.csv
 
 ### Options
 
@@ -102,6 +114,8 @@ These options are parsed using GNU getopt
 options:
 
  -h --help - Print usage
+
+ -n --clustername - work with a named cluster (or by default it will use a cluster name of 'default')
 
  -c --csv FILE - Set the csv file to be parsed
 

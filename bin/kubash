@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+KUBASH_VERSION=1.9.3
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
@@ -42,7 +43,7 @@
 : ${DO_CRICTL:='false'}
 : ${ETCD_VERSION:=v3.2.16}
 : ${KUBERNETES_VERSION:=v1.9.3}
-: ${KUBASH_RSYNC_OPTS:='-aze'}
+: ${KUBASH_RSYNC_OPTS:='-H -aze'}
 
 # Leaving these off as their behavior can be unpredictable
 # best only turn them on for debugging
@@ -368,22 +369,29 @@ kvm-decommer () {
   THRU_HOST=$3
   THRU_PORT=$4
   NODE_PATH=$5
-  if [[ "$THRU_HOST" == "localhost" ]]; then
-    $PSEUDO virsh destroy $REBASED_NODE
-    $PSEUDO virsh undefine $REBASED_NODE
-    # Create VM for node
-    $PSEUDO rm $NODE_PATH/$REBASED_NODE.qcow2
-  else
-    squawk 18 "ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT $PSEUDO virsh destroy $REBASED_NODE
-    ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT $PSEUDO virsh undefine $REBASED_NODE
-    ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT $PSEUDO rm $KVM_builderBasePath/$REBASED_NODE.qcow2"
-  
-    ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT "$PSEUDO virsh destroy $REBASED_NODE"
-    ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT "$PSEUDO virsh undefine $REBASED_NODE"
-  
-    # Create VM for node
-    ssh -n $THRU_USER@$THRU_HOST -p $THRU_PORT "$PSEUDO rm $NODE_PATH/$REBASED_NODE.qcow2"
-  fi
+  qemunodeimg="$NODE_PATH/$KUBASH_CLUSTER_NAME-k8s-$REBASED_NODE.qcow2"
+
+  command2run="virsh destroy $REBASED_NODE"
+  squawk 18 "$command2run"
+  sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
+  command2run="virsh undefine $REBASED_NODE"
+  squawk 18 "$command2run"
+  sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
+  command2run="rm $qemunodeimg"
+  squawk 18 "$command2run"
+  sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
+}
+
+remove_all_base_images_kvm () {
+  # Now remove the cluster base images
+  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f8,9,10,11,12,13|sort|uniq)"
+  squawk 18 "$uniq_hosts"
+  copy_image_tmp_para=$(mktemp -d)
+  while IFS="," read -r $uniq_hosts_list_columns
+  do
+    command2run="rm $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+    sudo_command $K8S_provisionerPort $K8S_provisionerUser $K8S_provisionerHost "$command2run"
+  done <<< "$uniq_hosts"
 }
 
 decom_kvm () {
@@ -391,7 +399,7 @@ decom_kvm () {
   provision_csv_slurp
   squawk 44 "slurpy -----> $(echo $kubash_provision_csv_slurped)"
   # Write all hosts to inventory for id
-  # csv_columns='K8S_node K8S_user K8S_ip1 K8S_provisionerPort K8S_role K8S_provisionerUser K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort'
+  # csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_network1 K8S_mac1 K8S_ip1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_network3 K8S_mac3 K8S_ip3"
   squawk 25 "decom_kvm loop starting"
   while IFS="," read -r $csv_columns
   do
@@ -401,6 +409,7 @@ decom_kvm () {
     set -e
   done <<< "$kubash_provision_csv_slurped"
   squawk 26 'Looped through all hosts to be decommissioned'
+  remove_all_base_images_kvm
 }
 
 vbox-provisioner () {
@@ -512,7 +521,8 @@ qemu-provisioner () {
   "
 
   # Create VM for node
-  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -b $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$K8S_node.qcow2"
+  qemunodeimg="$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node.qcow2"
+  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
 
   if [[ "$K8S_os" == "coreos" ]]; then
     squawk 15 Keyer
@@ -575,7 +585,7 @@ qemu-provisioner () {
   	--accelerate \
   	--hvm \
   	--os-variant=virtio26 \
-  	--disk path=$K8S_provisionerBasePath/$K8S_node.qcow2,format=qcow2,bus=virtio \
+  	--disk path=$qemunodeimg,format=qcow2,bus=virtio \
   	--network=$K8S_network1,mac=$K8S_mac1,model=virtio \
   	$SECOND_NIC \
   	$THIRD_NIC \
@@ -593,7 +603,7 @@ qemu-provisioner () {
   	--accelerate \
   	--hvm \
   	--os-variant=virtio26 \
-  	--disk path=$K8S_provisionerBasePath/$K8S_node.qcow2,format=qcow2,bus=virtio \
+  	--disk path=$qemunodeimg,format=qcow2,bus=virtio \
   	--network=$K8S_network1,mac=$K8S_mac1,model=virtio \
   	$SECOND_NIC \
   	$THIRD_NIC"
@@ -747,29 +757,25 @@ copy_image_to_all_provisioning_hosts () {
   while IFS="," read -r $uniq_hosts_list_columns
   do
     squawk 19 " $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt"
-    if [[ "$KVM_builderHost" = 'localhost' ]]; then
+    if [[ "$KVM_builderHost" == 'localhost' ]]; then
       if [[ "$K8S_provisionerHost" == 'localhost' ]]; then
-        if [[ "$(realpath $KVM_builderBasePath)" == "$(realpath $K8S_provisionerBasePath)" ]]; then
-          squawk 19 'builder and provisioner are the same path here'
-        else
-          squawk 17 "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerBasePath/$K8S_os-kubash.qcow2"
-          echo "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerBasePath/$K8S_os-kubash.qcow2" >> $copy_image_tmp_para/hopper
-        fi
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        squawk 17 "$copyimagecommand2run"
+        echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
-        squawk 17 "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-kubash.qcow2"
-        echo "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-kubash.qcow2" >> $copy_image_tmp_para/hopper
+        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        squawk 17 "$copyimagecommand2run"
+        echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi
     else
       if [[ "$K8S_provisionerHost" == "$KVM_builderHost" ]]; then
-        if [[ "$KVM_builderBasePath" == "$K8S_provisionerBasePath" ]]; then
-          squawk 19 'builder and provisioner are the same path here'
-        else
-          squawk 17 "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerBasePath/$K8S_os-kubash.qcow2"
-          echo "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderUser@$KVM_builderHost:$KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerBasePath/$K8S_os-kubash.qcow2" >> $copy_image_tmp_para/hopper
-        fi
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        squawk 17 "$copyimagecommand2run"
+        echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
-        squawk 17 "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-kubash.qcow2"
-        echo "rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderUser@$KVM_builderHost:$KVM_builderBasePath/$K8S_os-kubash.qcow2 $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-kubash.qcow2" >> $copy_image_tmp_para/hopper
+        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $K8S_builderUser@$K8S_builderHost:$KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        squawk 17 "$copyimagecommand2run"
+        echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi
     fi
   done <<< "$uniq_hosts"
@@ -1076,7 +1082,7 @@ write_ansible_kubespray_hosts () {
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
-  echo '[kubernetes-kubeminions]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-node]' >> $KUBASH_ANSIBLE_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "node" ]]; then
@@ -1086,12 +1092,12 @@ write_ansible_kubespray_hosts () {
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
-  echo '[kubernetes-kubeminions:vars]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-node:vars]' >> $KUBASH_ANSIBLE_HOSTS
   echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_ANSIBLE_HOSTS
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
-  echo '[kubernetes-kubemasters]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-master]' >> $KUBASH_ANSIBLE_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" ]]; then
@@ -1103,8 +1109,22 @@ write_ansible_kubespray_hosts () {
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
-  echo '[kubernetes-kubemasters:vars]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-master:vars]' >> $KUBASH_ANSIBLE_HOSTS
   echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_ANSIBLE_HOSTS
+
+  echo '' >> $KUBASH_ANSIBLE_HOSTS
+
+  echo '[etcd]'  >> $KUBASH_ANSIBLE_HOSTS
+  while IFS="," read -r $csv_columns
+  do
+    if [[ "$K8S_role" = "etcd" ]]; then
+      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+    elif [[ "$MASTERS_AS_ETCD" == "true" ]]; then
+      if [[ "$K8S_role" == "master" || "$K8S_role" == "primary_master" ]]; then
+        echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      fi
+    fi
+  done <<< "$slurpy"
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
@@ -1117,6 +1137,10 @@ write_ansible_kubespray_hosts () {
   done <<< "$slurpy"
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
+
+  echo '[k8s-cluster:children]' >> $KUBASH_ANSIBLE_HOSTS
+  echo 'kube-node' >> $KUBASH_ANSIBLE_HOSTS
+  echo 'kube-master' >> $KUBASH_ANSIBLE_HOSTS
 }
 
 removestalekeys () {
@@ -1242,6 +1266,35 @@ remove_vagrant_user () {
   rm -Rf $remove_vagrant_user_tmp_para
 }
 
+hostname_in_parallel () {
+  hostname_tmp_para=$(mktemp -d --suffix='.para.tmp')
+  squawk 12 ' Hostnaming all hosts using ssh'
+  if [[ -z "$kubash_hosts_csv_slurped" ]]; then
+    hosts_csv_slurp
+  fi
+  while IFS="," read -r $csv_columns
+  do
+    my_HOST=$K8S_node
+    my_IP=$K8S_ip1
+    my_PORT=$K8S_provisionerPort
+    my_USER=$K8S_provisionerUser
+    command2run="ssh -n -p $my_PORT $my_USER@$my_IP '$PSEUDO hostname $my_HOST && echo $my_HOST | $PSEUDO tee /etc/hostname && echo \"127.0.1.1 $my_HOST.$my_DOMAIN $my_HOST  \" | $PSEUDO tee -a /etc/hosts'"
+    squawk 15 "$command2run"
+    echo "$command2run" \
+      >> $hostname_tmp_para/hopper
+  done <<< "$kubash_hosts_csv_slurped"
+
+  if [[ "$VERBOSITY" -gt "9" ]] ; then
+    cat $hostname_tmp_para/hopper
+  fi
+  if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
+    $PARALLEL  -j $PARALLEL_JOBS -- < $hostname_tmp_para/hopper
+  else
+    bash $hostname_tmp_para/hopper
+  fi
+  rm -Rf $hostname_tmp_para
+}
+
 ping_in_parallel () {
   ping_tmp_para=$(mktemp -d --suffix='.para.tmp')
   squawk 12 ' Pinging all hosts using ssh'
@@ -1249,7 +1302,7 @@ ping_in_parallel () {
   do
     squawk 11 "$K8S_ip1"
     squawk 13 "$K8S_user"
-    MY_ECHO="echo '$K8S_ip1 $K8S_provisionerUser pong'" 
+    MY_ECHO="hostname; echo '$K8S_ip1 $K8S_provisionerUser pong'" 
     squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""
     echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""\
 	      >> $ping_tmp_para/hopper
@@ -1286,16 +1339,6 @@ ping () {
 ansible-ping () {
   squawk 11 ' Pinging all hosts using Ansible'
   ansible -i $KUBASH_ANSIBLE_HOSTS -m ping all
-}
-
-hostnamero () {
-  my_HOST=$1
-  my_IP=$2
-  my_PORT=$3
-  my_USER=$4
-  squawk 11 " hostnamero my_HOST=$my_HOST my_IP=$my_IP my_PORT=$my_PORT my_USER=$my_USER"
-  result=$(ssh -n -p $my_PORT $my_USER@$my_IP "$PSEUDO hostname $my_HOST && echo $my_HOST | $PSEUDO tee /etc/hostname && echo \"127.0.1.1 $my_HOST.$my_DOMAIN $my_HOST  \" | $PSEUDO tee -a /etc/hosts ")
-  squawk 13 "Result is $result"
 }
 
 chkdir () {
@@ -1367,7 +1410,6 @@ master_join () {
 
   if [[ "$DO_MASTER_JOIN" == "true" ]] ; then
     finish_pki_for_masters $my_node_user $my_node_ip $my_node_name
-    hostnamero $my_node_name $my_node_ip $my_node_port $my_node_user
     ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSUEDO hostname;$PSUEDO  uname -a"
     run_join=$(cat $KUBASH_DIR/join.sh)
     squawk 11 " run join $run_join"
@@ -1453,8 +1495,6 @@ master_init_join () {
 
   squawk 10 " master_init_join $my_master_name $my_master_ip $my_master_user $my_master_port"
   if [[ "$DO_MASTER_JOIN" == "true" ]] ; then
-    squawk 11 ' hostnamero'
-    hostnamero $my_master_name $my_master_ip $my_master_port $my_master_user
     ssh -n -p $my_master_port $my_master_user@$my_master_ip "$PSEUDO hostname;$PSEUDO  uname -a"
     my_grep='kubeadm join --token'
     squawk 13 'master_init_join kubeadm init'
@@ -1469,7 +1509,7 @@ master_init_join () {
         > $kubeadmin_config_tmp
       squawk 29 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $my_master_port' $kubeadmin_config_tmp  $my_master_user@$my_master_ip:/tmp/config.yaml"
       rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $kubeadmin_config_tmp  $my_master_user@$my_master_ip:/tmp/config.yaml
-      aquawk 16 "kubedmin_config_tmp =\n $(cat $kubeadmin_config_tmp)" -e
+      squawk 16 "kubedmin_config_tmp =\n $(cat $kubeadmin_config_tmp)" -e
       rm $kubeadmin_config_tmp
       my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/tmp/config.yaml"
       squawk 15 "$my_KUBE_INIT"
@@ -1537,7 +1577,6 @@ node_join () {
   my_node_port=$4
   squawk 11 " node_join $my_node_name $my_node_ip $my_node_user $my_node_port"
   if [[ "$DO_NODE_JOIN" == "true" ]] ; then
-    hostnamero $my_node_name $my_node_ip $my_node_port $my_node_user
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO hostname;$PSEUDO uname -a")
     squawk 13 "hostname and uname is $result"
     squawk 13 "Kubeadmin join"
@@ -2099,7 +2138,6 @@ do_masters_in_parallel () {
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" ]]; then
-      hostnamero $K8S_node $K8S_ip1 $K8S_provisionerPort $K8S_provisionerUser
       if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
         my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/tmp/config.yaml"
         squawk 15 "$my_KUBE_INIT"
@@ -2445,8 +2483,9 @@ preppy () {
 do_decom () {
   if [[ "$ANSWER_YES" == "yes" ]]; then
     decom_kvm
-    rm $KUBASH_HOSTS_CSV
-    rm $KUBASH_ANSIBLE_HOSTS
+    rm -f $KUBASH_HOSTS_CSV
+    rm -f $KUBASH_ANSIBLE_HOSTS
+    rm -f $KUBASH_CLUSTER_CONFIG
   else
     read -p "This will destroy all VMs defined in the $KUBASH_HOSTS_CSV. Are you sure? [y/N] " -n 1 -r
     echo    # (optional) move to a new line
@@ -2621,6 +2660,34 @@ activate_monitoring () {
   KUBECONFIG=$KUBECONFIG helm install stable/prometheus
 }
 
+build_all_in_parallel () {
+  squawk 11 'Building all targets in parallel'
+  rm -Rf $KVM_builderTMP
+  rm -Rf $KVM_builderDir
+  build_all_tmp_para=$(mktemp -d --suffix='.para.tmp')
+  touch $build_all_tmp_para/hopper
+  OS_LIST=(centos kubeadm kubeadm2ha kubespray openshift ubuntu debian coreos)
+  build_count=0
+  while [ "x${OS_LIST[build_count]}" != "x" ]
+  do
+    command2run="kubash build --target-os=${OS_LIST[build_count]} -y"
+    squawk 15 "$command2run"
+    echo "$command2run" >> $build_all_tmp_para/hopper
+    ((++build_count))
+  done
+
+  if [[ "$VERBOSITY" -gt "9" ]] ; then
+    cat $build_all_tmp_para/hopper
+  fi
+  if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
+    $PARALLEL  -j $PARALLEL_JOBS -- < $build_all_tmp_para/hopper
+  else
+    bash $build_all_tmp_para/hopper
+  fi
+  rm -Rf $build_all_tmp_para
+  squawk 11 'Done Building all targets'
+}
+
 main () {
   # save original io
   exec 3>&1 4>&2
@@ -2639,7 +2706,7 @@ main () {
 
   # Execute getopt on the arguments passed to this program, identified by the special character $@
   short_opts="c:hvyn:"
-  long_opts="oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug"
+  long_opts="version,oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug"
   PARSED_OPTIONS=$(getopt -n "$0" -o "$short_opts" --long "$long_opts" -- "$@")
 
   #Bad arguments, something has gone wrong with the getopt command.
@@ -2665,6 +2732,10 @@ main () {
         shift;;
       --debug)
         debug=true
+        shift;;
+      --version)
+        echo "Kubash, version $KUBASH_VERSION"
+        exit 0
         shift;;
       -y|--yes)
 	ANSWER_YES=yes
@@ -2736,7 +2807,7 @@ main () {
   done
 
   if [[ "$VERBOSITY" -gt 0 ]]; then
-    KUBASH_RSYNC_OPTS='-azve'
+    KUBASH_RSYNC_OPTS='-H -azve'
   fi
 
   chkdir $KUBASH_CLUSTERS_DIR
@@ -2875,11 +2946,19 @@ main () {
       provision_usage
       exit 1
     fi
+    copy_image_to_all_provisioning_hosts
     provisioner
     sleep 15
     refresh_network_addresses
     prep
     remove_vagrant_user
+    hostname_in_parallel
+  elif [[ $RAISON == "hostnamer" ]]; then
+    if [[ $print_help == "true" ]]; then
+      usage
+      exit 1
+    fi
+    hostname_in_parallel
   elif [[ $RAISON == "decommission" ]]; then
     if [[ $print_help == "true" ]]; then
       decom_usage
@@ -2983,16 +3062,7 @@ main () {
       usage
       exit 1
     fi
-    squawk 11 'Building all targets'
-    kubash build --target-os ubuntu
-    kubash build --target-os debian
-    kubash build --target-os centos
-    kubash build --target-os openshift
-    kubash build --target-os kubespray
-    kubash build --target-os kubeadm2ha
-    kubash build --target-os coreos
-    kubash build --target-os fedora
-    squawk 11 'Done Building all targets'
+    build_all_in_parallel
   elif [[ $RAISON == "build" ]]; then
     if [[ $print_help == "true" ]]; then
       build_usage

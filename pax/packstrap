@@ -3,6 +3,11 @@ TMP=$(mktemp -d)
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi ntp software-properties-common'}
 : ${DEB_PACKAGES_TO_INSTALL:='rsync net-tools dnsutils python-pip vim htop iotop iftop'}
 
+: ${DOCKER_PKG:='17.03'}
+: ${DOCKER_COMPOSE_PKG:='1.8.0'}
+: ${KUBEPKG_VERSION:="1.9.3"}
+: ${ETCD_VERSION:="3.2.7"}
+
 cat <<EOF > $TMP/inventory 
 localhost ansible_connection=local
 
@@ -38,6 +43,37 @@ echo 'export GOPATH=$HOME/.go
 export PATH=${GOPATH//://bin:}/bin:$PATH' \
 >> .bashrc
 
+install_default_docker () {
+  apt-get install -yqq docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')
+  apt-get install -yqq docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')
+  apt-get install -yqq kubelet kubeadm kubectl
+  
+  systemctl enable docker && systemctl start docker
+  systemctl enable kubelet && systemctl start kubelet
+  
+  pip install --upgrade pip
+  pip install docker-py
+
+  #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
+  #sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
+  # /etc/sysconfig/docker
+}
+
+install_spec_docker () {
+  apt-get install -yqq docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')
+  apt-get install -yqq docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')
+  apt-cache madison kubelet | grep '$KUBEPKG_VERSION'
+  apt-get install -yqq kubelet=$(apt-cache madison kubelet | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
+  apt-get install -yqq kubeadm=$(apt-cache madison kubeadm | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
+  apt-get install -yqq kubectl=$(apt-cache madison kubectl | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
+  
+  systemctl enable docker && systemctl start docker
+  systemctl enable kubelet && systemctl start kubelet
+  
+  pip install --upgrade pip
+  pip install docker-py
+}
+
 apt-get update
 apt-get install -yqq \
 $DEB_PRE_PACKAGES_TO_INSTALL
@@ -54,12 +90,6 @@ apt-get update
 apt-get install -y \
 $DEB_PACKAGES_TO_INSTALL
 
-pip install --upgrade pip
-pip install docker-py
-
-apt-get update
-apt-get install -yqq docker-ce=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
-
 # test snap
 if ! test_cmd_loc="$(type -p "snap")" || [ -z "$test_cmd_loc" ]; then
   echo "snap was not found in your path! skipping"
@@ -70,32 +100,35 @@ fi
 export GOPATH=$HOME/.go
 #go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
 #mv $HOME/go/bin/crictl /usr/local/bin/
-
-apt-mark hold docker-ce
-service open-iscsi restart
-systemctl restart docker
-
 swapoff --all
 
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
   # leaving clean for now, let ansible initialize
   #yum install -y centos-release-openshift-origin origin-clients
   echo 'Sticking to defaults for openshift'
+  install_default_docker
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to defaults for kubespray'
+  install_default_docker
 elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
+  install_spec_docker
   cd $TMP
   git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
   cd kubeadm2ha/ansible
   ansible-playbook -i $TMP/inventory cluster-images.yaml
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
-  apt-get install -yqq kubelet kubeadm kubectl
+  install_spec_docker
   kubeadm init
   kubeadm reset
 else
   echo 'Sticking to defaults'
+  install_default_docker
 fi
+
+apt-mark hold docker-ce
+service open-iscsi restart
+systemctl restart docker
 
 ## Show IP address in /etc/issue
 cat << EOF > /usr/local/bin/get-ip-address

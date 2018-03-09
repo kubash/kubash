@@ -7,3 +7,5 @@ bats
 oc
 cfssl
 cfssljson
+crictl
+ct
