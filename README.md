@@ -18,7 +18,9 @@ Install with one easy line
 curl -L git.io/kubash|bash
 ```
 
-Get started by making the example clusters `cd ~/.kubash; make examples; ls -lh clusters`
+Get started by making the example cluster from the example-cluster.yaml `cd ~/.kubash; kubash -n example yaml2cluster example-cluster.yaml;ls -lh clusters/example`
+
+[![asciicast](https://asciinema.org/a/164071.png)](https://asciinema.org/a/164071)
 
 ### Alternative pipelines
 
@@ -83,6 +85,10 @@ kubash -n clustername COMMAND
 ```
 
 ### Commands:
+
+[yaml2cluster](./docs/yaml2cluster.md) - Build a cluster directory from a yaml cluster file
+
+[json2cluster](./docs/yaml2cluster.md) - Build a cluster directory from a json cluster file
 
 [build](./docs/build.md) - Build a base image
 

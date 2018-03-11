@@ -1,9 +1,9 @@
 #name,role,cpuCount,Memory,network1,mac1,ip1,provisionerHost,provisionerUser,provisionerPort,provisionerBasePath,os,virt[,net2,mac2,ip2,net3,mac3,ip3]
-my-master1,primary_master,1,1100,network=default,52:54:00:e2:8f:11,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
-my-master2,master,1,1100,network=default,52:54:00:e2:8f:12,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
-my-master3,master,1,1100,network=default,52:54:00:e2:8f:13,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
-my-node1,node,1,2048,network=default,52:54:00:e2:8f:14,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
-my-node2,node,1,2048,network=default,52:54:00:e2:8f:15,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
-my-node3,node,1,2048,network=default,52:54:00:e2:8f:16,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
+my-master1,primary_master,1,1100,network=default,52:54:00:e2:8f:11,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
+my-master2,master,1,1100,network=default,52:54:00:e2:8f:12,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
+my-master3,master,1,1100,network=default,52:54:00:e2:8f:13,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
+my-node1,node,1,2048,network=default,52:54:00:e2:8f:14,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
+my-node2,node,1,2048,network=default,52:54:00:e2:8f:15,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
+my-node3,node,1,2048,network=default,52:54:00:e2:8f:16,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null
 #my-ingress1,ingress,1,2048,network=default,52:54:00:e2:8f:17,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,network=default,52:54:00:e2:8f:18,192.168.0.18
-#my-etcd1,etcd,1,512,network=default,52:54:00:e2:8f:18,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu
+#my-etcd1,etcd,1,512,network=default,52:54:00:e2:8f:18,dhcp,localhost,root,22,/var/lib/libvirt/images,kubeadm,qemu,null,null,null,null,null,null

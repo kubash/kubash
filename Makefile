@@ -166,6 +166,9 @@ example:
 	cp -iv templates/client.json clusters/default/
 	cp -iv net_set.example clusters/default/net_set
 
+yaml2json:
+	npm i -g yaml2json
+
 pax/ubuntu/builds/ubuntu-16.04.libvirt.box:
 	TMPDIR=/tiamat/tmp packer build -only=qemu kubash-ubuntu-16.04-amd64.json
 

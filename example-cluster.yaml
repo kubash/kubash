@@ -1,0 +1,115 @@
+---
+  hosts:
+    my-master1:
+      hostname: bob
+      role: primary_master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:11'
+        ip: dhcp
+    my-master2:
+      hostname: charles
+      role: master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:12'
+        ip: dhcp
+    my-master3:
+      hostname: sue
+      role: master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:13'
+        ip: dhcp
+    my-node1:
+      hostname: tom
+      role: master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:14'
+        ip: dhcp
+    my-node2:
+      hostname: joy
+      role: master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:15'
+        ip: dhcp
+    my-node3:
+      hostname: joe
+      role: master
+      cpuCount: 1
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: kubeadm
+      virt: qemu
+      network1:
+        network: network=default
+        mac: '52:54:00:e2:8f:16'
+        ip: dhcp
+      network2:
+        network: network=default
+        mac: '52:54:00:e2:8f:17'
+        ip: dhcp
+      network3:
+        network: network=default
+        mac: '52:54:00:e2:8f:18'
+        ip: dhcp
+  ca:
+    cert:
+      CERT_COMMON_NAME: etcd
+      CERT_COUNTRY: US
+      CERT_LOCALITY: Austin
+      CERT_ORGANISATION: Example inc.
+      CERT_STATE: Texas
+      CERT_ORG_UNIT: Deployment
+  net_set: calico

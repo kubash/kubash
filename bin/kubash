@@ -60,6 +60,7 @@ net_set () {
   elif [[ "$K8S_NET" == "flannel" ]]; then
     my_KUBE_CIDR="10.244.0.0/16"
   else 
+    horizontal_rule
     echo 'unknown pod network'
     exit 1
   fi
@@ -273,6 +274,7 @@ options:
 # Check if a command exists
 check_cmd () {
   if ! test_cmd_loc="$(type -p "$1")" || [[ -z "$test_cmd_loc" ]]; then
+    horizontal_rule
     echo "$1 was not found in your path!"
     echo "To proceed please install $1 to your path and try again!"
     exit 1
@@ -282,6 +284,7 @@ check_cmd () {
 # Check if a file exists and is writable
 check_file () {
   if [[ -w "$1" ]]; then
+    horizontal_rule
     echo "$1 was not writable!"
     exit 1
   fi
@@ -329,13 +332,13 @@ genmac () {
   # Generate a mac address
   hexchars="0123456789ABCDEF"
   : ${DEFAULT_MAC_ADDRESS_BLOCK:=52:54:00}
-  
+
   if [[ ! -z "$1" ]]; then
   	DEFAULT_MAC_ADDRESS_BLOCK=$1
   fi
-  
+
   end=$( for i in {1..6} ; do echo -n ${hexchars:$(( $RANDOM % 16 )):1} ; done | sed -e 's/\(..\)/:\1/g' )
-  
+
   echo "$DEFAULT_MAC_ADDRESS_BLOCK$end" >&3
 }
 
@@ -463,7 +466,7 @@ vbox-provisioner () {
 
 qemu-provisioner () {
   squawk 11 "qemu-provisioner $@"
-  
+
   K8S_node=$1
   K8S_role=$2
   K8S_cpuCount=$3
@@ -483,22 +486,22 @@ qemu-provisioner () {
   K8S_network3=${17}
   K8S_mac3=${18}
   K8S_ip3=${19}
-  if [[ "$K8S_mac1" == '' ]]; then
-    $K8S_mac1=$(kubash genmac)
+  if [[ "$K8S_mac1" == 'null' ]]; then
+    K8S_mac1=$(VERBOSITY=0 kubash --verbosity=1 genmac)
   fi
-  if [[ ! -z "$K8S_network2" ]]; then
-    if [[ "$K8S_mac2" == '' ]]; then
-      $K8S_mac2=$(kubash genmac)
+  if [[ "$K8S_network2" != 'null' ]]; then
+    if [[ "$K8S_mac2" == 'null' ]]; then
+      K8S_mac2=$(VERBOSITY=0 kubash --verbosity=1 genmac)
     fi
     SECOND_NIC="--network=$K8S_network2,mac=$K8S_mac2,model=virtio"
   fi
-  if [[ ! -z "$K8S_network3" ]]; then
-    if [[ "$K8S_mac3" == '' ]]; then
-      $K8S_mac3=$(kubash genmac)
+  if [[ "$K8S_network3" != 'null' ]]; then
+    if [[ "$K8S_mac3" == 'null' ]]; then
+      K8S_mac3=$(VERBOSITY=0 kubash --verbosity=1 genmac)
     fi
     THIRD_NIC="--network=$K8S_network3,mac=$K8S_mac3,model=virtio"
   fi
-  
+
   squawk 17 "K8S_node=$1
   K8S_role=$2
   K8S_cpuCount=$3
@@ -545,13 +548,13 @@ qemu-provisioner () {
     squawk 39 "Keys.json $SSH_AUTHORIZED_KEYS"
     rm -Rf $KEYTMP
     chkdir $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
-    if [[ "$K8S_ip2" == '' && "$K8S_ip2" == '' ]]; then
+    if [[ "$K8S_ip2" == 'null' && "$K8S_ip2" == 'null' ]]; then
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \
       K8S_provisionerUser=$K8S_provisionerUser \
       K8S_node=$K8S_node \
       envsubst < $KUBASH_DIR/templates/user_data \
       > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data
-    elif [[ ! -z "$K8S_ip2" && "$K8S_ip3" == '' ]]; then
+    elif [[ "$K8S_ip2" -ne 'null' && "$K8S_ip3" == 'null' ]]; then
       K8S_mac2=$K8S_mac2 \
       K8S_ip2=$K8S_ip2 \
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \
@@ -1152,7 +1155,7 @@ removestalekeys () {
 w8_kubedns () {
   squawk 10 "wait on Kube-DNS to become available" -n
   sleep 1
-  
+
   # while loop
   kubedns_countone=1
   # timeout for 15 minutes
@@ -1169,7 +1172,7 @@ w8_kubedns () {
     ((++kubedns_countone))
     sleep 3
   done
-  
+
   echo "Kube-DNS is now up and running"
   sleep 1
 }
@@ -1461,7 +1464,7 @@ master_init_join () {
   if [[ "DO_KEEPALIVED" == 'true' ]]; then
     #keepalived
     setup_keepalived_tmp=$(mktemp -d)
-  
+
     MASTER_VIP=$my_master_ip \
     envsubst < $KUBASH_DIR/templates/check_apiserver.sh \
     > $setup_keepalived_tmp/check_apiserver.sh
@@ -1488,7 +1491,7 @@ master_init_join () {
     rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $setup_keepalived_tmp/keepalived.conf $my_master_user@$my_master_ip:/tmp/keepalived.conf
     command2run='sudo  mv /tmp/keepalived.conf /etc/keepalived/'
     ssh -n -p $my_master_port $my_master_user@$my_master_ip "$command2run"
-    
+
     rm -f $setup_keepalived_tmp/keepalived.conf $setup_keepalived_tmp/check_apiserver.sh
     rmdir $setup_keepalived_tmp
   fi
@@ -1601,6 +1604,8 @@ checks () {
   check_cmd envsubst
   check_cmd ct
   check_cmd jinja2
+  check_cmd yaml2json
+  check_cmd jq
   check_cmd expr
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     check_cmd parallel
@@ -2026,8 +2031,8 @@ do_etcd () {
 
   # Only copy if etcd.line exists as the endpoints will have stuff in it regardless
   if [[ -e "$do_etcd_tmp_para/etcd.line" ]]; then
-    mv $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
-    mv $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
+    $MV_CMD $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
+    $MV_CMD $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
   fi
 
   countzero=0
@@ -2571,20 +2576,6 @@ coreos_build  () {
   chkdir $KVM_builderDir
   chkdir $KVM_builderTMP
 
-  if [[ $VERBOSITY -gt '1' ]]; then
-    if [[ "$ANSWER_YES" == "yes" ]]; then
-      MV_CMD='mv -v'
-    else
-      MV_CMD='mv -iv'
-    fi
-  else
-    if [[ "$ANSWER_YES" == "yes" ]]; then
-      MV_CMD='mv'
-    else
-      MV_CMD='mv -i'
-    fi
-  fi
-
   command2run="cd $KVM_builderTMP"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
   command2run="wget -c https://$CHANNEL.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2{,.sig}"
@@ -2614,19 +2605,6 @@ packer_build  () {
     LN_CMD='ln -fsv'
   else
     LN_CMD='ln -fs'
-  fi
-  if [[ $VERBOSITY -gt '1' ]]; then
-    if [[ "$ANSWER_YES" == "yes" ]]; then
-      MV_CMD='mv -v'
-    else
-      MV_CMD='mv -iv'
-    fi
-  else
-    if [[ "$ANSWER_YES" == "yes" ]]; then
-      MV_CMD='mv'
-    else
-      MV_CMD='mv -i'
-    fi
   fi
 
   command2run="cd $KUBASH_DIR/pax;if [ ! -e "$KUBASH_DIR/pax/build" ]; then $LN_CMD $KVM_builderDir $KUBASH_DIR/pax/builds; fi"
@@ -2686,6 +2664,88 @@ build_all_in_parallel () {
   fi
   rm -Rf $build_all_tmp_para
   squawk 11 'Done Building all targets'
+}
+
+yaml2cluster () {
+  yaml2cluster_tmp=$(mktemp -d)
+  if [[ -z "$1" ]]; then
+    echo 'yaml2cluster requires an argument'
+    exit 1
+  fi
+  this_yaml=$1
+  this_json=$yaml2cluster_tmp/this.json
+  yaml2json $this_yaml > $this_json
+  json2cluster $this_json
+  rm $this_json
+  rm -Rf $yaml2cluster_tmp
+}
+
+json2cluster () {
+  json2cluster_tmp=$(mktemp -d)
+  if [[ -z "$1" ]]; then
+    echo 'json2cluster requires an argument'
+    exit 1
+  fi
+  this_json=$1
+
+  if [[ -e $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME ]]; then
+    horizontal_rule
+    echo "The cluster directory already exists! $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME"
+    horizontal_rule
+    exit 1
+  fi
+
+  # provision.csv
+  jq -r \
+    '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip) "' \
+    $this_json >  $json2cluster_tmp/tmp.csv
+
+  while IFS="," read -r $csv_columns
+  do
+    if [[ "$K8S_mac1" == 'null' ]]; then
+      K8S_mac1=$(VERBOSITY=0 kubash --verbosity=1 genmac)
+    fi
+    if [[ "$K8S_network2" != 'null' ]]; then
+      if [[ "$K8S_mac2" == 'null' ]]; then
+        K8S_mac2=$(VERBOSITY=0 kubash --verbosity=1 genmac)
+      fi
+    fi
+    if [[ "$K8S_network3" != 'null' ]]; then
+      if [[ "$K8S_mac3" == 'null' ]]; then
+        K8S_mac3=$(VERBOSITY=0 kubash --verbosity=1 genmac)
+      fi
+    fi
+    echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" \
+      >>  $json2cluster_tmp/provision.csv
+  done < "$json2cluster_tmp/tmp.csv"
+
+  rm $json2cluster_tmp/tmp.csv
+  squawk 11 "$(cat $json2cluster_tmp/provision.csv)"
+
+  # ca-data.yaml
+#### BEGIN --> Indention break warning <-- BEGIN
+  jq -r \
+    '.ca[] | "CERT_COMMON_NAME: \(.CERT_COMMON_NAME)
+CERT_COUNTRY: \(.CERT_COUNTRY)
+CERT_LOCALITY: \(.CERT_LOCALITY)
+CERT_ORGANISATION: \(.CERT_ORGANISATION)
+CERT_STATE: \(.CERT_STATE)
+CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
+    $this_json >  $json2cluster_tmp/ca-data.yaml
+#### END --> Indention break warning <-- END
+  squawk 11 "$(cat $json2cluster_tmp/ca-data.yaml)"
+
+  # net_set
+  jq -r '.net_set | "\(.)" ' \
+    $this_json >  $json2cluster_tmp/net_set
+  squawk 11 "$(cat $json2cluster_tmp/net_set)"
+
+	$CP_CMD $KUBASH_DIR/users.csv.example $json2cluster_tmp/users.csv
+	$CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
+	$CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
+	$CP_CMD $KUBASH_DIR/templates/client.json $json2cluster_tmp/
+
+  $MV_CMD $json2cluster_tmp $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME
 }
 
 main () {
@@ -2806,8 +2866,23 @@ main () {
     esac
   done
 
-  if [[ "$VERBOSITY" -gt 0 ]]; then
+  if [[ $VERBOSITY -gt '1' ]]; then
     KUBASH_RSYNC_OPTS='-H -azve'
+    if [[ "$ANSWER_YES" == "yes" ]]; then
+      MV_CMD='mv -v'
+      CP_CMD='cp -v'
+    else
+      MV_CMD='mv -iv'
+      CP_CMD='cp -iv'
+    fi
+  else
+    if [[ "$ANSWER_YES" == "yes" ]]; then
+      MV_CMD='mv'
+      CP_CMD='cp'
+    else
+      MV_CMD='mv -i'
+      CP_CMD='cp -i'
+    fi
   fi
 
   chkdir $KUBASH_CLUSTERS_DIR
@@ -2815,6 +2890,7 @@ main () {
   squawk 17 "Check args"
 
   if [[ $# -eq 0 ]]; then
+    horizontal_rule
     usage
     exit 1
   fi
@@ -2825,12 +2901,14 @@ main () {
   checks
 
   if [[ $RAISON = "false" || "$RAISON" = "help" ]]; then
+    horizontal_rule
     usage
     exit 1
   fi
 
   if [[ $RAISON == "auto" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2854,12 +2932,14 @@ main () {
       exit
   elif [[ $RAISON == "grab" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
         do_grab
   elif [[ $RAISON == "grant" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2868,12 +2948,14 @@ main () {
     elif [[ $# -eq 2 ]]; then
       grant $1 $2
     else
+      horizontal_rule
       usage
       exit 1
     fi
     exit 0
   elif [[ $RAISON == "openebs" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2882,6 +2964,7 @@ main () {
     genmac
   elif [[ $RAISON == "dry" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2889,6 +2972,7 @@ main () {
         do_test
   elif [[ $RAISON == "hosts" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2896,6 +2980,7 @@ main () {
     exit 0
   elif [[ $RAISON == "dotfiles" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2904,6 +2989,7 @@ main () {
     exit 0
   elif [[ $RAISON == "show" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2911,6 +2997,7 @@ main () {
     read_csv
   elif [[ $RAISON == "test" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2918,6 +3005,7 @@ main () {
     do_test
   elif [[ $RAISON == "ping" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2928,6 +3016,7 @@ main () {
     fi
   elif [[ $RAISON == "aping" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2935,6 +3024,7 @@ main () {
     ansible-ping
   elif [[ $RAISON == "monitoring" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
@@ -2943,6 +3033,7 @@ main () {
     prep
   elif [[ $RAISON == "provision" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       provision_usage
       exit 1
     fi
@@ -2955,30 +3046,35 @@ main () {
     hostname_in_parallel
   elif [[ $RAISON == "hostnamer" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     hostname_in_parallel
   elif [[ $RAISON == "decommission" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       decom_usage
       exit 1
     fi
     do_decom
   elif [[ $RAISON == "demo" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     demo
   elif [[ $RAISON == "ingress" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     do_nginx_ingress $KUBASH_INGRESS_NAME
   elif [[ $RAISON == "masters" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       init_usage
       exit 1
     fi
@@ -2987,6 +3083,7 @@ main () {
     do_grab
   elif [[ $RAISON == "nodes" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       init_usage
       exit 1
     fi
@@ -2995,6 +3092,7 @@ main () {
     do_grab
   elif [[ $RAISON == "init" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       init_usage
       exit 1
     fi
@@ -3017,54 +3115,77 @@ main () {
     fi
   elif [[ $RAISON == "extras" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       init_usage
       exit 1
     fi
     do_tiller
+  elif [[ $RAISON == "yaml2cluster" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    yaml2cluster $@
+  elif [[ $RAISON == "json2cluster" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    json2cluster $@
   elif [[ $RAISON == "tiller" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       init_usage
       exit 1
     fi
     do_tiller
   elif [[ $RAISON == "refresh" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     refresh_network_addresses
   elif [[ $RAISON == "armor_fix" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     apparmor_fix_all_provisioning_hosts
   elif [[ $RAISON == "prepetcd" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     prep_etcd $@
   elif [[ $RAISON == "copy" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     copy_image_to_all_provisioning_hosts
   elif [[ $RAISON == "reset" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     kubeadm_reset
   elif [[ $RAISON == "build-all" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       usage
       exit 1
     fi
     build_all_in_parallel
   elif [[ $RAISON == "build" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       build_usage
       exit 1
     fi
@@ -3112,6 +3233,7 @@ main () {
       #override packer atm
       builder=coreos
       if [[ $builder == "packer" ]]; then
+        horizontal_rule
         echo 'packer not supported for coreos at this time'
         exit 1
       elif [[ $builder == "coreos" ]]; then
@@ -3136,35 +3258,43 @@ main () {
     elif [[ $builder == "veewee" ]]; then
       squawk 12 " Executing vee wee build..."
       # veewee_build 
+      horizontal_rule
       echo 'VeeWee support not built yet :('
       exit 1
     else
+      horizontal_rule
       echo 'builder not recognized'
       exit 1
     fi
     exit 0
   elif [[ $RAISON == "node_join" ]]; then
     if [[ $print_help == "true" ]]; then
+      horizontal_rule
       node_usage
       exit 1
     fi
     if [[ -z "$node_join_name" ]]; then
+      horizontal_rule
       echo 'you must specify the --node-join-name option'
       exit 1
     fi
     if [[ -z "$node_join_ip" ]]; then
+      horizontal_rule
       echo 'you must specify the --node-join-ip option'
       exit 1
     fi
     if [[ -z "$node_join_user" ]]; then
+      horizontal_rule
       echo 'you must specify the --node-join-user option'
       exit 1
     fi
     if [[ -z "$node_join_port" ]]; then
+      horizontal_rule
       echo 'you must specify the --node-join-port option'
       exit 1
     fi
     if [[ -z "$node_join_role" ]]; then
+      horizontal_rule
       echo 'you must specify the --node-join-role option'
       exit 1
     fi
@@ -3190,6 +3320,7 @@ main () {
   fi
 
   if [[ $print_help == "true" ]]; then
+    horizontal_rule
     usage
     exit 1
   fi

@@ -97,6 +97,12 @@ flight_checks () {
 }
 
 main () {
+
+  if type "apt-get" > /dev/null; then
+    sudo apt-get install -y jq git build-essential golang unzip curl wget parallel ansible
+  elif type "yum" > /dev/null; then
+    sudo yum install -y jq git build-essential golang unzip curl wget parallel ansible
+  fi
   check_cmd git
   check_cmd ssh
   check_cmd ansible
@@ -123,6 +129,7 @@ main () {
   git submodule update --init --recursive
   make submodules/openebs
   make jinja2
+  make yaml2json
   check_install ct
   check_install helm
   check_install oc

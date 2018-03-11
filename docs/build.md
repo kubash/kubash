@@ -4,12 +4,13 @@
 
 ### Environment Variables
 
-First you should set an ssh key to be added to the `authorized_keys` on the hosts, either set the directly as
+First you should set an ssh key to be added to the
+`authorized_keys` on the hosts, either set the key as an environment veriable directly as
 ```
 export KEYS_TO_ADD='ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTY68No= adminuser@testbox'
 ```
 
-Or alternatively give it an url to a set of keys
+Or alternatively give it an url to a set of pubkeys
 ```
 export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
 ```
