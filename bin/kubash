@@ -747,7 +747,7 @@ refresh_network_addresses () {
       countzero=0
       until ping -c1 -W1 $this_node_ip &>/dev/null
       do
-        if [[ "$countzero" -gt 22 ]]; then
+        if [[ "$countzero" -gt 25 ]]; then
           echo "$K8S_node host not coming up investigate $this_node_ip"
           exit 1
         elif [[ "$countzero" -gt 2 ]]; then
@@ -755,6 +755,13 @@ refresh_network_addresses () {
         fi
         sleep 2
         squawk 19 "pinging $this_node_ip $countzero"
+        ((++countzero))
+      done
+      countzero=0
+      until nc -vzw 2 $this_node_ip 22
+      do
+        sleep 2
+        squawk 19 "checking ssh $this_node_ip $countzero"
         ((++countzero))
       done
       squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
@@ -1608,6 +1615,7 @@ node_join () {
 checks () {
   squawk 0 " checks"
   check_cmd git
+  check_cmd nc
   check_cmd ssh
   check_cmd rsync
   check_cmd ansible
