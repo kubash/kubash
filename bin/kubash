@@ -2663,7 +2663,7 @@ activate_monitoring () {
 build_all_in_parallel () {
   squawk 1 'Building all targets in parallel'
   $PSEUDO rm -Rf $KVM_builderTMP
-  $PSEUDO -Rf $KVM_builderDir
+  $PSEUDO rm -Rf $KVM_builderDir
   build_all_tmp_para=$(mktemp -d --suffix='.para.tmp')
   touch $build_all_tmp_para/hopper
   OS_LIST=(centos kubeadm kubeadm2ha kubespray openshift ubuntu debian coreos)
