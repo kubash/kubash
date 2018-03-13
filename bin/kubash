@@ -2629,6 +2629,8 @@ packer_build  () {
   DESTINATION_FILE=$KVM_builderBasePath/$target_os-$KVM_BASE_IMG
   command2run="$MV_CMD $TARGET_FILE $DESTINATION_FILE"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
+  command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt/$target_build"
+  sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
   command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 }
