@@ -758,7 +758,7 @@ refresh_network_addresses () {
         ((++countzero))
       done
       countzero=0
-      until nc -vzw 2 $this_node_ip 22
+      until nc -W 2 -v $this_node_ip 22
       do
         sleep 2
         squawk 19 "checking ssh $this_node_ip $countzero"
