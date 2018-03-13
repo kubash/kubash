@@ -756,7 +756,7 @@ refresh_network_addresses () {
           sleep 3
         fi
         squawk 19 "checking ssh $this_node_ip $countzero"
-        ssh -n -q $this_K8S_user@$this_node_ip exit
+        ssh -o "UserKnownHostsFile /dev/null" -o "StrictHostKeyChecking no" -n -q $this_K8S_user@$this_node_ip exit
         this_ssh_status=$?
         ((++countzero))
       done
