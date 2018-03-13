@@ -17,7 +17,7 @@ matrix:
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
 
-language: node
+language: node_js
 nodejs:
   - "8"
 
