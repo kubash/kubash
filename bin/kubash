@@ -3062,7 +3062,7 @@ main () {
     fi
     copy_image_to_all_provisioning_hosts
     provisioner
-    squawk 1 "wating on hosts to comeup"
+    squawk 1 "wating on hosts to come up"
     sleep 33
     refresh_network_addresses
     prep
