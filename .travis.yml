@@ -46,6 +46,6 @@ script:
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
-	- bin/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
+  - bin/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
   - /bin/bash -l -c "echo kubash openebs"
   - bats .tests.bats
