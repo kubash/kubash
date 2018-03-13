@@ -18,7 +18,7 @@ matrix:
         - MINIKUBE_DRIVER=none
 
 language: node_js
-nodejs:
+node_js:
   - "8"
 
 addons:
@@ -37,11 +37,11 @@ before_install:
 # install nsenter which is required for port forwarding
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
+
+script:
   - bash scripts/dotfiles
   - bash scripts/chkdirs
   - /usr/bin/time -v make -e linuxreqs
-
-script:
   - sudo chown -R $USER /usr/local
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
