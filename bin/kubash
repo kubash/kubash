@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-KUBASH_VERSION=1.9.3
+KUBASH_VERSION=v1.9.4
+: ${KUBERNETES_VERSION:=$KUBASH_VERSION}
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
@@ -42,12 +43,10 @@ KUBASH_VERSION=1.9.3
 : ${DO_KEEPALIVED:='false'}
 : ${DO_CRICTL:='false'}
 : ${ETCD_VERSION:=v3.2.16}
-: ${KUBERNETES_VERSION:=v1.9.3}
 : ${KUBASH_RSYNC_OPTS:='-H -aze'}
+: ${CALICO_URL:=https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml}
+: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml}
 
-# Leaving these off as their behavior can be unpredictable
-# best only turn them on for debugging
-#set -eu
 set -e
 
 net_set () {
@@ -59,7 +58,7 @@ net_set () {
     my_KUBE_CIDR="192.168.0.0/16"
   elif [[ "$K8S_NET" == "flannel" ]]; then
     my_KUBE_CIDR="10.244.0.0/16"
-  else 
+  else
     horizontal_rule
     echo 'unknown pod network'
     exit 1
@@ -85,8 +84,8 @@ uniq_hosts_list_columns="K8S_provisionerHost K8S_provisionerUser K8S_provisioner
 squawk () {
   # This function simplifies error reporting and verbosity
   # call it by preceding your message with a verbosity level
-  # e.g. `squawk 13 "This is a squawk"`
-  # if the current verbosity level is greater than or equal 
+  # e.g. `squawk 3 "This is a squawk"`
+  # if the current verbosity level is greater than or equal to
   # the number given then this function will echo out your message
   # and pad it with # to let you now how verbose that message was
   squawk_lvl=$1
@@ -109,7 +108,7 @@ horizontal_rule () {
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 }
 
-squawk 13 "Kubash, by Josh Cox"
+squawk 3 "Kubash, by Josh Cox"
 
 usage () {
   horizontal_rule
@@ -316,13 +315,13 @@ TARGET_FILE_FOR_ADD=$HOME/.profile
 
 check_if_line_exists()
 {
-  squawk 17 " Checking for '$LINE_TO_ADD'  in $TARGET_FILE_FOR_ADD"
+  squawk 7 " Checking for '$LINE_TO_ADD'  in $TARGET_FILE_FOR_ADD"
   grep -qsFx "$LINE_TO_ADD" $TARGET_FILE_FOR_ADD
 }
 
 add_line_to()
 {
-  squawk 15 " Adding '$LINE_TO_ADD'  to $TARGET_FILE_FOR_ADD"
+  squawk 5 " Adding '$LINE_TO_ADD'  to $TARGET_FILE_FOR_ADD"
   TARGET_FILE=$TARGET_FILE_FOR_ADD
     [[ -w "$TARGET_FILE" ]] || TARGET_FILE=$TARGET_FILE_FOR_ADD
     printf "%s\n" "$LINE_TO_ADD" >> "$TARGET_FILE"
@@ -334,7 +333,7 @@ genmac () {
   : ${DEFAULT_MAC_ADDRESS_BLOCK:=52:54:00}
 
   if [[ ! -z "$1" ]]; then
-  	DEFAULT_MAC_ADDRESS_BLOCK=$1
+    DEFAULT_MAC_ADDRESS_BLOCK=$1
   fi
 
   end=$( for i in {1..6} ; do echo -n ${hexchars:$(( $RANDOM % 16 )):1} ; done | sed -e 's/\(..\)/:\1/g' )
@@ -343,30 +342,30 @@ genmac () {
 }
 
 rolero () {
-  squawk 12 "rolero $@"
+  squawk 2 "rolero $@"
   node_name=$1
   NODE_ROLE=$2
 
   result=$(kubectl --kubeconfig=$KUBECONFIG label --overwrite node $node_name node-role.kubernetes.io/$NODE_ROLE=)
-  squawk 14 "Result = $result"
+  squawk 4 "Result = $result"
 }
 
 hosts_csv_slurp () {
-  squawk 45 "slurp hosts.csv"
+  squawk 19 "slurp hosts.csv"
   # Get rid of commented lines, and sort on the second and third mac address fields
   # This ensures hosts with more net interfaces are set after hosts with less interfaces
   kubash_hosts_csv_slurped="$(grep -v '^#' $KUBASH_HOSTS_CSV|sort -t , -k 18,18n  -k 15,15n)"
 }
 
 provision_csv_slurp () {
-  squawk 45 "slurp provision.csv"
+  squawk 19 "slurp provision.csv"
   # Get rid of commented lines, and sort on the second and third mac address fields
   # This ensures hosts with more net interfaces are set after hosts with less interfaces
   kubash_provision_csv_slurped="$(grep -v '^#' $KUBASH_PROVISION_CSV|sort -t , -k 18,18n  -k 15,15n)"
 }
 
 kvm-decommer () {
-  squawk 15 "kvm-decommer-remote $@"
+  squawk 5 "kvm-decommer-remote $@"
   REBASED_NODE=$1
   THRU_USER=$2
   THRU_HOST=$3
@@ -375,20 +374,20 @@ kvm-decommer () {
   qemunodeimg="$NODE_PATH/$KUBASH_CLUSTER_NAME-k8s-$REBASED_NODE.qcow2"
 
   command2run="virsh destroy $REBASED_NODE"
-  squawk 18 "$command2run"
+  squawk 8 "$command2run"
   sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
   command2run="virsh undefine $REBASED_NODE"
-  squawk 18 "$command2run"
+  squawk 8 "$command2run"
   sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
   command2run="rm $qemunodeimg"
-  squawk 18 "$command2run"
+  squawk 8 "$command2run"
   sudo_command $THRU_PORT $THRU_USER $THRU_HOST "$command2run"
 }
 
 remove_all_base_images_kvm () {
   # Now remove the cluster base images
   uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f8,9,10,11,12,13|sort|uniq)"
-  squawk 18 "$uniq_hosts"
+  squawk 8 "$uniq_hosts"
   copy_image_tmp_para=$(mktemp -d)
   while IFS="," read -r $uniq_hosts_list_columns
   do
@@ -398,26 +397,26 @@ remove_all_base_images_kvm () {
 }
 
 decom_kvm () {
-  squawk 11 "decom_kvm starting"
+  squawk 1 "decom_kvm starting"
   provision_csv_slurp
-  squawk 44 "slurpy -----> $(echo $kubash_provision_csv_slurped)"
+  squawk 19 "slurpy -----> $(echo $kubash_provision_csv_slurped)"
   # Write all hosts to inventory for id
   # csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_network1 K8S_mac1 K8S_ip1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_network3 K8S_mac3 K8S_ip3"
-  squawk 25 "decom_kvm loop starting"
+  squawk 15 "decom_kvm loop starting"
   while IFS="," read -r $csv_columns
   do
-    squawk 36 "Loop $K8S_node $K8S_user $K8S_ip1 $K8S_provisionerPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
+    squawk 19 "Loop $K8S_node $K8S_user $K8S_ip1 $K8S_provisionerPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
     set +e
     kvm-decommer $K8S_node $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerPort $K8S_provisionerBasePath 
     set -e
   done <<< "$kubash_provision_csv_slurped"
-  squawk 26 'Looped through all hosts to be decommissioned'
+  squawk 16 'Looped through all hosts to be decommissioned'
   remove_all_base_images_kvm
 }
 
 vbox-provisioner () {
-  squawk 11 "vbox-provisioner $@"
-  
+  squawk 1 "vbox-provisioner $@"
+
   K8S_node=$1
   K8S_role=$2
   K8S_cpuCount=$3
@@ -437,8 +436,8 @@ vbox-provisioner () {
   K8S_network3=${17}
   K8S_mac3=${18}
   K8S_ip3=${19}
-  
-  squawk 17 "K8S_node=$1
+
+  squawk 7 "K8S_node=$1
   K8S_role=$2
   K8S_cpuCount=$3
   K8S_Memory=$4
@@ -465,7 +464,7 @@ vbox-provisioner () {
 
 
 qemu-provisioner () {
-  squawk 11 "qemu-provisioner $@"
+  squawk 1 "qemu-provisioner $@"
 
   K8S_node=$1
   K8S_role=$2
@@ -502,7 +501,7 @@ qemu-provisioner () {
     THIRD_NIC="--network=$K8S_network3,mac=$K8S_mac3,model=virtio"
   fi
 
-  squawk 17 "K8S_node=$1
+  squawk 7 "K8S_node=$1
   K8S_role=$2
   K8S_cpuCount=$3
   K8S_Memory=$4
@@ -528,7 +527,7 @@ qemu-provisioner () {
   qemucmd2run="$PSEUDO qemu-img create -f qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
 
   if [[ "$K8S_os" == "coreos" ]]; then
-    squawk 15 Keyer
+    squawk 5 Keyer
     KEYTMP=$(mktemp -d)
     touch $KEYTMP/keys
     if [ ! -z  "$KEYS_URL" ]; then
@@ -541,11 +540,11 @@ qemu-provisioner () {
     else
       echo 'no KEYS_TO_ADD given'
     fi
-    squawk 28 "Keys $(cat $KEYTMP/keys)"
+    squawk 18 "Keys $(cat $KEYTMP/keys)"
     echo '    ssh_authorized_keys:'>  $KEYTMP/keys.json
     cat  $KEYTMP/keys|sed 's/^/    - /' >> $KEYTMP/keys.json
     SSH_AUTHORIZED_KEYS=$(cat $KEYTMP/keys.json)
-    squawk 39 "Keys.json $SSH_AUTHORIZED_KEYS"
+    squawk 19 "Keys.json $SSH_AUTHORIZED_KEYS"
     rm -Rf $KEYTMP
     chkdir $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
     if [[ "$K8S_ip2" == 'null' && "$K8S_ip2" == 'null' ]]; then
@@ -578,88 +577,88 @@ qemu-provisioner () {
        > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign
 
     virshcmd2run="$PSEUDO virt-install --connect qemu:///system \
- 	--import \
-  	--autostart \
-  	--name $K8S_node \
-  	--ram $K8S_Memory \
-  	--vcpus $K8S_cpuCount \
-  	--os-type=linux \
-  	--noautoconsole \
-  	--accelerate \
-  	--hvm \
-  	--os-variant=virtio26 \
-  	--disk path=$qemunodeimg,format=qcow2,bus=virtio \
-  	--network=$K8S_network1,mac=$K8S_mac1,model=virtio \
-  	$SECOND_NIC \
-  	$THIRD_NIC \
-	--print-xml
-	" >&3 2>&3
+  --import \
+    --autostart \
+    --name $K8S_node \
+    --ram $K8S_Memory \
+    --vcpus $K8S_cpuCount \
+    --os-type=linux \
+    --noautoconsole \
+    --accelerate \
+    --hvm \
+    --os-variant=virtio26 \
+    --disk path=$qemunodeimg,format=qcow2,bus=virtio \
+    --network=$K8S_network1,mac=$K8S_mac1,model=virtio \
+    $SECOND_NIC \
+    $THIRD_NIC \
+  --print-xml
+  " >&3 2>&3
   else
     virshcmd2run="$PSEUDO virt-install --connect qemu:///system \
- 	--import \
-  	--autostart \
-  	--name $K8S_node \
-  	--ram $K8S_Memory \
-  	--vcpus $K8S_cpuCount \
-  	--os-type=linux \
-  	--noautoconsole \
-  	--accelerate \
-  	--hvm \
-  	--os-variant=virtio26 \
-  	--disk path=$qemunodeimg,format=qcow2,bus=virtio \
-  	--network=$K8S_network1,mac=$K8S_mac1,model=virtio \
-  	$SECOND_NIC \
-  	$THIRD_NIC"
+  --import \
+    --autostart \
+    --name $K8S_node \
+    --ram $K8S_Memory \
+    --vcpus $K8S_cpuCount \
+    --os-type=linux \
+    --noautoconsole \
+    --accelerate \
+    --hvm \
+    --os-variant=virtio26 \
+    --disk path=$qemunodeimg,format=qcow2,bus=virtio \
+    --network=$K8S_network1,mac=$K8S_mac1,model=virtio \
+    $SECOND_NIC \
+    $THIRD_NIC"
   fi
 
   if [[ "$K8S_provisionerHost" = "localhost" ]]; then
-    squawk 15 "$qemucmd2run"
+    squawk 5 "$qemucmd2run"
     $qemucmd2run
     if [[ "$K8S_os" == "coreos" ]]; then
-      squawk 15 "create domain.xml $virshcmd2run"
-      $virshcmd2run > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml 
+      squawk 5 "create domain.xml $virshcmd2run"
+      $virshcmd2run > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i 's|type=\"kvm\"|type=\"kvm\" xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\"|' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i "/<\/devices>/a <qemu:commandline>\n  <qemu:arg value='-fw_cfg'/>\n  <qemu:arg value='name=opt/com.coreos/config,file=$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign'/>\n</qemu:commandline>" $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       $PSEUDO virsh define $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       $PSEUDO virsh start $K8S_node
     else
-      squawk 15 "$PSEUDO $virshcmd2run"
+      squawk 5 "$PSEUDO $virshcmd2run"
       $PSEUDO $virshcmd2run
     fi
   else
-    squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
     ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$qemucmd2run"
 
     if [[ "$K8S_os" == "coreos" ]]; then
-      squawk 15 "create the domain.xml"
-      squawk 11 "touch $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml"
-      touch $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml 
-      ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run" > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml 
+      squawk 5 "create the domain.xml"
+      squawk 1 "touch $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml"
+      touch $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
+      ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run" > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i 's|type=\"kvm\"|type=\"kvm\" xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\"|' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i "/<\/devices>/a <qemu:commandline>\n  <qemu:arg value='-fw_cfg'/>\n  <qemu:arg value='name=opt/com.coreos/config,file=$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign'/>\n</qemu:commandline>" $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
 
-      squawk 15 "sync the cluster directory"
-      squawk 19 "rsync $KUBASH_RSYNC_OPTS 'ssh -p$K8S_provisionerPort' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerUser@$K8S_provisionerHost:~/"
+      squawk 5 "sync the cluster directory"
+      squawk 9 "rsync $KUBASH_RSYNC_OPTS 'ssh -p$K8S_provisionerPort' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerUser@$K8S_provisionerHost:~/"
       rsync $KUBASH_RSYNC_OPTS "ssh -p$K8S_provisionerPort" $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/
 
       virshcmd2run="$PSEUDO virsh define $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml"
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
 
       virshcmd2run="$PSEUDO virsh start $K8S_node"
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-    else 
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+    else
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
     fi
   fi
 }
 
 provisioner () {
-  squawk 11 " provisioner"
+  squawk 1 " provisioner"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
-  squawk 18 "$slurpy"
+  squawk 8 "$slurpy"
   apparmor_fixed='false'
   if [[ -e "$KUBASH_HOSTS_CSV" ]]; then
     horizontal_rule
@@ -673,21 +672,21 @@ provisioner () {
         apparmor_fixed='true'
       fi
       if [[ "$K8S_virt" = "qemu" ]]; then
-        squawk 19 "qemu-provisioner $K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3"
+        squawk 9 "qemu-provisioner $K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3"
         qemu-provisioner $K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3
       elif [[ "$K8S_virt" = "vbox" ]]; then
         vbox-provisioner $K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3
       else
-	echo "virtualization technology '$K8S_virt' not recognized"
+  echo "virtualization technology '$K8S_virt' not recognized"
       fi
-      squawk 14 "provisioned"
+      squawk 4 "provisioned"
   done <<< "$slurpy"
 }
 
 refresh_network_addresses () {
-  squawk 11 " provisioner"
+  squawk 1 " provisioner"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
-  squawk 18 "$slurpy"
+  squawk 8 "$slurpy"
   rm $KUBASH_HOSTS_CSV
   touch $KUBASH_HOSTS_CSV
   while IFS="," read -r $csv_columns
@@ -702,82 +701,101 @@ refresh_network_addresses () {
         if [[ "$K8S_provisionerHost" == "localhost" ]]; then
           countzero=0
           while [[ -z "$this_node_ip" ]]; do
-            squawk 17 "checking for IP address"
-            squawk 18 "$PSEUDO virsh domifaddr $K8S_node --full"
-            this_node_ip=$($PSEUDO virsh domifaddr $K8S_node --full|grep ipv4|tail -n1|awk '{print $4}'|cut -f1 -d/ 2>/dev/null)
-	    if [[ "$countzero" -gt 2 ]]; then
-    	      sleep 2
-            fi
-	    ((++countzero))
+            squawk 7 "checking for IP address"
+            squawk 8 "$PSEUDO virsh domifaddr $K8S_node --full"
+            this_node_ip=$($PSEUDO virsh domifaddr $K8S_node --full|grep ipv4|head -n1|awk '{print $4}'|cut -f1 -d/ 2>/dev/null)
+            if [[ "$countzero" -gt 2 ]]; then
+              sleep 2
+              fi
+            ((++countzero))
           done
         else
           countzero=0
           this_node_ip=''
           while [[ "$this_node_ip" == '' ]]; do
-            squawk 17 "checking for IP address"
-            squawk 18 "$PSEUDO virsh domifaddr $K8S_node --full"
+            squawk 7 "checking for IP address"
+            squawk 8 "$PSEUDO virsh domifaddr $K8S_node --full"
             this_node_ip=$(ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$PSEUDO virsh domifaddr $K8S_node --full"|grep ipv4|tail -n1|awk '{print $4}'|cut -f1 -d/ 2>/dev/null)
-	    if [[ "$countzero" -gt 2 ]]; then
-    	      sleep 2
+            if [[ "$countzero" -gt 2 ]]; then
+              sleep 2
             fi
-	    ((++countzero))
+            ((++countzero))
           done
         fi
       elif [[ "$K8S_networkDiscovery" == "arp" ]]; then
-          countzero=0
-	  this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
-          while [[ -z "$this_node_ip" ]]; do
-	    squawk 12 "sudo nmap -p 22 $BROADCAST_TO_NETWORK"
-	    NMAP_OUTPUT=$($PSEUDO nmap -p 22 $BROADCAST_TO_NETWORK)
-	    squawk 11 "arp -n|grep $K8S_mac1|awk '{print \$1}'"
-	    this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
-	    if [[ "$countzero" -gt 2 ]]; then
-    	      sleep 8
-            fi
-	    sleep 2
-	    ((++countzero))
-          done
+        countzero=0
+        this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
+        while [[ -z "$this_node_ip" ]]; do
+        squawk 2 "sudo nmap -p 22 $BROADCAST_TO_NETWORK"
+        NMAP_OUTPUT=$($PSEUDO nmap -p 22 $BROADCAST_TO_NETWORK)
+        squawk 1 "arp -n|grep $K8S_mac1|awk '{print \$1}'"
+        this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
+        if [[ "$countzero" -gt 2 ]]; then
+          sleep 8
+        fi
+        sleep 2
+        ((++countzero))
+        done
       fi
-      squawk 15 "adding to $KUBASH_HOSTS_CSV"
+      squawk 5 "adding to $KUBASH_HOSTS_CSV"
       if [[ "$K8S_os" == 'coreos' ]]; then
         this_K8S_user=$K8S_provisionerUser
       else
         this_K8S_user=$K8S_user
       fi
-      squawk 16 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
+      squawk 9 "preview $K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
+      countzero=0
+      set +e
+      this_ssh_status=254
+      until [[ "$this_ssh_status" == '0' ]]
+      do
+        if [[ "$countzero" -gt 25 ]]; then
+          echo "$K8S_node host not coming up investigate $this_node_ip"
+          exit 1
+        elif [[ "$countzero" -gt 2 ]]; then
+          sleep 3
+        fi
+        squawk 19 "checking ssh $this_node_ip $countzero"
+        ssh -o "UserKnownHostsFile /dev/null" -o "StrictHostKeyChecking no" -n -q $this_K8S_user@$this_node_ip exit
+        this_ssh_status=$?
+        ((++countzero))
+      done
+      set -e
+      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
       echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" >> $KUBASH_HOSTS_CSV
       this_node_ip=''
   done <<< "$slurpy"
+  squawk 19 'network addresses refreshed'
 }
 
 copy_image_to_all_provisioning_hosts () {
-  squawk 10 "copy_image_to_all_provisioning_hosts"
+  squawk 0 "copy_image_to_all_provisioning_hosts"
 
   uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f8,9,10,11,12,13|sort|uniq)"
-  squawk 18 "$uniq_hosts"
+  squawk 8 "$uniq_hosts"
   copy_image_tmp_para=$(mktemp -d)
   touch $copy_image_tmp_para/hopper
   while IFS="," read -r $uniq_hosts_list_columns
   do
-    squawk 19 " $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt"
+    squawk 9 " $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt"
     if [[ "$KVM_builderHost" == 'localhost' ]]; then
       if [[ "$K8S_provisionerHost" == 'localhost' ]]; then
         copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
-        squawk 17 "$copyimagecommand2run"
+        squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
         copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
-        squawk 17 "$copyimagecommand2run"
+        squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi
     else
       if [[ "$K8S_provisionerHost" == "$KVM_builderHost" ]]; then
         copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
-        squawk 17 "$copyimagecommand2run"
+        squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
         copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $K8S_builderUser@$K8S_builderHost:$KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
-        squawk 17 "$copyimagecommand2run"
+        squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi
     fi
@@ -795,9 +813,9 @@ copy_image_to_all_provisioning_hosts () {
 }
 
 apparmor_fix_all_provisioning_hosts () {
-  squawk 10 "apparmor_fix_all_provisioning_hosts"
+  squawk 0 "apparmor_fix_all_provisioning_hosts"
   uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f7,8,9,10,11,12|sort|uniq)"
-  squawk 18 "$uniq_hosts"
+  squawk 8 "$uniq_hosts"
   apparmor_tmp_para=$(mktemp -d)
   touch $apparmor_tmp_para/hopper
   #CURLY="bash $(curl -Ls https://raw.githubusercontent.com/kubash/kubash/master/scripts/libvirtarmor)"
@@ -808,7 +826,7 @@ apparmor_fix_all_provisioning_hosts () {
     if [[ "$K8S_provisionerHost" = 'localhost' ]]; then
       echo "$CURLY" >> $apparmor_tmp_para/hopper
     else
-      squawk 19 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"$CURLY\""
+      squawk 9 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"$CURLY\""
       echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"$CURLY\"" \
         >> $apparmor_tmp_para/hopper
     fi
@@ -850,12 +868,12 @@ demo () {
 }
 
 do_net () {
-  squawk 10 " do_net"
+  squawk 0 " do_net"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
   if [[ $K8S_NET == "calico" ]]; then
-    kubectl --kubeconfig=$KUBECONFIG apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f $CALICO_URL
   elif [[ $K8S_NET == "flannel" ]]; then
-    kubectl --kubeconfig=$KUBECONFIG apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml 
+    kubectl --kubeconfig=$KUBECONFIG apply -f $FLANNEL_URL
   elif [[ $K8S_NET == "weavenet" ]]; then
     VERSION="$(kubectl version | base64 | tr -d '\n')"
     kubectl --kubeconfig=$KUBECONFIG apply -f "https://cloud.weave.works/k8s/net?k8s-version=${VERSION}"
@@ -864,7 +882,7 @@ do_net () {
 
 do_tiller () {
   w8_kubedns
-  squawk 11 " do_tiller"
+  squawk 1 " do_tiller"
   kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
   kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
   KUBECONFIG=$KUBECONFIG helm init --service-account tiller
@@ -875,7 +893,7 @@ write_ansible_hosts () {
 }
 
 write_ansible_kubeadm2ha_hosts () {
-  squawk 11 " Make a hosts file for kubeadm2ha ansible"
+  squawk 1 " Make a hosts file for kubeadm2ha ansible"
   # Make a fresh hosts file
   slurpy="$(grep -v '^#' $KUBASH_HOSTS_CSV)"
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
@@ -981,7 +999,7 @@ write_ansible_kubeadm2ha_hosts () {
 }
 
 write_ansible_openshift_hosts () {
-  squawk 11 " Make a hosts file for openshift ansible"
+  squawk 1 " Make a hosts file for openshift ansible"
   # Make a fresh hosts file
   slurpy="$(grep -v '^#' $KUBASH_HOSTS_CSV)"
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
@@ -1067,7 +1085,7 @@ osm_default_node_selector="region=lab"' >> $KUBASH_ANSIBLE_HOSTS
 }
 
 write_ansible_kubespray_hosts () {
-  squawk 11 " Make a hosts file for ansible"
+  squawk 1 " Make a hosts file for ansible"
   # Make a fresh hosts file
   slurpy="$(grep -v '^#' $KUBASH_HOSTS_CSV)"
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
@@ -1147,13 +1165,13 @@ write_ansible_kubespray_hosts () {
 }
 
 removestalekeys () {
-  squawk 11 " removestalekeys $@"
+  squawk 1 " removestalekeys $@"
   node_ip=$1
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
 }
 
 w8_kubedns () {
-  squawk 10 "wait on Kube-DNS to become available" -n
+  squawk 0 "wait on Kube-DNS to become available" -n
   sleep 1
 
   # while loop
@@ -1161,12 +1179,12 @@ w8_kubedns () {
   # timeout for 15 minutes
   while [[ $kubedns_countone -lt 151 ]]
   do
-    squawk 10 '.' -n
+    squawk 0 '.' -n
     RESULT=$(kubectl --kubeconfig=$KUBECONFIG get po --namespace kube-system |grep kube-dns|grep Running)
     if [[ "$RESULT" ]]; then
         sleep 3
-        squawk 10 '.'
-        squawk 10 "$RESULT"
+        squawk 0 '.'
+        squawk 0 "$RESULT"
         break
     fi
     ((++kubedns_countone))
@@ -1178,40 +1196,40 @@ w8_kubedns () {
 }
 
 w8_kubectl () {
-  squawk 10 "Wait on the K8S cluster to become available" -n
-  squawk 10 "Errors on the first few tries are normal give it a few minutes to spin up" -n
+  squawk 0 "Wait on the K8S cluster to become available" -n
+  squawk 0 "Errors on the first few tries are normal give it a few minutes to spin up" -n
   sleep 15
   # while loop
   countone_w8_kubectl=1
   countlimit_w8_kubectl=151
   # timeout for 15 minutes
   while [[ "$countone_w8_kubectl" -lt "$countlimit_w8_kubectl" ]]; do
-    squawk 10 '.' -n
+    squawk 0 '.' -n
     if [[ "$VERBOSITY" -gt "11" ]] ; then
       kubectl --kubeconfig=$KUBECONFIG get pods -n kube-system | grep kube-apiserver
     fi
     result=$(kubectl --kubeconfig=$KUBECONFIG get pods -n kube-system 2>/dev/null | grep kube-apiserver |grep Running)
-    squawk 13 "Result is $result"
+    squawk 3 "Result is $result"
     if [[ "$result" ]]; then
-      squawk 15 "Result nailed $result"
+      squawk 5 "Result nailed $result"
       ((++countone_w8_kubectl))
       break
     fi
     ((++countone_w8_kubectl))
-    squawk 19 "$countone_w8_kubectl"
+    squawk 9 "$countone_w8_kubectl"
     if [[ "$countone_w8_kubectl" -ge "$countlimit_w8_kubectl"  ]]; then
-	    echo 'Master is not coming up, investigate, breaking'
-	    exit 1
+      echo 'Master is not coming up, investigate, breaking'
+      exit 1
     fi
     sleep 5
   done
-  squawk 10  "."
-  squawk 11 "kubectl commands are now able to interact with the kubernetes cluster"
+  squawk 0  "."
+  squawk 1 "kubectl commands are now able to interact with the kubernetes cluster"
 }
 
 w8_node () {
   node_name=$1
-  squawk 10 "Wait on the K8S node $node_name to become available" -n
+  squawk 0 "Wait on the K8S node $node_name to become available" -n
   sleep 5
   # while loop
   countone_w8_node=1
@@ -1219,42 +1237,42 @@ w8_node () {
   # timeout for 15 minutes
   set +e
   while [[ "$countone_w8_node" -lt "$countlimit_w8_node" ]]; do
-    squawk 10 '.' -n
+    squawk 0 '.' -n
     if [[ "$VERBOSITY" -gt "11" ]] ; then
       kubectl --kubeconfig=$KUBECONFIG get node $node_name
     fi
     result=$(kubectl --kubeconfig=$KUBECONFIG get node $node_name | grep -v NotReady | grep Ready)
-    squawk 13 "Result is $result"
+    squawk 3 "Result is $result"
     if [[ "$result" ]]; then
-      squawk 15 "Result nailed $result"
+      squawk 5 "Result nailed $result"
       ((++countone_w8_node))
       break
     fi
     ((++countone_w8_node))
-    squawk 19 "$countone_w8_node"
+    squawk 9 "$countone_w8_node"
     sleep 3
   done
   set -e
-  squawk 10  "."
-  squawk 10  "kubectl commands are now able to interact with the kubernetes node"
+  squawk 0  "."
+  squawk 0  "kubectl commands are now able to interact with the kubernetes node"
 }
 
 remove_vagrant_user () {
   remove_vagrant_user_tmp_para=$(mktemp -d)
-  squawk 12 ' Remove vagrant user from all hosts using ssh'
+  squawk 2 ' Remove vagrant user from all hosts using ssh'
   touch $remove_vagrant_user_tmp_para/hopper
   while IFS="," read -r $csv_columns
   do
-    squawk 11 "$K8S_ip1"
-    squawk 13 "$K8S_user"
-    squawk 13 "$K8S_os"
+    squawk 1 "$K8S_ip1"
+    squawk 3 "$K8S_user"
+    squawk 3 "$K8S_os"
     if [[ "$K8S_os" == 'coreos' ]]; then
-      squawk 19 'coreos so skipping'
+      squawk 9 'coreos so skipping'
     else
       REMMY="userdel -f vagrant && rm -Rf /home/vagrant"
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_user@$K8S_ip1 \"$REMMY\""
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_user@$K8S_ip1 \"$REMMY\""
       echo "ssh -n -p $K8S_provisionerPort $K8S_user@$K8S_ip1 \"$REMMY\""\
-	      >> $remove_vagrant_user_tmp_para/hopper
+        >> $remove_vagrant_user_tmp_para/hopper
     fi
   done < $KUBASH_HOSTS_CSV
 
@@ -1271,7 +1289,7 @@ remove_vagrant_user () {
 
 hostname_in_parallel () {
   hostname_tmp_para=$(mktemp -d --suffix='.para.tmp')
-  squawk 12 ' Hostnaming all hosts using ssh'
+  squawk 2 ' Hostnaming all hosts using ssh'
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -1282,7 +1300,7 @@ hostname_in_parallel () {
     my_PORT=$K8S_provisionerPort
     my_USER=$K8S_provisionerUser
     command2run="ssh -n -p $my_PORT $my_USER@$my_IP '$PSEUDO hostname $my_HOST && echo $my_HOST | $PSEUDO tee /etc/hostname && echo \"127.0.1.1 $my_HOST.$my_DOMAIN $my_HOST  \" | $PSEUDO tee -a /etc/hosts'"
-    squawk 15 "$command2run"
+    squawk 5 "$command2run"
     echo "$command2run" \
       >> $hostname_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
@@ -1300,15 +1318,15 @@ hostname_in_parallel () {
 
 ping_in_parallel () {
   ping_tmp_para=$(mktemp -d --suffix='.para.tmp')
-  squawk 12 ' Pinging all hosts using ssh'
+  squawk 2 ' Pinging all hosts using ssh'
   while IFS="," read -r $csv_columns
   do
-    squawk 11 "$K8S_ip1"
-    squawk 13 "$K8S_user"
+    squawk 1 "$K8S_ip1"
+    squawk 3 "$K8S_user"
     MY_ECHO="hostname; echo '$K8S_ip1 $K8S_provisionerUser pong'" 
-    squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""
     echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""\
-	      >> $ping_tmp_para/hopper
+        >> $ping_tmp_para/hopper
   done < $KUBASH_HOSTS_CSV
 
   if [[ "$VERBOSITY" -gt "9" ]] ; then
@@ -1323,14 +1341,14 @@ ping_in_parallel () {
 }
 
 ping () {
-  squawk 12 ' Pinging all hosts using ssh'
+  squawk 2 ' Pinging all hosts using ssh'
   while IFS="," read -r $csv_columns
   do
-    squawk 11 "$K8S_ip1"
-    squawk 13 "$K8S_user"
+    squawk 1 "$K8S_ip1"
+    squawk 3 "$K8S_user"
     if [[ "$VERBOSITY" -gt 10 ]]; then
       ssh -n -p $K8S_provisionerPort $K8S_user@$K8S_ip1 'echo pong'
-      squawk 13 "$K8S_provisionerUser"
+      squawk 3 "$K8S_provisionerUser"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 'echo pong'
     else
       ssh -n -p $K8S_provisionerPort $K8S_user@$K8S_ip1 'touch /tmp/sshpingtest-kubash'
@@ -1340,7 +1358,7 @@ ping () {
 }
 
 ansible-ping () {
-  squawk 11 ' Pinging all hosts using Ansible'
+  squawk 1 ' Pinging all hosts using Ansible'
   ansible -i $KUBASH_ANSIBLE_HOSTS -m ping all
 }
 
@@ -1356,7 +1374,7 @@ chkdir () {
 }
 
 dotfiles_install () {
-  squawk 11 ' Adjusting dotfiles'
+  squawk 1 ' Adjusting dotfiles'
   touch $HOME/.zshrc
   touch $HOME/.bashrc
   # make a bin dir in $HOME and add it to path
@@ -1375,7 +1393,7 @@ dotfiles_install () {
 }
 
 do_grab () {
-  squawk 11 " do_grab"
+  squawk 1 " do_grab"
   do_grab_master_count=0
   while IFS="," read -r $csv_columns
   do
@@ -1389,14 +1407,14 @@ do_grab () {
 }
 
 check_coreos () {
-  squawk 11 " check_coreos"
+  squawk 1 " check_coreos"
   do_coreos_init_count=0
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_os" == "coreos" ]]; then
       if [[ "$do_coreos_init_count" -lt "1" ]]; then
         do_coreos_initialization
-	break
+  break
       fi
       ((++do_coreos_init_count))
     fi
@@ -1404,7 +1422,7 @@ check_coreos () {
 }
 
 master_join () {
-  squawk 11 " master_join $@"
+  squawk 1 " master_join $@"
   my_node_name=$1
   my_node_ip=$2
   my_node_user=$3
@@ -1415,7 +1433,7 @@ master_join () {
     finish_pki_for_masters $my_node_user $my_node_ip $my_node_name
     ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSUEDO hostname;$PSUEDO  uname -a"
     run_join=$(cat $KUBASH_DIR/join.sh)
-    squawk 11 " run join $run_join"
+    squawk 1 " run join $run_join"
     ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join"
     w8_node $my_node_name
     rolero $my_node_name master
@@ -1423,7 +1441,7 @@ master_join () {
 }
 
 master_init_join () {
-  squawk 11 " master_init_join $@"
+  squawk 1 " master_init_join $@"
   my_master_name=$1
   my_master_ip=$2
   my_master_user=$3
@@ -1496,11 +1514,11 @@ master_init_join () {
     rmdir $setup_keepalived_tmp
   fi
 
-  squawk 10 " master_init_join $my_master_name $my_master_ip $my_master_user $my_master_port"
+  squawk 0 " master_init_join $my_master_name $my_master_ip $my_master_user $my_master_port"
   if [[ "$DO_MASTER_JOIN" == "true" ]] ; then
     ssh -n -p $my_master_port $my_master_user@$my_master_ip "$PSEUDO hostname;$PSEUDO  uname -a"
     my_grep='kubeadm join --token'
-    squawk 13 'master_init_join kubeadm init'
+    squawk 3 'master_init_join kubeadm init'
     if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
       kubeadmin_config_tmp=$(mktemp)
       KUBERNETES_VERSION=$KUBERNETES_VERSION \
@@ -1510,26 +1528,26 @@ master_init_join () {
       ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/endpoints.line) \
       envsubst  < $KUBASH_DIR/templates/kubeadm-config.yaml \
         > $kubeadmin_config_tmp
-      squawk 29 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $my_master_port' $kubeadmin_config_tmp  $my_master_user@$my_master_ip:/tmp/config.yaml"
+      squawk 19 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $my_master_port' $kubeadmin_config_tmp  $my_master_user@$my_master_ip:/tmp/config.yaml"
       rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $kubeadmin_config_tmp  $my_master_user@$my_master_ip:/tmp/config.yaml
-      squawk 16 "kubedmin_config_tmp =\n $(cat $kubeadmin_config_tmp)" -e
+      squawk 6 "kubedmin_config_tmp =\n $(cat $kubeadmin_config_tmp)" -e
       rm $kubeadmin_config_tmp
       my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/tmp/config.yaml"
-      squawk 15 "$my_KUBE_INIT"
+      squawk 5 "$my_KUBE_INIT"
       run_join=$(ssh -n $my_master_user@$my_master_ip "$my_KUBE_INIT" | tee $TMP/rawresults.k8s | grep -- "$my_grep")
       if [[ -z "$run_join" ]]; then
-	      horizontal_rule
-	      echo 'kubeadm init failed!'
-	      exit 1
+        horizontal_rule
+        echo 'kubeadm init failed!'
+        exit 1
       fi
       command2run='sudo  rm -f /tmp/config.yaml'
       ssh -n -p $my_master_port $my_master_user@$my_master_ip "$command2run"
     else
       my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --pod-network-cidr=$my_KUBE_CIDR"
-      squawk 15 "$my_KUBE_INIT"
+      squawk 5 "$my_KUBE_INIT"
       run_join=$(ssh -n $my_master_user@$my_master_ip "$my_KUBE_INIT" | tee $TMP/rawresults.k8s | grep -- "$my_grep")
     fi
-    squawk 19 "$(cat $TMP/rawresults.k8s)"
+    squawk 9 "$(cat $TMP/rawresults.k8s)"
     echo $run_join > $KUBASH_DIR/join.sh
     if [[ "$KUBASH_OIDC_AUTH" == 'true' ]]; then
       command2run='sudo sed -i "/- kube-apiserver/a\    - --oidc-issuer-url=https://accounts.google.com\n    - --oidc-username-claim=email\n    - --oidc-client-id=" /etc/kubernetes/manifests/kube-apiserver.yaml'
@@ -1542,7 +1560,7 @@ master_init_join () {
     command2run="bash /tmp/grabkubepki"
     sudo_command $this_port $this_user $this_host "$command2run"
     rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $my_master_user@$my_master_ip:/tmp/kube-pki.tgz $KUBASH_CLUSTER_DIR/
-    squawk 15 'and copy it to master and etcd hosts'
+    squawk 5 'and copy it to master and etcd hosts'
     copy_in_parallel_to_role "master" "$KUBASH_CLUSTER_DIR/kube-pki.tgz" "/tmp/"
     command2run='cd /; tar zxf /tmp/kube-pki.tgz'
     do_command_in_parallel_on_role "master"        "$command2run"
@@ -1557,13 +1575,13 @@ master_grab_kube_config () {
   my_master_ip=$2
   my_master_user=$3
   my_master_port=$4
-  squawk 11 ' refresh-kube-config'
-  squawk 13 " master_grab_kube_config $my_master_name $my_master_ip $my_master_user $my_master_port"
-  squawk 15 "mkdir -p ~/.kube && sudo cp -av /etc/kubernetes/admin.conf ~/.kube/config && sudo chown -R $my_master_user. ~/.kube"
+  squawk 1 ' refresh-kube-config'
+  squawk 3 " master_grab_kube_config $my_master_name $my_master_ip $my_master_user $my_master_port"
+  squawk 5 "mkdir -p ~/.kube && sudo cp -av /etc/kubernetes/admin.conf ~/.kube/config && sudo chown -R $my_master_user. ~/.kube"
   ssh -n -p $my_master_port $my_master_user@$my_master_ip "mkdir -p ~/.kube && sudo cp -av /etc/kubernetes/admin.conf ~/.kube/config && sudo chown -R $my_master_user. ~/.kube"
 
   chkdir $HOME/.kube
-  squawk 13 ' grab config'
+  squawk 3 ' grab config'
   rm -f $KUBASH_CLUSTER_CONFIG
   ssh -n -p $my_master_port $my_master_user@$my_master_ip 'cat .kube/config' > $KUBASH_CLUSTER_CONFIG
   sed -i "s/^  name: kubernetes$/  name: $KUBASH_CLUSTER_NAME/" $KUBASH_CLUSTER_CONFIG
@@ -1578,23 +1596,24 @@ node_join () {
   my_node_ip=$2
   my_node_user=$3
   my_node_port=$4
-  squawk 11 " node_join $my_node_name $my_node_ip $my_node_user $my_node_port"
+  squawk 1 " node_join $my_node_name $my_node_ip $my_node_user $my_node_port"
   if [[ "$DO_NODE_JOIN" == "true" ]] ; then
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO hostname;$PSEUDO uname -a")
-    squawk 13 "hostname and uname is $result"
-    squawk 13 "Kubeadmin join"
+    squawk 3 "hostname and uname is $result"
+    squawk 3 "Kubeadmin join"
     run_join=$(cat $KUBASH_DIR/join.sh)
     #result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
-    squawk 13 "run_join result is $result"
+    squawk 3 "run_join result is $result"
     w8_node $my_node_name
     rolero $my_node_name node
   fi
 }
 
 checks () {
-  squawk 10 " checks"
+  squawk 0 " checks"
   check_cmd git
+  check_cmd nc
   check_cmd ssh
   check_cmd rsync
   check_cmd ansible
@@ -1616,7 +1635,7 @@ checks () {
 
 
 initialize () {
-  squawk 11 " initialize"
+  squawk 1 " initialize"
   check_csv
   hosts_csv_slurp
   check_coreos
@@ -1624,10 +1643,10 @@ initialize () {
 }
 
 kubeadm2ha_initialize () {
-  squawk 11 "kubeadm2ha initialize"
+  squawk 1 "kubeadm2ha initialize"
   check_csv
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
-    squawk 11 'Hosts file found, not overwriting'
+    squawk 1 'Hosts file found, not overwriting'
   else
     write_ansible_kubeadm2ha_hosts
   fi
@@ -1654,10 +1673,10 @@ kubeadm2ha_initialize () {
 }
 
 kubespray_initialize () {
-  squawk 11 "kubespray initialize"
+  squawk 1 "kubespray initialize"
   check_csv
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
-    squawk 11 'Hosts file found, not overwriting'
+    squawk 1 'Hosts file found, not overwriting'
   else
     write_ansible_kubespray_hosts
   fi
@@ -1667,10 +1686,10 @@ kubespray_initialize () {
 }
 
 openshift_initialize () {
-  squawk 11 "openshift initialize"
+  squawk 1 "openshift initialize"
   check_csv
   if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
-    squawk 11 'Hosts file found, not overwriting'
+    squawk 1 'Hosts file found, not overwriting'
   else
     write_ansible_openshift_hosts
   fi
@@ -1683,12 +1702,12 @@ openshift_initialize () {
 }
 
 read_csv () {
-  squawk 11 " read_csv"
+  squawk 1 " read_csv"
   read_master_count=0
 
   while IFS="," read -r $csv_columns
   do
-    squawk 15 "$K8S_node $K8S_user $K8S_ip1 $K8S_provisionerPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
+    squawk 5 "$K8S_node $K8S_user $K8S_ip1 $K8S_provisionerPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
     if [[ "$K8S_role" == "master" ]]; then
       if [[ "$read_master_count" -lt "1" ]]; then
         echo "master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_provisionerPort"
@@ -1708,7 +1727,7 @@ read_csv () {
 }
 
 check_csv () {
-  squawk 14 " check_csv"
+  squawk 4 " check_csv"
   if [[ ! -e $KUBASH_HOSTS_CSV ]]; then
     horizontal_rule
     echo "$KUBASH_HOSTS_CSV file not found!"
@@ -1735,7 +1754,7 @@ grant_users () {
   # user_csv_columns="user_email user_role"
   while IFS="," read -r $user_csv_columns
   do
-    squawk 19 "user_name=$user_name user_email=$user_email user_role=$user_role"
+    squawk 9 "user_name=$user_name user_email=$user_email user_role=$user_role"
     echo "kubash -n $KUBASH_CLUSTER_NAME grant $user_name $user_email $user_role" >> $grant_users_tmp_para/hopper
   done <<< "$slurpy"
 
@@ -1751,20 +1770,20 @@ grant_users () {
 }
 
 finish_pki_for_masters () {
-  squawk 15 'finish_pki_for_masters'
+  squawk 5 'finish_pki_for_masters'
   this_user=$1
   this_host=$2
   this_name=$3
   this_port=$4
   command2run='mkdir -p /etc/kubernetes/pki/etcd'
   sudo_command $K8S_provisionerPort $this_user $this_host "$command2run"
-  squawk 15 'cp the etcd pki files'
+  squawk 5 'cp the etcd pki files'
   command2run='cp /etc/etcd/pki/ca.pem /etc/etcd/pki/client.pem /etc/etcd/pki/client-key.pem /etc/kubernetes/pki/etcd/'
   sudo_command $K8S_provisionerPort $this_user $this_host "$command2run"
 }
 
 finish_etcd () {
-  squawk 15 'finish_etcd'
+  squawk 5 'finish_etcd'
   this_user=$1
   this_host=$2
   this_name=$3
@@ -1786,7 +1805,7 @@ finish_etcd () {
   sudo_command $this_port $this_user $this_host "$command2run"
 
   if [[ -e $KUBASH_DIR/tmp/etcd-${ETCD_VERSION}-linux-amd64.tar.gz ]]; then
-    squawk 19 'Etcd binary already downloaded'
+    squawk 9 'Etcd binary already downloaded'
   else
     cd $KUBASH_DIR/tmp
     wget -c https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz 
@@ -1834,7 +1853,7 @@ start_etcd () {
   # Run kubeadm init on master0
   start_etcd_tmp_para=$(mktemp -d --suffix='.para.tmp' 2>/dev/null)
   touch $start_etcd_tmp_para/hopper
-  squawk 13 " do_etcd"
+  squawk 3 " do_etcd"
 
   countzero=0
   touch $start_etcd_tmp_para/endpoints.line
@@ -1844,9 +1863,9 @@ start_etcd () {
   do
     if [[ "$K8S_role" == "etcd" || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
       if [[ "$countzero" -lt "3" ]]; then
-	command2run='systemctl start etcd'
-	squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 'sudo bash -c \"$command2run\"'"
-	echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 'sudo bash -c \"$command2run\"'" >> $start_etcd_tmp_para/hopper
+  command2run='systemctl start etcd'
+  squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 'sudo bash -c \"$command2run\"'"
+  echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 'sudo bash -c \"$command2run\"'" >> $start_etcd_tmp_para/hopper
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -1863,7 +1882,7 @@ start_etcd () {
 }
 
 kubeadm_reset () {
-  squawk 13 "Kubeadmin reset"
+  squawk 3 "Kubeadmin reset"
   command2run="PATH=$K8S_SU_PATH kubeadm reset"
   # hack if debugging to skip this step
   set +e
@@ -1883,9 +1902,9 @@ prep_init_etcd () {
   cp $KUBASH_DIR/templates/client.json $init_etcd_tmp/pki/client.json
   jinja2 $KUBASH_DIR/templates/ca-csr.json $KUBASH_CLUSTER_DIR/ca-data.yaml --format=yaml > $init_etcd_tmp/pki/ca-csr.json
   command2run='mkdir -p /etc/etcd'
-  squawk 15 "command2run $command2run"
+  squawk 5 "command2run $command2run"
   sudo_command $this_port $this_user $this_host "$command2run"
-  squawk 25 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' $init_etcd_tmp/pki $this_user@$this_host:/tmp/"
+  squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' $init_etcd_tmp/pki $this_user@$this_host:/tmp/"
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" $init_etcd_tmp/pki $this_user@$this_host:/tmp/
   command2run='ls -lh /tmp/pki'
   sudo_command $this_port $this_user $this_host "$command2run"
@@ -1903,14 +1922,14 @@ prep_init_etcd () {
 
   # crictl
   if [[ "$DO_CRICTL" == 'true' ]]; then
-    squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' '${KUBASH_BIN}/crictl' $this_user@$this_host:/tmp/crictl"
+    squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' '${KUBASH_BIN}/crictl' $this_user@$this_host:/tmp/crictl"
     rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" "${KUBASH_BIN}/crictl" $this_user@$this_host:/tmp/crictl
     copy_in_parallel_to_all "${KUBASH_BIN}/crictl" "/tmp/crictl"
     command2run='mv /tmp/crictl /usr/local/bin/crictl'
     do_command_in_parallel "$command2run"
   fi
 
-  squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' '${KUBASH_BIN}/cfssl' $this_user@$this_host:/tmp/cfssl"
+  squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' '${KUBASH_BIN}/cfssl' $this_user@$this_host:/tmp/cfssl"
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" "${KUBASH_BIN}/cfssl" $this_user@$this_host:/tmp/cfssl
   copy_in_parallel_to_role "master" "${KUBASH_BIN}/cfssl" "/tmp/cfssl"
   copy_in_parallel_to_role "etcd"   "${KUBASH_BIN}/cfssl" "/tmp/cfssl"
@@ -1921,7 +1940,7 @@ prep_init_etcd () {
     do_command_in_parallel_on_role "master"        "$command2run"
   fi
 
-  squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' ${KUBASH_BIN}/cfssljson $this_user@$this_host:/tmp/cfssljson"
+  squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' ${KUBASH_BIN}/cfssljson $this_user@$this_host:/tmp/cfssljson"
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" "${KUBASH_BIN}/cfssljson" $this_user@$this_host:/tmp/cfssljson
   copy_in_parallel_to_role "master" "${KUBASH_BIN}/cfssljson" "/tmp/cfssljson"
   copy_in_parallel_to_role "etcd"   "${KUBASH_BIN}/cfssljson" "/tmp/cfssljson"
@@ -1957,9 +1976,9 @@ prep_init_etcd () {
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" $KUBASH_DIR/scripts/grabpki $this_user@$this_host:/tmp/grabpki
   command2run="bash /tmp/grabpki"
   sudo_command $this_port $this_user $this_host "$command2run"
-  squawk 15 'pull etcd-pki.tgz from primary master'
+  squawk 5 'pull etcd-pki.tgz from primary master'
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" $this_user@$this_host:/tmp/etcd-pki.tgz $KUBASH_CLUSTER_DIR/
-  squawk 15 'and copy it to master and etcd hosts'
+  squawk 5 'and copy it to master and etcd hosts'
   copy_in_parallel_to_role "etcd" "$KUBASH_CLUSTER_DIR/etcd-pki.tgz" "/tmp/"
   copy_in_parallel_to_role "master" "$KUBASH_CLUSTER_DIR/etcd-pki.tgz" "/tmp/"
   command2run='cd /; tar zxf /tmp/etcd-pki.tgz'
@@ -1972,7 +1991,7 @@ prep_init_etcd () {
 }
 
 prep_etcd () {
-  squawk 15 'prep_etcd'
+  squawk 5 'prep_etcd'
   this_user=$1
   this_host=$2
   this_name=$3
@@ -1983,7 +2002,7 @@ prep_etcd () {
 do_etcd () {
   do_etcd_tmp_para=$(mktemp -d --suffix='.para.tmp' 2>/dev/null || mktemp -d -t '.para.tmp')
   touch $do_etcd_tmp_para/hopper
-  squawk 13 " do_etcd"
+  squawk 3 " do_etcd"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -1996,18 +2015,18 @@ do_etcd () {
   do
     if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
-  	squawk 36 "$K8S_node=https://$K8S_ip1:2380  <-- $K8S_role"
-  	echo -n "$K8S_node=https://$K8S_ip1:2380" >> $do_etcd_tmp_para/etcd.line
-  	echo -n "," >> $do_etcd_tmp_para/etcd.line
-	((++countzero))
+    squawk 19 "$K8S_node=https://$K8S_ip1:2380  <-- $K8S_role"
+    echo -n "$K8S_node=https://$K8S_ip1:2380" >> $do_etcd_tmp_para/etcd.line
+    echo -n "," >> $do_etcd_tmp_para/etcd.line
+  ((++countzero))
         echo "  - https://$K8S_ip1:2379" >> $do_etcd_tmp_para/endpoints.line
       fi
     else
       if [[ "$K8S_role" == 'etcd' ]]; then
-  	squawk 36 "$K8S_node=https://$K8S_ip1:2380  <-- $K8S_role"
-  	echo -n "$K8S_node=https://$K8S_ip1:2380" >> $do_etcd_tmp_para/etcd.line
-  	echo -n "," >> $do_etcd_tmp_para/etcd.line
-	((++countzero))
+    squawk 19 "$K8S_node=https://$K8S_ip1:2380  <-- $K8S_role"
+    echo -n "$K8S_node=https://$K8S_ip1:2380" >> $do_etcd_tmp_para/etcd.line
+    echo -n "," >> $do_etcd_tmp_para/etcd.line
+  ((++countzero))
         echo "  - https://$K8S_ip1:2379" >> $do_etcd_tmp_para/endpoints.line
       fi
     fi
@@ -2031,8 +2050,8 @@ do_etcd () {
 
   # Only copy if etcd.line exists as the endpoints will have stuff in it regardless
   if [[ -e "$do_etcd_tmp_para/etcd.line" ]]; then
-    $MV_CMD $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
-    $MV_CMD $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
+    mv $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
+    mv $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
   fi
 
   countzero=0
@@ -2042,7 +2061,7 @@ do_etcd () {
   do
     if [[ "$K8S_role" == "primary_master"  ]]; then
       if [[ "$countzero" -eq "0" ]]; then
-	((++countzero))
+  ((++countzero))
         prep_init_etcd $K8S_provisionerUser $K8S_ip1 $K8S_node $K8S_provisionerPort
       else
         echo 'there should only be one primary'
@@ -2050,8 +2069,8 @@ do_etcd () {
       fi
     fi
     if [[ "$K8S_role" == "etcd" || "$K8S_role" == "master"  ]]; then
-        squawk 33 "$K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3"
-        squawk 13 "kubash -n $KUBASH_CLUSTER_NAME prepetcd $K8S_provisionerUser $K8S_ip1 $K8S_node $K8S_provisionerPort"
+        squawk 19 "$K8S_node $K8S_role $K8S_cpuCount $K8S_Memory $K8S_network1 $K8S_mac1 $K8S_ip1 $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt $K8S_network2 $K8S_mac2 $K8S_ip2 $K8S_network3 $K8S_mac3 $K8S_ip3"
+        squawk 3 "kubash -n $KUBASH_CLUSTER_NAME prepetcd $K8S_provisionerUser $K8S_ip1 $K8S_node $K8S_provisionerPort"
         touch $prepTMP/hopper
         echo      "kubash -n $KUBASH_CLUSTER_NAME prepetcd $K8S_provisionerUser $K8S_ip1 $K8S_node $K8S_provisionerPort" >> $prepTMP/hopper
     fi
@@ -2069,7 +2088,7 @@ do_etcd () {
 }
 
 do_primary_master () {
-  squawk 13 " do_primary_master"
+  squawk 3 " do_primary_master"
   do_master_count=0
 
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
@@ -2081,7 +2100,7 @@ do_primary_master () {
       if [[ "$do_master_count" -lt "1" ]]; then
         master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_provisionerPort
       else
-	echo 'There should only be one init master! Skipping this master'
+  echo 'There should only be one init master! Skipping this master'
         echo "master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_provisionerPort"
       fi
       ((++do_master_count))
@@ -2090,14 +2109,14 @@ do_primary_master () {
 }
 
 do_masters () {
-  squawk 13 " do_masters"
+  squawk 3 " do_masters"
 
   # hijack
   do_masters_in_parallel
 }
 
 do_scale_up_kube_dns () {
-  squawk 13 "do_scale_up_kube_dns"
+  squawk 3 "do_scale_up_kube_dns"
   do_scale_up_kube_dns=0
 
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
@@ -2114,7 +2133,7 @@ do_scale_up_kube_dns () {
 }
 
 do_masters_in_parallel () {
-  squawk 13 " do_masters_in_parallel"
+  squawk 3 " do_masters_in_parallel"
   do_master_count=0
 
   #command2run='sudo  rm /etc/kubernetes/pki/apiserver.crt'
@@ -2128,7 +2147,7 @@ do_masters_in_parallel () {
     ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/endpoints.line) \
     envsubst  < $KUBASH_DIR/templates/kubeadm-config.yaml \
       > $kubeadmin_config_tmp
-    squawk 15 "copy_in_parallel_to_role master '$kubeadmin_config_tmp' '/tmp/config.yaml'"
+    squawk 5 "copy_in_parallel_to_role master '$kubeadmin_config_tmp' '/tmp/config.yaml'"
     copy_in_parallel_to_role master "$kubeadmin_config_tmp" "/tmp/config.yaml"
     rm $kubeadmin_config_tmp
   fi
@@ -2145,11 +2164,11 @@ do_masters_in_parallel () {
     if [[ "$K8S_role" == "master" ]]; then
       if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
         my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/tmp/config.yaml"
-        squawk 15 "$my_KUBE_INIT"
+        squawk 5 "$my_KUBE_INIT"
         echo "ssh -n $K8S_provisionerUser@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
       else
         my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --pod-network-cidr=$my_KUBE_CIDR"
-        squawk 15 "$my_KUBE_INIT"
+        squawk 5 "$my_KUBE_INIT"
         echo "ssh -n $K8S_provisionerUser@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
       fi
     fi
@@ -2176,7 +2195,7 @@ do_nodes () {
 do_nodes_in_parallel () {
   do_nodes_tmp_para=$(mktemp -d)
   touch $do_nodes_tmp_para/hopper
-  squawk 13 " do_nodes_in_parallel"
+  squawk 3 " do_nodes_in_parallel"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -2185,13 +2204,13 @@ do_nodes_in_parallel () {
   do 
     if [[ "$K8S_role" == "node" ]]; then
       echo "kubash -n $KUBASH_CLUSTER_NAME node_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_provisionerUser --node-join-port $K8S_provisionerPort --node-join-role node" \
-	      >> $do_nodes_tmp_para/hopper
+        >> $do_nodes_tmp_para/hopper
     else
-      squawk 11 " K8S_role NOT NODE"
-      squawk 11 " K8S_role $K8S_role $K8S_ip1 $K8S_user $K8S_provisionerPort"
+      squawk 1 " K8S_role NOT NODE"
+      squawk 1 " K8S_role $K8S_role $K8S_ip1 $K8S_user $K8S_provisionerPort"
     fi
     ((++countzero_do_nodes))
-    squawk 13 " count $countzero_do_nodes"
+    squawk 3 " count $countzero_do_nodes"
   done <<< "$kubash_hosts_csv_slurped"
 
   if [[ "$VERBOSITY" -gt "9" ]] ; then
@@ -2209,22 +2228,22 @@ do_command_in_parallel () {
   do_command_tmp_para=$(mktemp -d)
   command2run=$1
   touch $do_command_tmp_para/hopper
-  squawk 13 " do_command_in_parallel $1"
+  squawk 3 " do_command_in_parallel $1"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
-    squawk 57 'slurp empty'
+    squawk 19 'slurp empty'
     hosts_csv_slurp
   else
-    squawk 57 "host slurp $(echo $kubash_hosts_csv_slurped)"
+    squawk 19 "host slurp $(echo $kubash_hosts_csv_slurped)"
   fi
   countzero_do_nodes=0
-  squawk 66 'Start while loop'
+  squawk 20 'Start while loop'
   while IFS="," read -r $csv_columns
-  do 
+  do
     ((++countzero_do_nodes))
-    squawk 43 " count $countzero_do_nodes"
-    squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
+    squawk 19 " count $countzero_do_nodes"
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
     echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
-	      >> $do_command_tmp_para/hopper
+        >> $do_command_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
 
   if [[ "$VERBOSITY" -gt "9" ]] ; then
@@ -2239,7 +2258,7 @@ do_command_in_parallel () {
 }
 
 do_command () {
-  squawk 13 " do_command $@" 
+  squawk 3 " do_command $@" 
   if [[ ! $# -eq 4 ]]; then
     echo "do_command $@ <--- arguments does not equal 4!!!" 
     exit 1
@@ -2249,10 +2268,10 @@ do_command () {
   this_host=$3
   command2run=$4
   if [[ "$this_host" == "localhost" ]]; then
-    squawk 15 "bash -c '$command2run'"
+    squawk 5 "bash -c '$command2run'"
     bash -c "$command2run"
   else
-    squawk 15 "ssh -n -p $this_port $this_user@$this_host \"bash -c '$command2run'\""
+    squawk 5 "ssh -n -p $this_port $this_user@$this_host \"bash -c '$command2run'\""
     ssh -n -p $this_port $this_user@$this_host "bash -c '$command2run'"
   fi
 }
@@ -2262,16 +2281,16 @@ sudo_command () {
     echo "sudo_command $@ <--- arguments does not equal 4!!!" 
     exit 1
   fi
-  squawk 13 " sudo_command '$1' '$2' '$3 '$4'" 
+  squawk 3 " sudo_command '$1' '$2' '$3 '$4'" 
   this_port=$1
   this_user=$2
   this_host=$3
   command2run=$4
   if [[ "$this_host" == "localhost" ]]; then
-    squawk 15 "sudo bash -c '$command2run'"
+    squawk 5 "sudo bash -c '$command2run'"
     sudo bash -c "$command2run"
   else
-    squawk 15 "ssh -n -p $this_port $this_user@$this_host \"$PSEUDO bash -l -c '$command2run'\""
+    squawk 5 "ssh -n -p $this_port $this_user@$this_host \"$PSEUDO bash -l -c '$command2run'\""
     ssh -n -p $this_port $this_user@$this_host "$PSEUDO bash -l -c '$command2run'"
   fi
 }
@@ -2281,13 +2300,13 @@ copy_in_parallel_to_all () {
   file2copy=$1
   destination=$2
   touch $copy_in_to_all_tmp_para/hopper
-  squawk 13 " copy_in_parallel_to_all"
+  squawk 3 " copy_in_parallel_to_all"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
   while IFS="," read -r $csv_columns
   do 
-    squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
+    squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
     echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
       >> $copy_in_to_all_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
@@ -2309,15 +2328,15 @@ copy_in_parallel_to_role () {
   file2copy=$2
   destination=$3
   touch $copy_in_to_role_tmp_para/hopper
-  squawk 13 " copy_in_parallel_to_role"
+  squawk 3 " copy_in_parallel_to_role"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
   while IFS="," read -r $csv_columns
   do 
     if [[ "$K8S_role" == "$role2copy2" ]]; then
-      squawk 13 " count $countzero_do_nodes"
-      squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
+      squawk 3 " count $countzero_do_nodes"
+      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
       echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
         >> $copy_in_to_role_tmp_para/hopper
     fi
@@ -2340,15 +2359,15 @@ copy_in_parallel_to_os () {
   file2copy=$2
   destination=$3
   touch $copy_in_to_os_tmp_para/hopper
-  squawk 13 " copy_in_parallel_to_os"
+  squawk 3 " copy_in_parallel_to_os"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
   while IFS="," read -r $csv_columns
   do 
     if [[ "$K8S_os" == "$os2copy2" ]]; then
-      squawk 13 " count $countzero_do_nodes"
-      squawk 15 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
+      squawk 3 " count $countzero_do_nodes"
+      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
       echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_provisionerPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
         >> $copy_in_to_os_tmp_para/hopper
     fi
@@ -2370,15 +2389,15 @@ do_command_in_parallel_on_role () {
   role2runiton=$1
   command2run=$2
   touch $do_command_on_role_tmp_para/hopper
-  squawk 13 " do_command_in_parallel"
+  squawk 3 " do_command_in_parallel"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
   while IFS="," read -r $csv_columns
   do 
     if [[ "$K8S_role" == "$role2runiton" ]]; then
-      squawk 49 " count $countzero_do_nodes"
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
+      squawk 19 " count $countzero_do_nodes"
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
       echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
         >> $do_command_on_role_tmp_para/hopper
     fi
@@ -2396,7 +2415,7 @@ do_command_in_parallel_on_role () {
 }
 
 do_test () {
-  squawk 13 " do_command_in_parallel"
+  squawk 3 " do_command_in_parallel"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -2429,15 +2448,15 @@ do_command_in_parallel_on_os () {
   os2runiton=$1
   command2run=$2
   touch $do_command_on_os_tmp_para/hopper
-  squawk 13 " do_command_in_parallel"
+  squawk 3 " do_command_in_parallel"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
   while IFS="," read -r $csv_columns
   do 
     if [[ "$K8S_os" == "$os2runiton" ]]; then
-      squawk 43 " count $countzero_do_nodes"
-      squawk 15 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
+      squawk 19 " count $countzero_do_nodes"
+      squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
       echo "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
         >> $do_command_on_os_tmp_para/hopper
     fi
@@ -2455,7 +2474,7 @@ do_command_in_parallel_on_os () {
 }
 
 process_hosts_csv () {
-  squawk 13 " process_hosts_csv"
+  squawk 3 " process_hosts_csv"
   do_etcd
   start_etcd
   do_primary_master
@@ -2469,7 +2488,7 @@ process_hosts_csv () {
 }
 
 prep () {
-  squawk 15 " prep"
+  squawk 5 " prep"
   while IFS="," read -r $csv_columns
   do
     preppy $K8S_node $K8S_ip1 $K8S_provisionerPort
@@ -2477,7 +2496,7 @@ prep () {
 }
 
 preppy () {
-  squawk 17 " preppy"
+  squawk 7 " preppy"
   node_name=$1
   node_ip=$2
   node_port=$3
@@ -2509,18 +2528,18 @@ do_coreos_initialization () {
   RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
   CORETMP=$KUBASH_DIR/tmp
   cd $CORETMP
-  
+
   do_command_in_parallel_on_os 'coreos' "mkdir -p /opt/cni/bin"
   wget -c "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz"
   copy_in_parallel_to_os "coreos" $CORETMP/cni-plugins-amd64-${CNI_VERSION}.tgz /tmp/
   #rm $CORETMP/cni-plugins-amd64-${CNI_VERSION}.tgz
   do_command_in_parallel_on_os "coreos" "tar -C /opt/cni/bin -xzf /tmp/cni-plugins-amd64-${CNI_VERSION}.tgz"
   do_command_in_parallel_on_os "coreos" "rm -f /tmp/cni-plugins-amd64-${CNI_VERSION}.tgz"
-  
+
   do_command_in_parallel_on_os "coreos" "mkdir -p /opt/bin"
 
   if [[ -e "$CORETMP/kubelet" ]]; then
-    squawk 19 "kubelet has no headers and will not continue skipping for now"
+    squawk 9 "kubelet has no headers and will not continue skipping for now"
   else
     wget -c https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
   fi
@@ -2535,11 +2554,11 @@ do_coreos_initialization () {
   do_command_in_parallel_on_os "coreos" "mv /tmp/kubectl /opt/bin/"
   #rm $CORETMP/kubectl
   do_command_in_parallel_on_os "coreos" "cd /opt/bin; chmod +x {kubeadm,kubelet,kubectl}"
-  
+
   if [[ -e "$CORETMP/kubelet.service" ]]; then
-    squawk 19 "already retrieved"
+    squawk 9 "already retrieved"
   else
-    wget -c "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" 
+    wget -c "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service"
     sed -i 's:/usr/bin:/opt/bin:g' $CORETMP/kubelet.service
   fi
   copy_in_parallel_to_os "coreos" $CORETMP/kubelet.service /tmp/kubelet.service
@@ -2547,7 +2566,7 @@ do_coreos_initialization () {
   rm $CORETMP/kubelet.service
   do_command_in_parallel_on_os "coreos" "mkdir -p /etc/systemd/system/kubelet.service.d"
   if [[ -e "$CORETMP/10-kubeadm.conf" ]]; then
-    squawk 19 "already retrieved"
+    squawk 9 "already retrieved"
   else
     wget -c "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf"
     sed -i 's:/usr/bin:/opt/bin:g' $CORETMP/10-kubeadm.conf
@@ -2560,13 +2579,13 @@ do_coreos_initialization () {
 
   #do_command_in_parallel_on_os "coreos" "systemctl unmask kubelet.service ; systemctl restart kubelet.service ; systemctl enable kubelet.service"
   do_command_in_parallel_on_os "coreos" "systemctl restart kubelet.service ; systemctl enable kubelet.service"
-  
+
   #rmdir $CORETMP
 }
 
 do_openebs () {
-	kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
-	kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
 }
 
 coreos_build  () {
@@ -2611,7 +2630,7 @@ packer_build  () {
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
   cd $KUBASH_DIR/pax/$target_os
-  squawk 12 " Executing packer build..."
+  squawk 2 " Executing packer build..."
 
   if [[ "$debug" == "true" ]]; then
     debug_flag='-debug -on-error=ask'
@@ -2620,14 +2639,16 @@ packer_build  () {
     debug_flag=''
     PACKER_LOG=0
   fi
-  squawk 12 "TMPDIR=$KVM_builderTMP packer build -only=$build_virt $debug_flag $target_build.json"
+  squawk 2 "TMPDIR=$KVM_builderTMP packer build -only=$build_virt $debug_flag $target_build.json"
   packer_build_cmd="packer build -only=$build_virt $debug_flag $target_build.json"
   command2run="cd $KUBASH_DIR/pax/$target_os; PACKER_LOG=$PACKER_LOG TMPDIR=$KVM_builderTMP $packer_build_cmd"
   do_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
-  TARGET_FILE=$KVM_builderDir/packer-$target_build-$build_virt/$target_build 
+  TARGET_FILE=$KVM_builderDir/packer-$target_build-$build_virt/$target_build
   DESTINATION_FILE=$KVM_builderBasePath/$target_os-$KVM_BASE_IMG
   command2run="$MV_CMD $TARGET_FILE $DESTINATION_FILE"
+  sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
+  command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt/$target_build"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
   command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
@@ -2639,9 +2660,9 @@ activate_monitoring () {
 }
 
 build_all_in_parallel () {
-  squawk 11 'Building all targets in parallel'
-  rm -Rf $KVM_builderTMP
-  rm -Rf $KVM_builderDir
+  squawk 1 'Building all targets in parallel'
+  $PSEUDO rm -Rf $KVM_builderTMP
+  $PSEUDO rm -Rf $KVM_builderDir
   build_all_tmp_para=$(mktemp -d --suffix='.para.tmp')
   touch $build_all_tmp_para/hopper
   OS_LIST=(centos kubeadm kubeadm2ha kubespray openshift ubuntu debian coreos)
@@ -2649,7 +2670,7 @@ build_all_in_parallel () {
   while [ "x${OS_LIST[build_count]}" != "x" ]
   do
     command2run="kubash build --target-os=${OS_LIST[build_count]} -y"
-    squawk 15 "$command2run"
+    squawk 5 "$command2run"
     echo "$command2run" >> $build_all_tmp_para/hopper
     ((++build_count))
   done
@@ -2663,7 +2684,7 @@ build_all_in_parallel () {
     bash $build_all_tmp_para/hopper
   fi
   rm -Rf $build_all_tmp_para
-  squawk 11 'Done Building all targets'
+  squawk 1 'Done Building all targets'
 }
 
 yaml2cluster () {
@@ -2720,7 +2741,7 @@ json2cluster () {
   done < "$json2cluster_tmp/tmp.csv"
 
   rm $json2cluster_tmp/tmp.csv
-  squawk 11 "$(cat $json2cluster_tmp/provision.csv)"
+  squawk 5 "$(cat $json2cluster_tmp/provision.csv)"
 
   # ca-data.yaml
 #### BEGIN --> Indention break warning <-- BEGIN
@@ -2733,17 +2754,20 @@ CERT_STATE: \(.CERT_STATE)
 CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
     $this_json >  $json2cluster_tmp/ca-data.yaml
 #### END --> Indention break warning <-- END
-  squawk 11 "$(cat $json2cluster_tmp/ca-data.yaml)"
+  squawk 5 "$(cat $json2cluster_tmp/ca-data.yaml)"
 
   # net_set
   jq -r '.net_set | "\(.)" ' \
     $this_json >  $json2cluster_tmp/net_set
-  squawk 11 "$(cat $json2cluster_tmp/net_set)"
+  squawk 7 "$(cat $json2cluster_tmp/net_set)"
 
-	$CP_CMD $KUBASH_DIR/users.csv.example $json2cluster_tmp/users.csv
-	$CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
-	$CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
-	$CP_CMD $KUBASH_DIR/templates/client.json $json2cluster_tmp/
+  # users.csv
+  jq -r '.users | to_entries[] | "\(.key),\(.value.role)"' \
+    $this_json >  $json2cluster_tmp/users.csv
+
+  $CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
+  $CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
+  $CP_CMD $KUBASH_DIR/templates/client.json $json2cluster_tmp/
 
   $MV_CMD $json2cluster_tmp $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME
 }
@@ -2757,12 +2781,12 @@ main () {
   # If cmd empty print usage
   if [[ -z "$1" ]]; then
     horizontal_rule
-    squawk 15 "No Args found printing usage"
+    squawk 5 "No Args found printing usage"
     usage
     exit 1
   fi
 
-  squawk 15 'parse opts'
+  squawk 5 'parse opts'
 
   # Execute getopt on the arguments passed to this program, identified by the special character $@
   short_opts="c:hvyn:"
@@ -2780,11 +2804,11 @@ main () {
   # A little magic, necessary when using getopt.
   eval set -- "$PARSED_OPTIONS"
 
-  squawk 15 'loop through opts'
+  squawk 5 'loop through opts'
 
   opt_loop_count=1
   while true; do
-    squawk 15 "$opt_loop_count $@"
+    squawk 5 "$opt_loop_count $@"
     opt_loop_count=`expr $opt_loop_count + 1`
     case "$1" in
       -h|--help)
@@ -2798,7 +2822,7 @@ main () {
         exit 0
         shift;;
       -y|--yes)
-	ANSWER_YES=yes
+  ANSWER_YES=yes
         shift;;
       -n|--clustername)
         KUBASH_CLUSTER_NAME="$2"
@@ -2809,7 +2833,7 @@ main () {
         KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
         KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
         KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
-	net_set
+        net_set
         shift 2 ;;
       -c|--csv)
         KUBASH_HOSTS_CSV="$2"
@@ -2837,25 +2861,25 @@ main () {
         node_join_role="$2"
         shift 2 ;;
       --target-os)
-	target_os="$2"
+  target_os="$2"
         shift 2 ;;
       --target-build)
-	target_build="$2"
+  target_build="$2"
         shift 2 ;;
       --build-virt)
-	build_virt="$2"
+  build_virt="$2"
         shift 2 ;;
       -v|--verbose)
-        VERBOSITY=`expr $VERBOSITY + 15`
-        squawk 12 " verbosity is now $VERBOSITY"
+        VERBOSITY=`expr $VERBOSITY + 1`
+        squawk 2 " verbosity is now $VERBOSITY"
         shift;;
       --verbosity)
         VERBOSITY=`expr $VERBOSITY + $2`
-        squawk 12 " verbosity is now $VERBOSITY"
+        squawk 2 " verbosity is now $VERBOSITY"
         shift 2 ;;
       --oidc)
         KUBASH_OIDC_AUTH=true
-        squawk 12 "OIDC Auth turned on"
+        squawk 2 "OIDC Auth turned on"
         shift;;
       --builder)
         builder=$2
@@ -2887,7 +2911,7 @@ main () {
 
   chkdir $KUBASH_CLUSTERS_DIR
 
-  squawk 17 "Check args"
+  squawk 7 "Check args"
 
   if [[ $# -eq 0 ]]; then
     horizontal_rule
@@ -2895,7 +2919,7 @@ main () {
     exit 1
   fi
   RAISON=$1
-  squawk 15 "Raison set to $RAISON"
+  squawk 5 "Raison set to $RAISON"
   shift
 
   checks
@@ -2912,23 +2936,23 @@ main () {
       usage
       exit 1
     fi
-	squawk 11 "Full auto engaged"
-	kubash provision \
+  squawk 1 "Full auto engaged"
+  kubash provision \
           -n $KUBASH_CLUSTER_NAME
-	kubash ping \
+  kubash ping \
           -n $KUBASH_CLUSTER_NAME
-	kubash init \
+  kubash init \
           -n $KUBASH_CLUSTER_NAME
-	sleep 10
-	kubash openebs \
+  sleep 10
+  kubash openebs \
           -n $KUBASH_CLUSTER_NAME
-	sleep 10
-	kubash tiller  \
+  sleep 10
+  kubash tiller  \
           -n $KUBASH_CLUSTER_NAME
-	sleep 10
-	kubash ingress \
+  sleep 10
+  kubash ingress \
           -n $KUBASH_CLUSTER_NAME
-	squawk 11 "Full auto finished"
+  squawk 1 "Full auto finished"
       exit
   elif [[ $RAISON == "grab" ]]; then
     if [[ $print_help == "true" ]]; then
@@ -2984,7 +3008,7 @@ main () {
       usage
       exit 1
     fi
-    squawk 15 'Adjusting dotfiles'
+    squawk 5 'Adjusting dotfiles'
     dotfiles_install
     exit 0
   elif [[ $RAISON == "show" ]]; then
@@ -3039,7 +3063,8 @@ main () {
     fi
     copy_image_to_all_provisioning_hosts
     provisioner
-    sleep 15
+    squawk 1 "wating on hosts to come up"
+    sleep 33
     refresh_network_addresses
     prep
     remove_vagrant_user
@@ -3238,7 +3263,7 @@ main () {
         exit 1
       elif [[ $builder == "coreos" ]]; then
         if [[ -z "$target_build" ]]; then
-  	squawk 15 "Setting coreos channel to stable"
+    squawk 5 "Setting coreos channel to stable"
           target_build=stable
         fi
       fi
@@ -3250,14 +3275,14 @@ main () {
       build_virt=qemu
     fi
     if [[ $builder == "packer" ]]; then
-      squawk 15 "packer_build $build_virt $target_os $target_build"
+      squawk 5 "packer_build $build_virt $target_os $target_build"
       packer_build $build_virt $target_os $target_build
     elif [[ $builder == "coreos" ]]; then
-      squawk 15 "coreos_build $build_virt $target_os $target_build"
+      squawk 5 "coreos_build $build_virt $target_os $target_build"
       coreos_build $build_virt $target_os $target_build
     elif [[ $builder == "veewee" ]]; then
-      squawk 12 " Executing vee wee build..."
-      # veewee_build 
+      squawk 2 " Executing vee wee build..."
+      # veewee_build
       horizontal_rule
       echo 'VeeWee support not built yet :('
       exit 1
@@ -3299,17 +3324,17 @@ main () {
       exit 1
     fi
     if [[ $node_join_role == "node" ]]; then
-      squawk 12 " Executing node join..."
+      squawk 2 " Executing node join..."
       DO_NODE_JOIN=true
       node_join $node_join_name $node_join_ip $node_join_user $node_join_port
     elif [[ $node_join_role == "master" ]]; then
-      squawk 12 " Executing master join..."
+      squawk 2 " Executing master join..."
       DO_MASTER_JOIN=true
       master_join $node_join_name $node_join_ip $node_join_user $node_join_port
     fi
     exit 0
   elif [[ $RAISON == "true" ]]; then
-	  squawk 18 'passthru'
+    squawk 8 'passthru'
   else
     horizontal_rule
     echo "Command \"$RAISON\" unknown!!! printing usage."

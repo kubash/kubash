@@ -1,0 +1,4 @@
+# username,email,role
+admin,admin@example.com,admin
+user,user@example.com,provisioner
+log,log@example.com,log

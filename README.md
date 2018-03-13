@@ -18,9 +18,42 @@ Install with one easy line
 curl -L git.io/kubash|bash
 ```
 
-Get started by making the example cluster from the example-cluster.yaml `cd ~/.kubash; kubash -n example yaml2cluster example-cluster.yaml;ls -lh clusters/example`
+Get started by making the example cluster from the example-cluster.yaml
+
+```
+cd ~/.kubash
+kubash -n example yaml2cluster examples/example-cluster.yaml
+ls -lh clusters/example
+```
+
+Now build the image `kubash build --target-os kubeadm`
+
+[![asciicast](https://asciinema.org/a/164070.png)](https://asciinema.org/a/164070)
+
+Then `kubash provision -n example`
 
 [![asciicast](https://asciinema.org/a/164071.png)](https://asciinema.org/a/164071)
+
+And finally `kubash -n example init`
+
+[![asciicast](https://asciinema.org/a/164079.png)](https://asciinema.org/a/164079)
+
+By default kubash is quiet unless an error is hit (though some of the
+programs called by kubash might not be very quiet).  If you like
+watching noisy output crank up the verbosity by adding a few v flags
+(i.e. `-vvvv`) or secify the verbosity `--verbosity 100` or export it as
+a environment variable e.g.
+
+```
+export VERBOSITY=100
+```
+
+kubash output will be denoted by appending `#`s in front of various
+verbosity levels e.g.
+
+```
+############# Kubash, by Josh Cox
+```
 
 ### Alternative pipelines
 
