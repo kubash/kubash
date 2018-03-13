@@ -746,6 +746,7 @@ refresh_network_addresses () {
       fi
       squawk 9 "preview $K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
       countzero=0
+      set +e
       this_ssh_status=254
       until [[ "$this_ssh_status" == '0' ]]
       do
@@ -760,6 +761,7 @@ refresh_network_addresses () {
         this_ssh_status=$?
         ((++countzero))
       done
+      set -e
       squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
       echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" >> $KUBASH_HOSTS_CSV
       this_node_ip=''
