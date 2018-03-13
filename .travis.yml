@@ -17,13 +17,15 @@ matrix:
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
 
-language: bash
+language: node
+nodejs:
+  - "8"
 
 addons:
   apt:
     packages:
       - curl
-      - rsync 
+      - rsync
       - socat
       - time
       - devscripts
