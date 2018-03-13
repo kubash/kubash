@@ -745,7 +745,7 @@ refresh_network_addresses () {
         this_K8S_user=$K8S_user
       fi
       countzero=0
-      until ping -c1 $this_node_ip &>/dev/null
+      until ping -c1 -W2 $this_node_ip &>/dev/null
       do
         if [[ "$countzero" -gt 22 ]]; then
           echo "$K8S_node host not coming up investigate $this_node_ip"
