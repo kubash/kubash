@@ -745,6 +745,7 @@ refresh_network_addresses () {
         this_K8S_user=$K8S_user
       fi
       countzero=0
+      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
       until ping -c1 -W1 $this_node_ip &>/dev/null
       do
         if [[ "$countzero" -gt 25 ]]; then
@@ -753,7 +754,6 @@ refresh_network_addresses () {
         elif [[ "$countzero" -gt 2 ]]; then
           sleep 3
         fi
-        sleep 2
         squawk 19 "pinging $this_node_ip $countzero"
         ((++countzero))
       done
@@ -761,9 +761,14 @@ refresh_network_addresses () {
       this_ssh_status=254
       until [[ "$this_ssh_status" == '0' ]]
       do
-        sleep 2
+        if [[ "$countzero" -gt 25 ]]; then
+          echo "$K8S_node host not coming up investigate $this_node_ip"
+          exit 1
+        elif [[ "$countzero" -gt 2 ]]; then
+          sleep 3
+        fi
         squawk 19 "checking ssh $this_node_ip $countzero"
-        ssh -q $this_K8S_user@$this_node_ip exit
+        ssh -n -q $this_K8S_user@$this_node_ip exit
         this_ssh_status=$?
         ((++countzero))
       done
