@@ -2051,8 +2051,8 @@ do_etcd () {
 
   # Only copy if etcd.line exists as the endpoints will have stuff in it regardless
   if [[ -e "$do_etcd_tmp_para/etcd.line" ]]; then
-    $MV_CMD $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
-    $MV_CMD $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
+    mv $do_etcd_tmp_para/etcd.line $KUBASH_CLUSTER_DIR/
+    mv $do_etcd_tmp_para/endpoints.line $KUBASH_CLUSTER_DIR/
   fi
 
   countzero=0
