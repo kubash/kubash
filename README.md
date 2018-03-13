@@ -5,6 +5,8 @@ Build, provision, initialize, add common components, and tear down a cluster PDQ
 [![Build Status](https://travis-ci.org/kubash/kubash.svg?branch=master)](https://travis-ci.org/kubash/kubash)
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/joshuacox/kubash.svg?columns=all)](https://waffle.io/joshuacox/kubash)
 
+Dev [![Build Status](https://travis-ci.org/joshuacox/kubash.svg?branch=master)](https://travis-ci.org/joshuacox/kubash)
+
 Build production ready clusters using a variety of technologies along the way.
 
 By default, this will build an image using packer, then rebase that image for your nodes.
