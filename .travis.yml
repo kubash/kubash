@@ -17,13 +17,15 @@ matrix:
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
 
-language: bash
+language: node
+nodejs:
+  - "8"
 
 addons:
   apt:
     packages:
       - curl
-      - rsync 
+      - rsync
       - socat
       - time
       - devscripts
@@ -35,15 +37,15 @@ before_install:
 # install nsenter which is required for port forwarding
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
-  - make example
-
-script:
   - bash scripts/dotfiles
   - bash scripts/chkdirs
   - /usr/bin/time -v make -e linuxreqs
+
+script:
   - sudo chown -R $USER /usr/local
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
+	- bin/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
   - /bin/bash -l -c "echo kubash openebs"
   - bats .tests.bats
