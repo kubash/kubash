@@ -45,7 +45,7 @@ $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 reqs: linuxreqs
 
-linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs
+linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs yaml2json
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
@@ -156,15 +156,7 @@ examples:
 	sed -i 's/^my-/coreos-/' $(KUBASH_DIR)/clusters/coreos/provision.csv
 
 example:
-	mkdir -p clusters/default
-	cp -iv hosts.csv.example clusters/default/hosts.csv
-	cp -iv users.csv.example clusters/default/users.csv
-	cp -iv provision.csv.example clusters/default/provision.csv
-	cp -iv ca-data.yaml.example clusters/default/ca-data.yaml
-	cp -iv templates/ca-csr.json clusters/default/
-	cp -iv templates/ca-config.json clusters/default/
-	cp -iv templates/client.json clusters/default/
-	cp -iv net_set.example clusters/default/net_set
+	$(HOME)/.kubash/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
 
 yaml2json:
 	npm i -g yaml2json
