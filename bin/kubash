@@ -44,6 +44,8 @@ KUBASH_VERSION=1.9.4
 : ${ETCD_VERSION:=v3.2.16}
 : ${KUBERNETES_VERSION:=v1.9.3}
 : ${KUBASH_RSYNC_OPTS:='-H -aze'}
+: ${CALICO_URL:=https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml}
+: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml}
 
 # Leaving these off as their behavior can be unpredictable
 # best only turn them on for debugging
@@ -872,9 +874,9 @@ do_net () {
   squawk 0 " do_net"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
   if [[ $K8S_NET == "calico" ]]; then
-    kubectl --kubeconfig=$KUBECONFIG apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f $CALICO_URL
   elif [[ $K8S_NET == "flannel" ]]; then
-    kubectl --kubeconfig=$KUBECONFIG apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml 
+    kubectl --kubeconfig=$KUBECONFIG apply -f $FLANNEL_URL
   elif [[ $K8S_NET == "weavenet" ]]; then
     VERSION="$(kubectl version | base64 | tr -d '\n')"
     kubectl --kubeconfig=$KUBECONFIG apply -f "https://cloud.weave.works/k8s/net?k8s-version=${VERSION}"
