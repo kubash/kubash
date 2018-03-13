@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION=1.9.3
+KUBASH_VERSION=1.9.4
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
