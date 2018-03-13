@@ -18,7 +18,13 @@ Install with one easy line
 curl -L git.io/kubash|bash
 ```
 
-Get started by making the example cluster from the example-cluster.yaml `cd ~/.kubash; kubash -n example yaml2cluster example-cluster.yaml;ls -lh clusters/example`
+Get started by making the example cluster from the example-cluster.yaml
+
+```
+cd ~/.kubash
+kubash -n example yaml2cluster examples/example-cluster.yaml
+ls -lh clusters/example
+```
 
 Now build the image `kubash build --target-os kubeadm`
 

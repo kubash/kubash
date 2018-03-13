@@ -2742,7 +2742,7 @@ json2cluster () {
   done < "$json2cluster_tmp/tmp.csv"
 
   rm $json2cluster_tmp/tmp.csv
-  squawk 1 "$(cat $json2cluster_tmp/provision.csv)"
+  squawk 5 "$(cat $json2cluster_tmp/provision.csv)"
 
   # ca-data.yaml
 #### BEGIN --> Indention break warning <-- BEGIN
@@ -2755,14 +2755,17 @@ CERT_STATE: \(.CERT_STATE)
 CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
     $this_json >  $json2cluster_tmp/ca-data.yaml
 #### END --> Indention break warning <-- END
-  squawk 1 "$(cat $json2cluster_tmp/ca-data.yaml)"
+  squawk 5 "$(cat $json2cluster_tmp/ca-data.yaml)"
 
   # net_set
   jq -r '.net_set | "\(.)" ' \
     $this_json >  $json2cluster_tmp/net_set
-  squawk 1 "$(cat $json2cluster_tmp/net_set)"
+  squawk 7 "$(cat $json2cluster_tmp/net_set)"
 
-  $CP_CMD $KUBASH_DIR/users.csv.example $json2cluster_tmp/users.csv
+  # users.csv
+  jq -r '.users | to_entries[] | "\(.key),\(.value.role)"' \
+    $this_json >  $json2cluster_tmp/users.csv
+
   $CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
   $CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
   $CP_CMD $KUBASH_DIR/templates/client.json $json2cluster_tmp/
