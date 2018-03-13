@@ -156,7 +156,7 @@ examples:
 	sed -i 's/^my-/coreos-/' $(KUBASH_DIR)/clusters/coreos/provision.csv
 
 example:
-	kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
+	$(HOME)/.kubash/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
 
 yaml2json:
 	npm i -g yaml2json
