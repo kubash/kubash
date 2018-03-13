@@ -104,7 +104,7 @@
       CERT_ORGANISATION: Example inc.
       CERT_STATE: Texas
       CERT_ORG_UNIT: Deployment
-  net_set: calico
+  net_set: flannel
   users:
     admin:
       role: admin
