@@ -9,12 +9,14 @@ matrix:
         directories:
         - $HOME/.minikube
         - $HOME/.kube
+        - $HOME/.local/bin
         - .git
         - /usr/local
       env:
         - MINIKUBE_MEMORY=7777
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
+        - HELM_INSTALL_DIR=$HOME/.local/bin
 
 language: node_js
 node_js:
@@ -37,6 +39,7 @@ addons:
 before_install:
 # install nsenter which is required for port forwarding
   - ln -s $(pwd) /home/travis/.kubash
+  - curl -sL --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get|bash
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
   - make reqs
