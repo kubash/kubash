@@ -50,6 +50,8 @@ script:
   - sudo chown -R $USER /etc/kubernetes
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
   - /bin/bash -l -c "echo kubash openebs"
-  - bats .tests.bats
   - env
   - pwd
+  - make ct
+  - make ct
+  - bats .tests.bats
