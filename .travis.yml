@@ -42,12 +42,11 @@ before_install:
   - curl -sL --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get|bash
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
-  - make reqs
+  - sudo make reqs
 
 script:
   - bash scripts/dotfiles
   - bash scripts/chkdirs
-  - /usr/bin/time -v make -e linuxreqs
   - sudo chown -R $USER /usr/local
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
