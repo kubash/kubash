@@ -3218,9 +3218,9 @@ main () {
       builder='packer'
     fi
     if [[ -z "$target_os" ]]; then
-      target_os=ubuntu
+      target_os=kubadm
       if [[ -z "$target_build" ]]; then
-        target_build=ubuntu-16.04-amd64
+        target_build=kubadm-7.4-x86_64
       fi
     elif [[ "$target_os" == "ubuntu" ]]; then
       if [[ -z "$target_build" ]]; then
@@ -3246,9 +3246,9 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm2ha-7.4-x86_64
       fi
-    elif [[ "$target_os" == "kubeadm" ]]; then
+    elif [[ "$target_os" == "kubadm" ]]; then
       if [[ -z "$target_build" ]]; then
-        target_build=kubeadm-7.4-x86_64
+        target_build=kubadm-7.4-x86_64
       fi
     elif [[ "$target_os" == "fedora" ]]; then
       if [[ -z "$target_build" ]]; then
