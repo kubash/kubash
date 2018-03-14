@@ -33,7 +33,7 @@ PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 
 @test "yaml2cluster memory" {
   result="$(cut -f4 -d, clusters/example/provision.csv|head -n1)"
-  [ "$result" -eq 2048 ]
+  [ "$result" -eq 1100 ]
 }
 
 @test "yaml2cluster network" {
@@ -43,7 +43,7 @@ PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 
 @test "yaml2cluster mac" {
   result="$(cut -f6 -d, clusters/example/provision.csv|head -n1)"
-  [ "$result" = '52:54:00:e2:9e:11' ]
+  [ "$result" = '52:54:00:e2:8a:11' ]
 }
 
 @test "yaml2cluster dhcp" {
