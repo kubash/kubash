@@ -39,6 +39,7 @@ before_install:
 # install nsenter which is required for port forwarding
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
+  - make reqs
 
 script:
   - bash scripts/dotfiles
