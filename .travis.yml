@@ -32,6 +32,8 @@ addons:
       - ansible
       - parallel
       - golang
+      - nmap
+      - python-pip
 
 before_install:
 # install nsenter which is required for port forwarding
