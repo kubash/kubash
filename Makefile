@@ -313,3 +313,12 @@ cfssl:
 
 jinja2:
 	pip install jinja2 jinja2-cli
+
+anaconda: $(KUBASH_BIN)/Anaconda.sh
+	bash $(KUBASH_BIN)/Anaconda.sh
+
+$(KUBASH_BIN)/Anaconda.sh:
+	wget -c -O $(KUBASH_BIN)/Anaconda.sh https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
+
+nvm:
+	curl --silent -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
