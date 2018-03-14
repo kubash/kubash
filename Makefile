@@ -3,6 +3,7 @@
 $(eval KUBASH_DIR := $(HOME)/.kubash)
 $(eval KUBASH_BIN := $(KUBASH_DIR)/bin)
 $(eval GOPATH := $(HOME)/.go)
+PATH=$(KUBASH_BIN):$(PATH)
 
 # Namespaces
 $(eval KUBASH_NAMESPACE := kubash)
