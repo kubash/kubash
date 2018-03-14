@@ -2,6 +2,7 @@
 PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 
 @test "yaml2cluster test example" {
+  rm -Rf clusters/example
   yamlresult="$(kubash yaml2cluster examples/example-cluster.yaml -n example)"
   cp $HOME/.kube/config clusters/example/
   [ -e "clusters/example/provision.csv" ]
