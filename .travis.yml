@@ -9,7 +9,6 @@ matrix:
         directories:
         - $HOME/.minikube
         - $HOME/.kube
-        - $HOME/.kubash
         - .git
         - /usr/local
       env:
@@ -37,6 +36,7 @@ addons:
 
 before_install:
 # install nsenter which is required for port forwarding
+  - ln -s $(pwd) /home/travis/.kubash
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
   - make reqs
@@ -52,7 +52,8 @@ script:
   - /bin/bash -l -c "echo kubash openebs"
   - env
   - pwd
-  - make ct; ls -lh
   - ls -lh /home/travis/build/joshuacox/kubash/bin
   - ls -lh /home/travis/.kubash/bin
+  - ls -lh /home/travis/.kubash/
+  - ls -lh /home/travis/
   - bats .tests.bats
