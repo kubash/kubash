@@ -45,7 +45,7 @@ $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 reqs: linuxreqs
 
-linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs yaml2json
+linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs yaml2json ct
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
