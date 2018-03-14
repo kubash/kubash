@@ -56,6 +56,6 @@ script:
   - env
   - pwd
   - mkdir -p clusters/default
-  - /bin/bash -l -c "kubash openebs"
   - cp $HOME/.kube/config clusters/default/
+  - /bin/bash -l -c "kubash openebs"
   - bats .tests.bats
