@@ -203,8 +203,15 @@ And you can also add a debug flag:
 kubash --debug --verbosity 100 init
 ```
 
-
 try `kubash COMMAND --help`
+
+### Parallel jobs
+
+To set the number of concurrent jobs export PARALLEL_JOBS e.g.
+
+```
+export PARALLEL_JOBS=10
+```
 
 ### [GNU Parallel](https://www.gnu.org/software/parallel/)
 

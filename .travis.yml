@@ -53,5 +53,5 @@ script:
   - env
   - pwd
   - make ct
-  - make ct
+  - ls -lh /home/travis/build/joshuacox/kubash/bin
   - bats .tests.bats
