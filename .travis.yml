@@ -52,6 +52,7 @@ script:
   - /bin/bash -l -c "echo kubash openebs"
   - env
   - pwd
-  - make ct
+  - make ct; ls -lh
   - ls -lh /home/travis/build/joshuacox/kubash/bin
+  - ls -lh /home/travis/.kubash/bin
   - bats .tests.bats
