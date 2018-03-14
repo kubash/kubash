@@ -39,14 +39,12 @@ addons:
 
 before_install:
 # install nsenter which is required for port forwarding
+  - npm i -g yaml2json
   - ln -s $(pwd) /home/travis/.kubash
   - curl -sL --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get|bash
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
-  - make nvm
   - make ct
-  - npm i -g yaml2json
-    #- /bin/bash -l -c "/usr/bin/time -v sudo make reqs"
 
 script:
   - bash scripts/dotfiles
@@ -57,10 +55,6 @@ script:
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
   - env
   - pwd
-  - ls -lh /home/travis/build/joshuacox/kubash/bin
-  - ls -lh /home/travis/.kubash/bin
-  - ls -lh /home/travis/.kubash/
-  - ls -lh /home/travis/
   - mkdir -p clusters/default
   - /bin/bash -l -c "kubash openebs"
   - cp $HOME/.kube/config clusters/default/
