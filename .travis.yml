@@ -17,6 +17,7 @@ matrix:
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
         - HELM_INSTALL_DIR=$HOME/.local/bin
+        - NVM_DIR="$HOME/.nvm"
 
 language: node_js
 node_js:
@@ -43,7 +44,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
   - make nvm
-  - sudo make reqs
+  - /bin/bash -l -c "/usr/bin/time -v sudo make reqs"
 
 script:
   - bash scripts/dotfiles
