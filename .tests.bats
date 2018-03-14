@@ -1,24 +1,15 @@
 #!/usr/bin/env bats
 PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 
-@test "addition using bc" {
-  result="$(echo 2+2 | bc)"
-  [ "$result" -eq 4 ]
-}
-
-@test "ct" {
-  [ -e "/home/travis/build/joshuacox/kubash/bin/ct" ]
-}
-
 @test "yaml2cluster test example" {
-  yamlresult="$(kubash yaml2cluster /home/travis/build/joshuacox/kubash/examples/example-cluster.yaml -n example)"
+  yamlresult="$(kubash yaml2cluster examples/example-cluster.yaml -n example)"
   cp $HOME/.kube/config clusters/example/
-  [ -e "/home/travis/build/joshuacox/kubash/clusters/example/provision.csv" ]
+  [ -e "clusters/example/provision.csv" ]
 }
 
 @test "minikube config" {
   result="$(cp $HOME/.kube/config clusters/example/)"
-  [ -e "/home/travis/build/joshuacox/kubash/clusters/example/config" ]
+  [ -e "clusters/example/config" ]
 }
 
 @test "yaml2cluster primary_master" {
