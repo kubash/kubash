@@ -55,11 +55,13 @@ script:
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
-  - /bin/bash -l -c "echo kubash openebs"
   - env
   - pwd
   - ls -lh /home/travis/build/joshuacox/kubash/bin
   - ls -lh /home/travis/.kubash/bin
   - ls -lh /home/travis/.kubash/
   - ls -lh /home/travis/
+  - mkdir -p clusters/default
+  - /bin/bash -l -c "kubash openebs"
+  - cp $HOME/.kube/config clusters/default/
   - bats .tests.bats
