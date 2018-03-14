@@ -13,12 +13,12 @@ PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 @test "yaml2cluster test example" {
   yamlresult="$(kubash yaml2cluster /home/travis/build/joshuacox/kubash/examples/example-cluster.yaml -n example)"
   cp $HOME/.kube/config clusters/example/
-  [ -e "/home/travis/build/joshuacox/kubash/clusters/examples/provision.csv" ]
+  [ -e "/home/travis/build/joshuacox/kubash/clusters/example/provision.csv" ]
 }
 
 @test "minikube config" {
   result="$(cp $HOME/.kube/config clusters/example/)"
-  [ -e "/home/travis/build/joshuacox/kubash/clusters/examples/config" ]
+  [ -e "/home/travis/build/joshuacox/kubash/clusters/example/config" ]
 }
 
 @test "yaml2cluster primary_master" {
