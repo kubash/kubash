@@ -44,7 +44,9 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
   - make bats
   - make nvm
-  - /bin/bash -l -c "/usr/bin/time -v sudo make reqs"
+  - make ct
+  - npm i -g yaml2json
+    #- /bin/bash -l -c "/usr/bin/time -v sudo make reqs"
 
 script:
   - bash scripts/dotfiles
