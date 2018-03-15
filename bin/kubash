@@ -2773,8 +2773,8 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
 
 kubash_interactive () {
   horizontal_rule
-  echo "Interactive Kubash Shell Enter 'help' for help, or 'quit' to quite"
-  echo "working with the $KUBASH_CLUSTER_NAME kubash cluster, or set it with 'clustername'"
+  echo "Interactive Kubash Shell Enter 'help' for help, or 'quit' to quit"
+  echo "working with the $KUBASH_CLUSTER_NAME kubash cluster, or set with 'clustername'"
   horizontal_rule
   echo -n 'K8$ '
   set +e
@@ -2782,10 +2782,11 @@ kubash_interactive () {
   do
     case $command
     in
-      quit|exit) exit 0                    ;;
-      help|\?)   usage                     ;;
-      clustername|name)   set_name $args      ;;
-      *)         interactive_results=$(kubash "$command" "$args") ;;
+      quit|exit)             exit 0                       ;;
+      help|\?)               usage                        ;;
+      verbosity|v)           set_verbosity $args          ;;
+      clustername|name)      set_name      $args          ;;
+      *) interactive_results=$(kubash "$command" "$args") ;;
     esac
     echo "$interactive_results"
     echo -n 'K8$ '
@@ -2793,8 +2794,18 @@ kubash_interactive () {
   set -e
 }
 
+set_verbosity () {
+  if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    VERBOSITY=0
+  else
+    VERBOSITY=$1
+  fi
+  squawk 0 " verbosity is now $VERBOSITY"
+}
+
 set_name () {
   squawk 5 "set_name $1"
+  squawk 3 "Kubash will now work with the $1 cluster"
   KUBASH_CLUSTER_NAME="$1"
   KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
   KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
@@ -2898,8 +2909,7 @@ main () {
         squawk 2 " verbosity is now $VERBOSITY"
         shift;;
       --verbosity)
-        VERBOSITY=`expr $VERBOSITY + $2`
-        squawk 2 " verbosity is now $VERBOSITY"
+        set_verbosity $2
         shift 2 ;;
       --oidc)
         KUBASH_OIDC_AUTH=true
