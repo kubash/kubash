@@ -2772,6 +2772,19 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
   $MV_CMD $json2cluster_tmp $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME
 }
 
+kubash_interactive () {
+  echo "Kubash Interactive Shell Enter 'help' for help, or 'quit' to quite"
+  while read command args
+  do
+    case $command
+    in
+      quit|exit) exit 0                    ;;
+      help|\?)   usage                     ;;
+      *)         kubash "$command" "$args" ;;
+    esac
+  done
+}
+
 main () {
   # save original io
   exec 3>&1 4>&2
@@ -3097,6 +3110,13 @@ main () {
       exit 1
     fi
     do_nginx_ingress $KUBASH_INGRESS_NAME
+  elif [[ $RAISON == "interactive" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    kubash_interactive $@
   elif [[ $RAISON == "masters" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
