@@ -2759,19 +2759,11 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
   jq -r '.net_set | "\(.)" ' \
     $this_json >  $json2cluster_tmp/net_set
   squawk 7 "$(cat $json2cluster_tmp/net_set)"
-<<<<<<< HEAD
 
   # users.csv
   jq -r '.users | to_entries[] | "\(.key),\(.value.role)"' \
     $this_json >  $json2cluster_tmp/users.csv
 
-=======
-
-  # users.csv
-  jq -r '.users | to_entries[] | "\(.key),\(.value.role)"' \
-    $this_json >  $json2cluster_tmp/users.csv
-
->>>>>>> travis
   $CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
   $CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
   $CP_CMD $KUBASH_DIR/templates/client.json $json2cluster_tmp/
@@ -2794,8 +2786,8 @@ kubash_interactive () {
       help|\?)               usage                        ;;
       verbosity)             set_verbosity $args          ;;
       v)                increase_verbosity $args          ;;
-      clustername|name)      set_name      $args          ;;
-      *) interactive_results=$(kubash "$command" "$args") ;;
+      cluster|clustername|name)      set_name      $args          ;;
+      *) interactive_results=$(kubash -n $KUBASH_CLUSTER_NAME "$command" "$args") ;;
     esac
     echo "$interactive_results"
     echo -n 'K8$ '
@@ -2839,15 +2831,8 @@ main () {
 
   # If cmd empty print usage
   if [[ -z "$1" ]]; then
-<<<<<<< HEAD
-    horizontal_rule
-    squawk 5 "No Args found printing usage"
-    usage
-    exit 1
-=======
     kubash_interactive
     exit 0
->>>>>>> travis
   fi
 
   squawk 5 'parse opts'
@@ -2886,25 +2871,10 @@ main () {
         exit 0
         shift;;
       -y|--yes)
-<<<<<<< HEAD
-  ANSWER_YES=yes
-        shift;;
-      -n|--clustername)
-        KUBASH_CLUSTER_NAME="$2"
-        KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
-        KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
-        export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
-        KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
-        KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
-        KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
-        KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
-        net_set
-=======
         ANSWER_YES=yes
         shift;;
       -n|--clustername)
         set_name "$2"
->>>>>>> travis
         shift 2 ;;
       -c|--csv)
         KUBASH_HOSTS_CSV="$2"
@@ -2932,15 +2902,6 @@ main () {
         node_join_role="$2"
         shift 2 ;;
       --target-os)
-<<<<<<< HEAD
-  target_os="$2"
-        shift 2 ;;
-      --target-build)
-  target_build="$2"
-        shift 2 ;;
-      --build-virt)
-  build_virt="$2"
-=======
         target_os="$2"
         shift 2 ;;
       --target-build)
@@ -2948,19 +2909,13 @@ main () {
         shift 2 ;;
       --build-virt)
         build_virt="$2"
->>>>>>> travis
         shift 2 ;;
       -v|--verbose)
         VERBOSITY=`expr $VERBOSITY + 1`
         squawk 2 " verbosity is now $VERBOSITY"
         shift;;
       --verbosity)
-<<<<<<< HEAD
-        VERBOSITY=`expr $VERBOSITY + $2`
-        squawk 2 " verbosity is now $VERBOSITY"
-=======
         set_verbosity $2
->>>>>>> travis
         shift 2 ;;
       --oidc)
         KUBASH_OIDC_AUTH=true
@@ -3019,26 +2974,6 @@ main () {
       usage
       exit 1
     fi
-<<<<<<< HEAD
-  squawk 1 "Full auto engaged"
-  kubash provision \
-          -n $KUBASH_CLUSTER_NAME
-  kubash ping \
-          -n $KUBASH_CLUSTER_NAME
-  kubash init \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash openebs \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash tiller  \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash ingress \
-          -n $KUBASH_CLUSTER_NAME
-  squawk 1 "Full auto finished"
-      exit
-=======
     squawk 1 "Full auto engaged"
     kubash provision \
       -n $KUBASH_CLUSTER_NAME
@@ -3057,7 +2992,6 @@ main () {
       -n $KUBASH_CLUSTER_NAME
     squawk 1 "Full auto finished"
     exit 0
->>>>>>> travis
   elif [[ $RAISON == "grab" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -3444,17 +3378,16 @@ main () {
       master_join $node_join_name $node_join_ip $node_join_user $node_join_port
     fi
     exit 0
-  elif [[ $RAISON == "true" ]]; then
-    squawk 8 'passthru'
   else
+    squawk 8 'passthru'
     # Else fall through to passing on to kubectl for the current cluster
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    squawk 5 "kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@"
-    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@
+    squawk 5 "kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@"
+    kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@
   fi
 
   if [[ $print_help == "true" ]]; then
