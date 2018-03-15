@@ -72,26 +72,3 @@ PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
   result="$(cut -f13 -d, clusters/example/provision.csv|head -n1)"
   [ "$result" = 'qemu' ]
 }
-
-@test "checkbashisms kubash" {
-  skip "Skpping for now"
-  result="$(checkbashisms -xnfp ./bin/kubash)"
-  [ -z "$result" ]
-}
-
-@test "checkbashisms bootstrap" {
-  skip "Skpping for now"
-  result="$(checkbashisms -xnfp ./bootstrap)"
-  [ -z "$result" ]
-}
-@test "checkbashisms scripts" {
-  skip "Skpping for now"
-  result="$(checkbashisms -xnfp ./scripts/*)"
-  [ -z "$result" ]
-}
-
-@test "checkbashisms w8s" {
-  skip "Skpping for now"
-  result="$(checkbashisms -xnfp ./w8s/*)"
-  [ -z "$result" ]
-}

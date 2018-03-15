@@ -50,6 +50,18 @@ linuxreqs: kubectl helm minikube jinja2 submodules/openebs yaml2json ct
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
 
+$(KUBASH_BIN)/kush:
+	echo '#!/usr/bin/env sh' > $(KUBASH_BIN)/kush
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kush
+
+$(KUBASH_BIN)/kzsh:
+	echo '#!/usr/bin/env zsh' > $(KUBASH_BIN)/kzsh
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kzsh
+
+$(KUBASH_BIN)/kudash:
+	echo '#!/usr/bin/env dash' > $(KUBASH_BIN)/kudash
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kudash
+
 $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
 	@echo 'Installing helm'
