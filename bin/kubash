@@ -2784,7 +2784,8 @@ kubash_interactive () {
     in
       quit|exit)             exit 0                       ;;
       help|\?)               usage                        ;;
-      verbosity|v)           set_verbosity $args          ;;
+      verbosity)             set_verbosity $args          ;;
+      v)                increase_verbosity $args          ;;
       clustername|name)      set_name      $args          ;;
       *) interactive_results=$(kubash "$command" "$args") ;;
     esac
@@ -2800,6 +2801,11 @@ set_verbosity () {
   else
     VERBOSITY=$1
   fi
+  squawk 0 " verbosity is now $VERBOSITY"
+}
+
+increase_verbosity () {
+  ((++VERBOSITY))
   squawk 0 " verbosity is now $VERBOSITY"
 }
 
@@ -2968,24 +2974,24 @@ main () {
       usage
       exit 1
     fi
-  squawk 1 "Full auto engaged"
-  kubash provision \
-          -n $KUBASH_CLUSTER_NAME
-  kubash ping \
-          -n $KUBASH_CLUSTER_NAME
-  kubash init \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash openebs \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash tiller  \
-          -n $KUBASH_CLUSTER_NAME
-  sleep 10
-  kubash ingress \
-          -n $KUBASH_CLUSTER_NAME
-  squawk 1 "Full auto finished"
-      exit
+    squawk 1 "Full auto engaged"
+    kubash provision \
+      -n $KUBASH_CLUSTER_NAME
+    kubash ping \
+      -n $KUBASH_CLUSTER_NAME
+    kubash init \
+      -n $KUBASH_CLUSTER_NAME
+    sleep 10
+    kubash openebs \
+      -n $KUBASH_CLUSTER_NAME
+    sleep 10
+    kubash tiller  \
+      -n $KUBASH_CLUSTER_NAME
+    sleep 10
+    kubash ingress \
+      -n $KUBASH_CLUSTER_NAME
+    squawk 1 "Full auto finished"
+    exit 0
   elif [[ $RAISON == "grab" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -3374,14 +3380,6 @@ main () {
     exit 0
   elif [[ $RAISON == "true" ]]; then
     squawk 8 'passthru'
-  elif [[ $RAISON == "get" ]]; then
-    if [[ $print_help == "true" ]]; then
-      horizontal_rule
-      usage
-      exit 1
-    fi
-    shift
-    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config get $@
   else
     # Else fall through to passing on to kubectl for the current cluster
     if [[ $print_help == "true" ]]; then
@@ -3389,7 +3387,8 @@ main () {
       usage
       exit 1
     fi
-    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@
+    squawk 5 "kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@"
+    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@
   fi
 
   if [[ $print_help == "true" ]]; then
