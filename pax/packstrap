@@ -62,9 +62,9 @@ install_default_docker () {
 install_spec_docker () {
   apt-get install -yqq docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')
   apt-get install -yqq docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')
-  apt-get install -yqq kubelet=$(apt-cache madison kubelet | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
-  apt-get install -yqq kubeadm=$(apt-cache madison kubeadm | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
-  apt-get install -yqq kubectl=$(apt-cache madison kubectl | grep '$KUBEPKG_VERSION' | head -1 | awk '{print $3}')
+  apt-get install -yqq kubelet=$(apt-cache madison kubelet | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
+  apt-get install -yqq kubeadm=$(apt-cache madison kubeadm | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
+  apt-get install -yqq kubectl=$(apt-cache madison kubectl | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
   
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
