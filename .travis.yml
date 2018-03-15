@@ -62,7 +62,7 @@ script:
   - cp $HOME/.kube/config clusters/default/
   - /bin/bash -l -c "kubash openebs"
   - /bin/bash -l -c "w8s/generic.w8 openebs-provisioner default"
-  - bats .tests.bats
+  - bats .ci/.tests.bats
   - /bin/bash -l -c "kubash demo"
   # too much memory usage so we will end it there and destroy the VM
   # as the next though successful take too long
