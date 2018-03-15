@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+PATH=/home/travis/build/joshuacox/kubash/bin:/home/travis/.kubash/bin:$PATH
 
 @test "checkbashisms kubash" {
   result="$(checkbashisms -xnfp ./bin/kubash)"

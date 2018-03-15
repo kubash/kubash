@@ -43,12 +43,30 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 # Helm settings
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
+all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
+
 reqs: linuxreqs
 
+<<<<<<< HEAD
 linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs yaml2json
+=======
+linuxreqs: kubectl helm minikube jinja2 submodules/openebs yaml2json ct
+>>>>>>> travis
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
+
+$(KUBASH_BIN)/kush:
+	echo '#!/usr/bin/env sh' > $(KUBASH_BIN)/kush
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kush
+
+$(KUBASH_BIN)/kzsh:
+	echo '#!/usr/bin/env zsh' > $(KUBASH_BIN)/kzsh
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kzsh
+
+$(KUBASH_BIN)/kudash:
+	echo '#!/usr/bin/env dash' > $(KUBASH_BIN)/kudash
+	tail -n +2 "$(KUBASH_BIN)/kubash" >> $(KUBASH_BIN)/kudash
 
 $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
@@ -313,3 +331,12 @@ cfssl:
 
 jinja2:
 	pip install jinja2 jinja2-cli
+
+anaconda: $(KUBASH_BIN)/Anaconda.sh
+	bash $(KUBASH_BIN)/Anaconda.sh
+
+$(KUBASH_BIN)/Anaconda.sh:
+	wget -c -O $(KUBASH_BIN)/Anaconda.sh https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
+
+nvm:
+	curl --silent -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
