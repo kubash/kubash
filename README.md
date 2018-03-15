@@ -3,12 +3,9 @@
 Build, provision, initialize, add common components, and tear down a cluster PDQ.
 
 [![Build Status](https://travis-ci.org/kubash/kubash.svg?branch=master)](https://travis-ci.org/kubash/kubash)
-<<<<<<< HEAD
-=======
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/kubash/kubash.svg?columns=all)](https://waffle.io/kubash/kubash)
 
 old waffle (still has quite a backlog)
->>>>>>> travis
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/joshuacox/kubash.svg?columns=all)](https://waffle.io/joshuacox/kubash)
 
 Dev [![Build Status](https://travis-ci.org/joshuacox/kubash.svg?branch=master)](https://travis-ci.org/joshuacox/kubash)
@@ -179,55 +176,18 @@ options:
 
 There is an example csv file in this repo which shows how to compose this file
 
-### Debugging
+### [Debugging](./docs/debug.md)
 
-First start by adding a few -vvv to the command to bump up the verbosity e.g.
+First try `kubash COMMAND --help`
 
-```
-kubash -vvvvv init
-```
+See the [debugging](./docs/debug.md) page for more
 
-or
-
-```
-kubash --verbosity 22 init
-```
-
-Alternatively there is an environment variable `VERBOSITY`
-
-```
-export VERBOSITY=25
-kubash init
-```
-
-And you can also add a debug flag:
-
-```
-kubash --debug --verbosity 100 init
-```
-
-try `kubash COMMAND --help`
-
-### Interactive Mode
+### [Interactive Mode](./docs/interactive.md)
 
 `kubash` --  alone will invoke an interactive shell (or if you prefer
 `kubash interactive`)
 
-```
-### Kubash, by Josh Cox
----------------------------------------------------------------------------------------------------------------
-Interactive Kubash Shell Enter 'help' for help, or 'quit' to quit
-working with the default kubash cluster, or set with 'clustername'
----------------------------------------------------------------------------------------------------------------
-K8$ 
-```
-
-At this prompt you can invoke all the kubash commands in a read loop,
-this can eliminate alot of typing while interacting with a cluster.
-There are a few special commands that you can invoke in the interactive
-shell.  `name EXAMPLE` will set the name of the cluster that you are
-interacting with.  `verbosity 10` will set the verbosity to 10. `v` will
-increment the verbosity up one.
+see the [Interactive Mode](./docs/interactive.md) documentation
 
 ### Parallel jobs
 
