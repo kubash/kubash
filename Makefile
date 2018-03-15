@@ -43,6 +43,8 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 # Helm settings
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
+all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
+
 reqs: linuxreqs
 
 linuxreqs: kubectl helm minikube jinja2 submodules/openebs yaml2json ct
