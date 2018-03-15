@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION=v1.9.3
+KUBASH_VERSION='v1.9.3'
 : ${KUBERNETES_VERSION:=$KUBASH_VERSION}
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
@@ -768,7 +768,7 @@ refresh_network_addresses () {
 }
 
 copy_image_to_all_provisioning_hosts () {
-  squawk 0 "copy_image_to_all_provisioning_hosts"
+  squawk 1 "copy_image_to_all_provisioning_hosts"
 
   uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f8,9,10,11,12,13|sort|uniq)"
   squawk 8 "$uniq_hosts"
@@ -812,7 +812,7 @@ copy_image_to_all_provisioning_hosts () {
 }
 
 apparmor_fix_all_provisioning_hosts () {
-  squawk 0 "apparmor_fix_all_provisioning_hosts"
+  squawk 1 "apparmor_fix_all_provisioning_hosts"
   uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f7,8,9,10,11,12|sort|uniq)"
   squawk 8 "$uniq_hosts"
   apparmor_tmp_para=$(mktemp -d)
@@ -867,7 +867,7 @@ demo () {
 }
 
 do_net () {
-  squawk 0 " do_net"
+  squawk 1 " do_net"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
   if [[ $K8S_NET == "calico" ]]; then
     kubectl --kubeconfig=$KUBECONFIG apply -f $CALICO_URL
@@ -1170,7 +1170,7 @@ removestalekeys () {
 }
 
 w8_kubedns () {
-  squawk 0 "wait on Kube-DNS to become available" -n
+  squawk 3 "wait on Kube-DNS to become available" -n
   sleep 1
 
   # while loop
@@ -1178,12 +1178,12 @@ w8_kubedns () {
   # timeout for 15 minutes
   while [[ $kubedns_countone -lt 151 ]]
   do
-    squawk 0 '.' -n
+    squawk 1 '.' -n
     RESULT=$(kubectl --kubeconfig=$KUBECONFIG get po --namespace kube-system |grep kube-dns|grep Running)
     if [[ "$RESULT" ]]; then
         sleep 3
-        squawk 0 '.'
-        squawk 0 "$RESULT"
+        squawk 1 '.' -n
+        squawk 3 "$RESULT"
         break
     fi
     ((++kubedns_countone))
@@ -1195,15 +1195,15 @@ w8_kubedns () {
 }
 
 w8_kubectl () {
-  squawk 0 "Wait on the K8S cluster to become available" -n
-  squawk 0 "Errors on the first few tries are normal give it a few minutes to spin up" -n
+  squawk 3 "Wait on the K8S cluster to become available" -n
+  squawk 3 "Errors on the first few tries are normal give it a few minutes to spin up" -n
   sleep 15
   # while loop
   countone_w8_kubectl=1
   countlimit_w8_kubectl=151
   # timeout for 15 minutes
   while [[ "$countone_w8_kubectl" -lt "$countlimit_w8_kubectl" ]]; do
-    squawk 0 '.' -n
+    squawk 1 '.' -n
     if [[ "$VERBOSITY" -gt "11" ]] ; then
       kubectl --kubeconfig=$KUBECONFIG get pods -n kube-system | grep kube-apiserver
     fi
@@ -1222,13 +1222,13 @@ w8_kubectl () {
     fi
     sleep 5
   done
-  squawk 0  "."
+  squawk 3  "."
   squawk 1 "kubectl commands are now able to interact with the kubernetes cluster"
 }
 
 w8_node () {
   node_name=$1
-  squawk 0 "Wait on the K8S node $node_name to become available" -n
+  squawk 3 "Wait on the K8S node $node_name to become available" -n
   sleep 5
   # while loop
   countone_w8_node=1
@@ -1236,7 +1236,7 @@ w8_node () {
   # timeout for 15 minutes
   set +e
   while [[ "$countone_w8_node" -lt "$countlimit_w8_node" ]]; do
-    squawk 0 '.' -n
+    squawk 1 '.' -n
     if [[ "$VERBOSITY" -gt "11" ]] ; then
       kubectl --kubeconfig=$KUBECONFIG get node $node_name
     fi
@@ -1252,8 +1252,8 @@ w8_node () {
     sleep 3
   done
   set -e
-  squawk 0  "."
-  squawk 0  "kubectl commands are now able to interact with the kubernetes node"
+  squawk 3  "."
+  squawk 3  "kubectl commands are now able to interact with the kubernetes node"
 }
 
 remove_vagrant_user () {
@@ -1513,7 +1513,7 @@ master_init_join () {
     rmdir $setup_keepalived_tmp
   fi
 
-  squawk 0 " master_init_join $my_master_name $my_master_ip $my_master_user $my_master_port"
+  squawk 3 " master_init_join $my_master_name $my_master_ip $my_master_user $my_master_port"
   if [[ "$DO_MASTER_JOIN" == "true" ]] ; then
     ssh -n -p $my_master_port $my_master_user@$my_master_ip "$PSEUDO hostname;$PSEUDO  uname -a"
     my_grep='kubeadm join --token'
@@ -1610,7 +1610,7 @@ node_join () {
 }
 
 checks () {
-  squawk 0 " checks"
+  squawk 5 " checks"
   check_cmd git
   check_cmd nc
   check_cmd ssh
@@ -2801,12 +2801,12 @@ set_verbosity () {
   else
     VERBOSITY=$1
   fi
-  squawk 0 " verbosity is now $VERBOSITY"
+  squawk 1 " verbosity is now $VERBOSITY"
 }
 
 increase_verbosity () {
   ((++VERBOSITY))
-  squawk 0 " verbosity is now $VERBOSITY"
+  squawk 1 " verbosity is now $VERBOSITY"
 }
 
 set_name () {
