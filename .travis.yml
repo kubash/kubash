@@ -60,10 +60,10 @@ script:
   - /bin/bash -l -c "kubash openebs"
   - /bin/bash -l -c "kubash demo"
   - bats .tests.bats
-  - w8s/generic.w8 percona default
-  - w8s/generic.w8 pgset-0 default
-  - w8s/generic.w8 rabbitmq-0 default
-  - w8s/generic.w8 mongo-0 default
+  - /bin/bash -l -c "w8s/generic.w8 percona default"
+  - /bin/bash -l -c "w8s/generic.w8 pgset-0 default"
+  - /bin/bash -l -c "w8s/generic.w8 rabbitmq-0 default"
+  - /bin/bash -l -c "w8s/generic.w8 mongo-0 default"
   #- w8s/generic.w8 pgset-1 default
   #- w8s/generic.w8 rabbitmq-1 default
   #- w8s/generic.w8 mongo-1 default
