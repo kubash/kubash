@@ -2773,16 +2773,36 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
 }
 
 kubash_interactive () {
-  echo "Kubash Interactive Shell Enter 'help' for help, or 'quit' to quite"
+  echo "Interactive Kubash Shell Enter 'help' for help, or 'quit' to quite"
+  echo "working with the $KUBASH_CLUSTER_NAME kubash cluster, or set it with 'clustername'"
+  echo -n "kubash>"
+  set +e
   while read command args
   do
     case $command
     in
       quit|exit) exit 0                    ;;
       help|\?)   usage                     ;;
-      *)         kubash "$command" "$args" ;;
+      clustername|name)   set_name $args      ;;
+      *)         interactive_results=$(kubash "$command" "$args") ;;
     esac
+    echo "$interactive_results"
+    echo -n "kubash>"
   done
+  set -e
+}
+
+set_name () {
+  squawk 5 "set_name $1"
+  KUBASH_CLUSTER_NAME="$1"
+  KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
+  KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
+  export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
+  KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
+  KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
+  KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
+  KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
+  net_set
 }
 
 main () {
@@ -2838,15 +2858,7 @@ main () {
   ANSWER_YES=yes
         shift;;
       -n|--clustername)
-        KUBASH_CLUSTER_NAME="$2"
-        KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
-        KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
-        export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
-        KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
-        KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
-        KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
-        KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
-        net_set
+        set_name "$2"
         shift 2 ;;
       -c|--csv)
         KUBASH_HOSTS_CSV="$2"
@@ -3266,9 +3278,9 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm2ha-7.4-x86_64
       fi
-    elif [[ "$target_os" == "kubadm" ]]; then
+    elif [[ "$target_os" == "kubeadm" ]]; then
       if [[ -z "$target_build" ]]; then
-        target_build=kubadm-7.4-x86_64
+        target_build=kubeadm-7.4-x86_64
       fi
     elif [[ "$target_os" == "fedora" ]]; then
       if [[ -z "$target_build" ]]; then
@@ -3355,13 +3367,22 @@ main () {
     exit 0
   elif [[ $RAISON == "true" ]]; then
     squawk 8 'passthru'
+  elif [[ $RAISON == "get" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    shift
+    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config get $@
   else
-    horizontal_rule
-    echo "Command \"$RAISON\" unknown!!! printing usage."
-    horizontal_rule
-    sleep 2
-    usage
-    exit 1
+    # Else fall through to passing on to kubectl for the current cluster
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@
   fi
 
   if [[ $print_help == "true" ]]; then
