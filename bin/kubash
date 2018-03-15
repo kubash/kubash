@@ -2785,7 +2785,6 @@ kubash_interactive () {
       quit|exit)             exit 0                       ;;
       help|\?)               usage                        ;;
       verbosity)             set_verbosity $args          ;;
-      watch) watch -n3 kubash get pods --all-namespaces   ;;
       v)                increase_verbosity $args          ;;
       clustername|name)      set_name      $args          ;;
       *) interactive_results=$(kubash "$command" "$args") ;;
