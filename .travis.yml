@@ -9,16 +9,23 @@ matrix:
         directories:
         - $HOME/.minikube
         - $HOME/.kube
-        - $HOME/.kubash
+        - $HOME/.local/bin
         - .git
         - /usr/local
       env:
         - MINIKUBE_MEMORY=7777
         - MINIKUBE_CPU=4
         - MINIKUBE_DRIVER=none
+        - HELM_INSTALL_DIR=$HOME/.local/bin
+        - NVM_DIR="$HOME/.nvm"
 
+<<<<<<< HEAD
 language: node
 nodejs:
+=======
+language: node_js
+node_js:
+>>>>>>> travis
   - "8"
 
 addons:
@@ -32,20 +39,54 @@ addons:
       - ansible
       - parallel
       - golang
+      - nmap
+      - python-pip
 
 before_install:
 # install nsenter which is required for port forwarding
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter /usr/local/bin; fi
+  - npm i -g yaml2json
+  - ln -s $(pwd) /home/travis/.kubash
   - make bats
+<<<<<<< HEAD
   - bash scripts/dotfiles
   - bash scripts/chkdirs
   - /usr/bin/time -v make -e linuxreqs
 
 script:
+=======
+  - make ct
+
+script:
+  - ls -alh /home/travis
+  - ls -alh /home/travis/.kubash
+  - ls -alh /home/travis/.kubash/bin
+  - if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
+  - curl -sL --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get|bash
+  - bash scripts/dotfiles
+  - bash scripts/chkdirs
+>>>>>>> travis
   - sudo chown -R $USER /usr/local
   - sudo mkdir -p /etc/kubernetes
   - sudo chown -R $USER /etc/kubernetes
   - /bin/bash -l -c "/usr/bin/time -v make -e ci"
+<<<<<<< HEAD
 	- bin/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
   - /bin/bash -l -c "echo kubash openebs"
   - bats .tests.bats
+=======
+  - env
+  - pwd
+  - mkdir -p clusters/default
+  - cp $HOME/.kube/config clusters/default/
+  - /bin/bash -l -c "kubash openebs"
+  - /bin/bash -l -c "w8s/generic.w8 openebs-provisioner default"
+  - bats .ci/.tests.bats
+  - /bin/bash -l -c "kubash demo"
+  # too much memory usage so we will end it there and destroy the VM
+  # as the next though successful take too long
+    #- /bin/bash -l -c "kubash demo"
+    #- /bin/bash -l -c "w8s/generic.w8 percona default"
+    #- /bin/bash -l -c "w8s/generic.w8 pgset-0 default"
+    #- /bin/bash -l -c "w8s/generic.w8 rabbitmq-0 default"
+    #- /bin/bash -l -c "w8s/generic.w8 mongo-0 default"
+>>>>>>> travis
