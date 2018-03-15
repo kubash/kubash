@@ -47,11 +47,7 @@ all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nv
 
 reqs: linuxreqs
 
-<<<<<<< HEAD
-linuxreqs: $(KUBASH_BIN) kubectl helm minikube jinja2 submodules/openebs yaml2json
-=======
 linuxreqs: kubectl helm minikube jinja2 submodules/openebs yaml2json ct
->>>>>>> travis
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
