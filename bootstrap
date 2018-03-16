@@ -99,9 +99,9 @@ flight_checks () {
 main () {
 
   if type "apt-get" > /dev/null; then
-    sudo apt-get install -y jq git build-essential golang unzip curl wget parallel ansible
+    sudo apt-get install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap
   elif type "yum" > /dev/null; then
-    sudo yum install -y jq git build-essential golang unzip curl wget parallel ansible
+    sudo yum install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap
   fi
   check_cmd git
   check_cmd ssh

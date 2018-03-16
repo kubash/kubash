@@ -1,0 +1,25 @@
+help
+verbosity
+cluster
+name
+yaml2cluster
+json2cluster
+build
+build-all
+reset
+refresh
+provision
+ping
+init
+copy
+dotfiles
+hosts
+grab
+auto
+demo
+openebs
+decommission
+get pods
+get pods --all-namespaces
+get nodes
+get svc
