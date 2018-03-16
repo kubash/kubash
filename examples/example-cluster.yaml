@@ -1,7 +1,7 @@
 ---
   hosts:
     my-master1:
-      hostname: bob
+      hostname: master01
       role: primary_master
       cpuCount: 1
       Memory: 1100
@@ -17,7 +17,7 @@
         mac: '52:54:00:e2:8a:11'
         ip: dhcp
     my-master2:
-      hostname: charles
+      hostname: master02
       role: master
       cpuCount: 1
       Memory: 1100
@@ -33,7 +33,7 @@
         mac: '52:54:00:e2:8a:12'
         ip: dhcp
     my-master3:
-      hostname: sue
+      hostname: master03
       role: master
       cpuCount: 1
       Memory: 1100
@@ -49,7 +49,7 @@
         mac: '52:54:00:e2:8a:13'
         ip: dhcp
     my-node1:
-      hostname: tom
+      hostname: node01
       role: node
       cpuCount: 1
       Memory: 1100
@@ -65,7 +65,7 @@
         mac: '52:54:00:e2:8a:14'
         ip: dhcp
     my-node2:
-      hostname: joy
+      hostname: node02
       role: node
       cpuCount: 1
       Memory: 1100
@@ -81,7 +81,7 @@
         mac: '52:54:00:e2:8a:15'
         ip: dhcp
     my-node3:
-      hostname: joe
+      hostname: node03
       role: node
       cpuCount: 1
       Memory: 1100
