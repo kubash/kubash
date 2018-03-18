@@ -1,0 +1,50 @@
+help
+khelp
+verbosity
+cluster
+name
+yaml2cluster
+json2cluster
+build
+build-all
+reset
+refresh
+provision
+ping
+init
+copy
+dotfiles
+hosts
+grab
+auto
+demo
+openebs
+describe
+decommission
+get pods
+get pods --all-namespaces
+get nodes
+get svc
+keti
+kgpa
+kgp
+klp
+kep
+kdp
+kdelp
+kgs
+kes
+kds
+kdels
+kgsec
+kdsec
+kdelsec
+kdp
+ked
+kdd
+kdeld
+ksd
+krsd
+kgrs
+krh
+kru

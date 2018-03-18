@@ -137,40 +137,55 @@ go-build-docker:
 	go get github.com/hashicorp/packer
 	rmdir $(TMP)
 
-examples:
+all-examples:
 	make example
 	cd $(KUBASH_DIR)/clusters; \
-	cp -a default openshift; \
-	cp -a default kubeadm2ha; \
-	cp -a default kubespray; \
-	cp -a default centos; \
-	cp -a default debian; \
-	cp -a default ubuntu; \
-	cp -a default coreos;
+	rsync -av example/ openshift; \
+	rsync -av example/ kubeadm2ha; \
+	rsync -av example/ kubespray; \
+	rsync -av example/ centos; \
+	rsync -av example/ debian; \
+	rsync -av example/ ubuntu; \
+	rsync -av example/ coreos;
 	sed -i 's/kubeadm/openshift/' $(KUBASH_DIR)/clusters/openshift/provision.csv
-	sed -i 's/8f/aa/' $(KUBASH_DIR)/clusters/openshift/provision.csv
+	sed -i 's/master0/openshiftm0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
+	sed -i 's/node0/openshiftn0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
+	sed -i 's/8a/aa/g' $(KUBASH_DIR)/clusters/openshift/provision.csv
 	sed -i 's/^my-/openshift-/' $(KUBASH_DIR)/clusters/openshift/provision.csv
 	sed -i 's/kubeadm/kubespray/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
-	sed -i 's/8f/ab/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
+	sed -i 's/master0/kubespraym0/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
+	sed -i 's/node0/kubesprayn0/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
+	sed -i 's/8a/ab/g' $(KUBASH_DIR)/clusters/kubespray/provision.csv
 	sed -i 's/^my-/kubespray-/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
 	sed -i 's/kubeadm/kubeadm2ha/' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
-	sed -i 's/8f/ac/' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
+	sed -i 's/master0/kubeadm2ham0/' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
+	sed -i 's/node0/kubeadm2han0/' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
+	sed -i 's/8a/ac/g' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
 	sed -i 's/^my-/kubeadm2ha-/' $(KUBASH_DIR)/clusters/kubeadm2ha/provision.csv
 	sed -i 's/kubeadm/centos/' $(KUBASH_DIR)/clusters/centos/provision.csv
-	sed -i 's/8f/ad/' $(KUBASH_DIR)/clusters/centos/provision.csv
+	sed -i 's/master0/centosm0/' $(KUBASH_DIR)/clusters/centos/provision.csv
+	sed -i 's/node0/centosn0/' $(KUBASH_DIR)/clusters/centos/provision.csv
+	sed -i 's/8a/ad/g' $(KUBASH_DIR)/clusters/centos/provision.csv
 	sed -i 's/^my-/centos-/' $(KUBASH_DIR)/clusters/centos/provision.csv
 	sed -i 's/kubeadm/debian/' $(KUBASH_DIR)/clusters/debian/provision.csv
-	sed -i 's/8f/ae/' $(KUBASH_DIR)/clusters/debian/provision.csv
+	sed -i 's/master0/debianm0/' $(KUBASH_DIR)/clusters/debian/provision.csv
+	sed -i 's/node0/debiann0/' $(KUBASH_DIR)/clusters/debian/provision.csv
+	sed -i 's/8a/ae/g' $(KUBASH_DIR)/clusters/debian/provision.csv
 	sed -i 's/^my-/debian-/' $(KUBASH_DIR)/clusters/debian/provision.csv
 	sed -i 's/kubeadm/ubuntu/' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
-	sed -i 's/8f/a0/' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
+	sed -i 's/master0/ubuntum0/' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
+	sed -i 's/node0/ubuntun0/' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
+	sed -i 's/8a/a0/g' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
 	sed -i 's/^my-/ubuntu-/' $(KUBASH_DIR)/clusters/ubuntu/provision.csv
 	sed -i 's/kubeadm/coreos/' $(KUBASH_DIR)/clusters/coreos/provision.csv
-	sed -i 's/8f/a1/' $(KUBASH_DIR)/clusters/coreos/provision.csv
+	sed -i 's/master0/coreosm0/' $(KUBASH_DIR)/clusters/coreos/provision.csv
+	sed -i 's/node0/coreosn0/' $(KUBASH_DIR)/clusters/coreos/provision.csv
+	sed -i 's/8a/a1/g' $(KUBASH_DIR)/clusters/coreos/provision.csv
 	sed -i 's/^my-/coreos-/' $(KUBASH_DIR)/clusters/coreos/provision.csv
 
 example:
-	$(HOME)/.kubash/kubash yaml2cluster -n default $(KUBASH_DIR)/examples/example-cluster.yaml
+	rm -Rf $(KUBASH_DIR)/clusters/example
+	$(KUBASH_BIN)/kubash yaml2cluster -n example $(KUBASH_DIR)/examples/example-cluster.yaml
 
 yaml2json:
 	npm i -g yaml2json
@@ -336,3 +351,9 @@ $(KUBASH_BIN)/Anaconda.sh:
 
 nvm:
 	curl --silent -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.8/install.sh | bash
+
+coreos_key:
+	$(eval TMP := $(shell mktemp -d --suffix=CKTMP))
+	curl -O https://coreos.com/security/image-signing-key/CoreOS_Image_Signing_Key.asc -o $(TMP)/CoreOS_Image_Signing_Key.asc
+	gpg --import --keyid-format LONG CoreOS_Image_Signing_Key.asc
+	rm -Rf $(TMP)

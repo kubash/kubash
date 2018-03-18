@@ -14,7 +14,7 @@ TMP=$(mktemp -d)
 : ${ETCD_PKG="etcd-$ETCD_VERSION.el7"}
 
 cd $TMP
-cat <<EOF > $TMP/inventory 
+cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
 
 [nodes]

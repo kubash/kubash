@@ -36,6 +36,7 @@ addons:
       - golang
       - nmap
       - python-pip
+      - rlwrap
 
 before_install:
 # install nsenter which is required for port forwarding

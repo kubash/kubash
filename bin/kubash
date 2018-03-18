@@ -3,6 +3,7 @@ KUBASH_VERSION='v1.9.3'
 : ${KUBERNETES_VERSION:=$KUBASH_VERSION}
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
+: ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
 : ${KUBASH_CLUSTERS_DIR:=$KUBASH_DIR/clusters}
 : ${KUBASH_CLUSTER_DIR:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME}
@@ -25,7 +26,7 @@ KUBASH_VERSION='v1.9.3'
 : ${KVM_RAM:=4096}
 : ${KVM_CPU:=2}
 : ${KVM_NET:='default'}
-: ${PSEUDO:=sudo -i}
+: ${PSEUDO:=sudo}
 : ${K8S_user:=root}
 : ${K8S_NET:=calico}
 : ${K8S_provisionerPort:=22}
@@ -107,8 +108,6 @@ horizontal_rule () {
   printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -
 }
 
-squawk 3 "Kubash, by Josh Cox"
-
 usage () {
   horizontal_rule
   # Print usage
@@ -122,55 +121,94 @@ kubash init
   horizontal_rule
 echo '
 commands:
-
-build - build a base image
-
-provision - provision individual nodes
-
-init - initialize the cluster
-
-reset - reset the cluster with `kubeadm reset` on all hosts
-
-decommission - tear down the cluster and decommission nodes
-
-show - show the analyzed input of the hosts file
-
-ping - Perform ansible ping to all hosts
-
-auto - Full auto will provision and initialize all hosts
-
-masters - Perform initialization of masters
-
-nodes - Perform initialization of nodes
-
-dotfiles - Perform dotfiles auto configuration
-
-grab - Grab the .kube/config from the master
-
-hosts - Write ansible hosts file
-
-dry - Perform dry run
-
-copy - copy the built images to the provisioning hosts
+  build         - build a base image
+  provision     - provision individual nodes
+  init          - initialize the cluster
+  reset         - reset the cluster with `kubeadm reset` on all hosts
+  decommission  - tear down the cluster and decommission nodes
+  show          - show the analyzed input of the hosts file
+  ping          - Perform ansible ping to all hosts
+  auto          - Full auto will provision and initialize all hosts
+  masters       - Perform initialization of masters
+  nodes         - Perform initialization of nodes
+  dotfiles      - Perform dotfiles auto configuration
+  grab          - Grab the .kube/config from the master
+  hosts         - Write ansible hosts file
+  copy          - copy the built images to the provisioning hosts
+  kubash *     - any unrecognized commands will attempt to be passed to kubectl
 '
   horizontal_rule
 echo '
 options:
-
- -h --help - Print usage
-
- -c --csv FILE - Set the csv file to be parsed
-
- --parallel NUMBER_OF_THREADS - set the number of parallel jobs for tasks that support it
-
- -v --verbose - Increase the verbosity (can set multiple times to incrementally increase e.g. `-vvvv`
-
- --verbosity NUMBER - or you can set the verbosity directly
-
- --debug - adds the debug flag
-
- -n --clustername - use a particular cluster by name
+ -h --help      - Print usage
+ -c --csv FILE  - Set the csv file to be parsed
+ --parallel X   - set the number of parallel jobs for tasks that support it
+ -v --verbose   - Increase the verbosity (can set multiple times to incrementally increase e.g. `-vvvv`
+ --verbosity X  - or you can set the verbosity directly
+ --debug        - adds the debug flag
+ -n             - use a particular cluster by name
 '
+}
+
+interactive_usage () {
+horizontal_rule
+echo -n 'commands:
+  help          - show this help
+  kh|khelp      - show the kubectl help
+  build         - build a base image
+  provision     - provision individual nodes
+  init          - initialize the cluster
+  reset         - reset the cluster with `kubeadm reset` on all hosts
+  decommission  - tear down the cluster and decommission nodes
+  show          - show the analyzed input of the hosts file
+  ping          - Perform ansible ping to all hosts
+  auto          - Full auto will provision and initialize all hosts
+  masters       - Perform initialization of masters
+  nodes         - Perform initialization of nodes
+  dotfiles      - Perform dotfiles auto configuration
+  grab          - Grab the .kube/config from the master
+  hosts         - Write ansible hosts file
+  copy          - copy the built images to the provisioning hosts
+  h *           - h commands will be passed to helm
+  k *           - k commands will be passed to kubectl
+  *             - all other commands will attempt to be passed to kubectl
+  i.e.
+  get pods
+  get nodes
+  etc'
+}
+
+kubectl_interactive_usage () {
+horizontal_rule
+echo -n 'kubectl shorthand commands:
+  # Drop into an interactive terminal on a container
+  keti="kubectl exec -ti"
+  # Pod management.
+  kgp="kubectl get pods"
+  klp="kubectl logs pods"
+  kep="kubectl edit pods"
+  kdp="kubectl describe pods"
+  kdelp="kubectl delete pods"
+  # Service management.
+  kgs="kubectl get svc"
+  kes="kubectl edit svc"
+  kds="kubectl describe svc"
+  kdels="kubectl delete svc"
+  # Secret management
+  kgsec="kubectl get secret"
+  kdsec="kubectl describe secret"
+  kdelsec="kubectl delete secret"
+  # Deployment management.
+  kgd="kubectl get deployment"
+  ked="kubectl edit deployment"
+  kdd="kubectl describe deployment"
+  kdeld="kubectl delete deployment"
+  ksd="kubectl scale deployment"
+  krsd="kubectl rollout status deployment"
+  # Rollout management.
+  kgrs="kubectl get rs"
+  krh="kubectl rollout history"
+  kru="kubectl rollout undo"'
 }
 
 node_usage () {
@@ -618,6 +656,11 @@ qemu-provisioner () {
       $virshcmd2run > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i 's|type=\"kvm\"|type=\"kvm\" xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\"|' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i "/<\/devices>/a <qemu:commandline>\n  <qemu:arg value='-fw_cfg'/>\n  <qemu:arg value='name=opt/com.coreos/config,file=$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign'/>\n</qemu:commandline>" $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
+      squawk 5 "sync the cluster directory"
+
+      squawk 9 "rsync -az $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerBasePath/"
+      rsync -az $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerBasePath/
+
       $PSEUDO virsh define $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       $PSEUDO virsh start $K8S_node
     else
@@ -813,7 +856,7 @@ copy_image_to_all_provisioning_hosts () {
 
 apparmor_fix_all_provisioning_hosts () {
   squawk 1 "apparmor_fix_all_provisioning_hosts"
-  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f7,8,9,10,11,12|sort|uniq)"
+  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f8,9,10,11,12,13|sort|uniq)"
   squawk 8 "$uniq_hosts"
   apparmor_tmp_para=$(mktemp -d)
   touch $apparmor_tmp_para/hopper
@@ -1117,6 +1160,17 @@ write_ansible_kubespray_hosts () {
 
   echo '' >> $KUBASH_ANSIBLE_HOSTS
 
+  echo '[calico-rr]' >> $KUBASH_ANSIBLE_HOSTS
+  while IFS="," read -r $csv_columns
+  do
+    if [[ "$K8S_role" == "master" ]]; then
+      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+    elif [[ "$K8S_role" == "primary_master" ]]; then
+      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+    fi
+  done <<< "$slurpy"
+
+  echo '' >> $KUBASH_ANSIBLE_HOSTS
   echo '[kube-master]' >> $KUBASH_ANSIBLE_HOSTS
   while IFS="," read -r $csv_columns
   do
@@ -1624,6 +1678,7 @@ checks () {
   check_cmd jinja2
   check_cmd yaml2json
   check_cmd jq
+  check_cmd rlwrap
   check_cmd expr
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     check_cmd parallel
@@ -1951,8 +2006,8 @@ prep_init_etcd () {
   fi
 
   # Hack, delete after rebuild
-  command2run="echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile"
-  sudo_command $this_port $this_user $this_host "$command2run"
+  #command2run="echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile"
+  #sudo_command $this_port $this_user $this_host "$command2run"
   do_command_in_parallel_on_role "etcd"          "$command2run"
   if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
     do_command_in_parallel_on_role "master"        "$command2run"
@@ -2594,16 +2649,16 @@ coreos_build  () {
   chkdir $KVM_builderDir
   chkdir $KVM_builderTMP
 
-  command2run="cd $KVM_builderTMP"
+  rsync $KUBASH_RSYNC_OPTS "ssh -p$KVM_builderPort" $KUBASH_DIR/pax/CoreOS_Image_Signing_Key.asc $KVM_builderUser@$KVM_builderHost:/tmp/
+  command2run="gpg --import --keyid-format LONG /tmp/CoreOS_Image_Signing_Key.asc"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="wget -c https://$CHANNEL.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2{,.sig}"
+  command2run="cd $KVM_builderTMP; wget -c https://$CHANNEL.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2{,.sig}"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="gpg --verify coreos_production_qemu_image.img.bz2.sig"
+  command2run="cd $KVM_builderTMP;gpg --verify coreos_production_qemu_image.img.bz2.sig"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="rm coreos_production_qemu_image.img.bz2.sig"
+  command2run="cd $KVM_builderTMP;rm coreos_production_qemu_image.img.bz2.sig"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="bunzip2 coreos_production_qemu_image.img.bz2"
-  sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
+  command2run="cd $KVM_builderTMP;bunzip2 coreos_production_qemu_image.img.bz2"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
   TARGET_FILE="$KVM_builderTMP/coreos_production_qemu_image.img"
@@ -2647,9 +2702,7 @@ packer_build  () {
   DESTINATION_FILE=$KVM_builderBasePath/$target_os-$KVM_BASE_IMG
   command2run="$MV_CMD $TARGET_FILE $DESTINATION_FILE"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt/$target_build"
-  sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
-  command2run="rmdir $KVM_builderDir/packer-$target_build-$build_virt"
+  command2run="rm -Rf $KVM_builderDir/packer-$target_build-$build_virt"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 }
 
@@ -2773,26 +2826,66 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
 
 kubash_interactive () {
   horizontal_rule
-  echo "Interactive Kubash Shell Enter 'help' for help, or 'quit' to quit"
+  echo "Interactive Kubash Shell Enter 'help' for help, 'kh' for kubectl help or 'quit' to quit"
   echo "working with the $KUBASH_CLUSTER_NAME kubash cluster, or set with 'clustername'"
-  horizontal_rule
-  echo -n 'K8$ '
   set +e
-  while read command args
+
+  while true
   do
+    myinput=$(rlwrap -f $KUBASH_DIR/.kubash_completions -s 777 -S 'K8$ ' -H $KUBASH_HISTORY -D=2 head -n1)
+    read command args <<< $myinput
+    squawk 29 "$command $args"
     case $command
     in
       quit|exit)             exit 0                       ;;
-      help|\?)               usage                        ;;
+      help|\?)               interactive_usage            ;;
+      khelp|kh)               kubectl_interactive_usage   ;;
       verbosity)             set_verbosity $args          ;;
       v)                increase_verbosity $args          ;;
-      cluster|clustername|name)      set_name      $args          ;;
-      *) interactive_results=$(kubash -n $KUBASH_CLUSTER_NAME "$command" "$args") ;;
+      switch|use|n|cluster|name) set_name  $args          ;;
+      k|kubectl) kubectl_passthru $args                   ;;
+      h|helm) helm_passthru $args                         ;;
+      g|get) kubectl_passthru get $args                   ;;
+      l|list) helm_passthru list                          ;;
+      d|describe) kubectl_passthru describe $args         ;;
+      keti) kubectl_passthru exec -ti $args               ;;
+      kgpa) kubectl_passthru get pods --all-namespaces $args ;;
+      kgp) kubectl_passthru get pods $args                ;;
+      klp) kubectl_passthru logs pods $args               ;;
+      kep) kubectl_passthru logs pods $args               ;;
+      kdp) kubectl_passthru describe pods $args           ;;
+      kdelp) kubectl_passthru delete pods $args           ;;
+      kgs) kubectl_passthru get svc $args                 ;;
+      kes) kubectl_passthru edit svc $args                ;;
+      kds) kubectl_passthru describe svc $args            ;;
+      kdels) kubectl_passthru delete svc $args            ;;
+      kgsec) kubectl_passthru get secret $args            ;;
+      kdsec) kubectl_passthru decribe secret $args        ;;
+      kdelsec) kubectl_passthru delete secret $args       ;;
+      kdp) kubectl_passthru get deployment $args          ;;
+      ked) kubectl_passthru edit deployment $args         ;;
+      kdd) kubectl_passthru describe deployment $args     ;;
+      kdeld) kubectl_passthru delete deployment $args     ;;
+      ksd) kubectl_passthru scale deployment $args        ;;
+      krsd) kubectl_passthru rollout status deployment $args ;;
+      kgrs) kubectl_passthru get rs $args                 ;;
+      krh) kubectl_passthru get rollout history $args     ;;
+      kru) kubectl_passthru get rollout undo $args        ;;
+      *) interactive_results=$(kubash -n $KUBASH_CLUSTER_NAME $command $args) ;;
     esac
     echo "$interactive_results"
-    echo -n 'K8$ '
   done
   set -e
+}
+
+kubectl_passthru () {
+    squawk 5 "kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@"
+    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@
+}
+
+helm_passthru () {
+    squawk 5 "KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm $@"
+    KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm $@
 }
 
 set_verbosity () {
@@ -2801,17 +2894,17 @@ set_verbosity () {
   else
     VERBOSITY=$1
   fi
-  squawk 1 " verbosity is now $VERBOSITY"
+  squawk 5 " verbosity is now $VERBOSITY"
 }
 
 increase_verbosity () {
   ((++VERBOSITY))
-  squawk 1 " verbosity is now $VERBOSITY"
+  squawk 5 " verbosity is now $VERBOSITY"
 }
 
 set_name () {
-  squawk 5 "set_name $1"
-  squawk 3 "Kubash will now work with the $1 cluster"
+  squawk 9 "set_name $1"
+  squawk 8 "Kubash will now work with the $1 cluster"
   KUBASH_CLUSTER_NAME="$1"
   KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
   KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
@@ -2824,6 +2917,7 @@ set_name () {
 }
 
 main () {
+  checks
   # save original io
   exec 3>&1 4>&2
   # Let's display everything on stderr.
@@ -2911,8 +3005,7 @@ main () {
         build_virt="$2"
         shift 2 ;;
       -v|--verbose)
-        VERBOSITY=`expr $VERBOSITY + 1`
-        squawk 2 " verbosity is now $VERBOSITY"
+        increase_verbosity
         shift;;
       --verbosity)
         set_verbosity $2
@@ -2960,7 +3053,6 @@ main () {
   squawk 5 "Raison set to $RAISON"
   shift
 
-  checks
 
   if [[ $RAISON = "false" || "$RAISON" = "help" ]]; then
     horizontal_rule
@@ -3298,6 +3390,14 @@ main () {
     elif [[ "$target_os" == "fedora" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=fedora-27-x86_64
+      fi
+    elif [[ "$target_os" == "kubeadm194" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=kubeadm194-7.4-x86_64
+      fi
+    elif [[ "$target_os" == "ubuntu194" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu194-16.04-amd64
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm
