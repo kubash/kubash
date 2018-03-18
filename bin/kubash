@@ -169,8 +169,9 @@ echo -n 'commands:
   grab          - Grab the .kube/config from the master
   hosts         - Write ansible hosts file
   copy          - copy the built images to the provisioning hosts
-  k *           - k commands will attempt to be passed to kubectl
-  h *           - h commands will attempt to be passed to helm
+  h *           - h commands will be passed to helm
+  k *           - k commands will be passed to kubectl
+  *             - all other commands will attempt to be passed to kubectl
   i.e.
   get pods
   get nodes
