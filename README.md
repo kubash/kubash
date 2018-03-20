@@ -19,13 +19,13 @@ Then initialize them using kubeadm, and install charts using helm.
 
 ### Oneliner installation
 
-Install with one easy line
+Install with one easy line:
 
 ```
 curl -L git.io/kubash|bash
 ```
 
-Get started by making the example clusters
+Get started by making the example clusters:
 
 ```
 cd ~/.kubash
