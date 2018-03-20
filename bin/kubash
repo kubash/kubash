@@ -169,9 +169,8 @@ echo -n 'commands:
   grab          - Grab the .kube/config from the master
   hosts         - Write ansible hosts file
   copy          - copy the built images to the provisioning hosts
-  h *           - h commands will be passed to helm
-  k *           - k commands will be passed to kubectl
-  *             - all other commands will attempt to be passed to kubectl
+  k *           - k commands will attempt to be passed to kubectl
+  h *           - h commands will attempt to be passed to helm
   i.e.
   get pods
   get nodes
@@ -185,6 +184,7 @@ echo -n 'kubectl shorthand commands:
   keti="kubectl exec -ti"
   # Pod management.
   kgp="kubectl get pods"
+  kgpa="kubectl get pods --all-namespaces"
   klp="kubectl logs pods"
   kep="kubectl edit pods"
   kdp="kubectl describe pods"
@@ -2862,7 +2862,7 @@ kubash_interactive () {
       kgsec) kubectl_passthru get secret $args            ;;
       kdsec) kubectl_passthru decribe secret $args        ;;
       kdelsec) kubectl_passthru delete secret $args       ;;
-      kdp) kubectl_passthru get deployment $args          ;;
+      kgd) kubectl_passthru get deployment $args          ;;
       ked) kubectl_passthru edit deployment $args         ;;
       kdd) kubectl_passthru describe deployment $args     ;;
       kdeld) kubectl_passthru delete deployment $args     ;;

@@ -35,7 +35,7 @@ export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
 
 #### Initializer specific options
 
-`--target-os kubeadm` This will build centos images 
+`--target-os kubeadm` This will build centos images
 with the addition of getting the kube repos added and kubeadm etc installed
 
 `--target-os kubeadm2ha` This will build centos images
