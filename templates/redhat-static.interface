@@ -1,0 +1,11 @@
+TYPE=Ethernet
+DEVICE="$this_interface"
+IPADDR=$this_ip
+ONBOOT=yes
+NOZEROCONF=yes
+USERCTL=no
+NM_CONTROLLED=no
+BOOTPROTO=static
+NAME="System $this_interface"
+$this_netmask
+$this_gateway
