@@ -12,6 +12,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:11'
@@ -28,6 +29,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:12'
@@ -44,6 +46,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:13'
@@ -60,6 +63,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:14'
@@ -76,6 +80,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:15'
@@ -92,6 +97,7 @@
         BasePath: '/var/lib/libvirt/images'
       os: kubeadm
       virt: qemu
+      sshPort: 22
       network1:
         network: network=default
         mac: '52:54:00:e2:8a:16'

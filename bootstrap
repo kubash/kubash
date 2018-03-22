@@ -137,6 +137,8 @@ main () {
   make cfssl
   make packer
   make coreos_key
+  make ct
+  make kubectl
   check_install crictl
   sudo pip install netaddr
   $KUBASH_BIN/kubash dotfiles
