@@ -936,9 +936,9 @@ do_traefik () {
   fi
 
   if [[ $USE_TRAEFIK_DAEMON_SET == 'true' ]]; then
-    TRAEFIK_URL=https://github.com/containous/traefik/tree/master/examples/k8s/traefik-ds.yaml
+    TRAEFIK_URL=https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-ds.yaml
   else
-    TRAEFIK_URL=https://github.com/containous/traefik/tree/master/examples/k8s/traefik-deployment.yaml
+    TRAEFIK_URL=https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-deployment.yaml
   fi
   kubectl --kubeconfig=$KUBECONFIG apply -f \
     $TRAEFIK_URL
@@ -3452,6 +3452,14 @@ main () {
     elif [[ "$target_os" == "ubuntu195" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=ubuntu195-16.04-amd64
+      fi
+    elif [[ "$target_os" == "kubeadm196" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=kubeadm196-7.4-x86_64
+      fi
+    elif [[ "$target_os" == "ubuntu196" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu196-16.04-amd64
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

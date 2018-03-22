@@ -1,0 +1,2 @@
+auto $this_interface
+iface $this_interface inet dhcp

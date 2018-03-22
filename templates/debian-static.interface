@@ -1,0 +1,7 @@
+auto $this_interface
+iface $this_interface inet static
+        $this_ip
+        $this_netmask
+        $this_network
+        $this_broadcast
+        $this_gateway
