@@ -1,0 +1,11 @@
+#!/bin/sh
+this_pwd=$(pwd)
+
+cd $this_pwd/submodules/kubeadm2ha
+git pull
+cd $this_pwd/submodules/kubespray
+git pull
+cd $this_pwd/submodules/openshift-ansible
+git pull
+cd $this_pwd/submodules/openebs
+git pull
