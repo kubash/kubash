@@ -1,7 +1,7 @@
 #!/bin/sh -eux
 TMP=$(mktemp -d)
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi ntp software-properties-common'}
-: ${DEB_PACKAGES_TO_INSTALL:='rsync net-tools dnsutils python-pip vim htop iotop iftop'}
+: ${DEB_PACKAGES_TO_INSTALL:='rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop'}
 
 : ${DOCKER_PKG:='17.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
@@ -44,9 +44,10 @@ export PATH=${GOPATH//://bin:}/bin:$PATH' \
 >> .bashrc
 
 install_default_docker () {
-  apt-get install -yqq --allow-downgrades docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades kubelet kubeadm kubectl
+  apt-get install -yqq --allow-downgrades \
+   docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
+   docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}') \
+   kubelet kubeadm kubectl
 
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
@@ -60,11 +61,12 @@ install_default_docker () {
 }
 
 install_spec_docker () {
-  apt-get install -yqq --allow-downgrades docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades kubelet=$(apt-cache madison kubelet | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades kubeadm=$(apt-cache madison kubeadm | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
-  apt-get install -yqq --allow-downgrades kubectl=$(apt-cache madison kubectl | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
+  apt-get install -yqq --allow-downgrades \
+   docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
+   docker-compose=$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}') \
+   kubelet=$(apt-cache madison kubelet | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}') \
+   kubeadm=$(apt-cache madison kubeadm | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}') \
+   kubectl=$(apt-cache madison kubectl | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
 
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
@@ -159,3 +161,4 @@ EOF
 chmod +x /etc/network/if-up.d/show-ip-address
 
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
+docker version

@@ -3,7 +3,7 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${INSTALL_PKGS:='fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
 : ${DOCKER_PKG:='docker-ce-17.12.1.ce-1.el7.centos.x86_64'}
 : ${DOCKER_COMPOSE_PKG:='docker-compose-1.9.0-5.el7.noarch'}
 : ${KUBEPKG_VERSION:="1.9.3-0"}

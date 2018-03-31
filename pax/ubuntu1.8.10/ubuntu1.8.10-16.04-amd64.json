@@ -327,17 +327,17 @@
     }
   ],
   "variables": {
-    "box_basename": "ubuntu195-16.04",
+    "box_basename": "ubuntu1.8.10-16.04",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
     "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
     "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
-    "kubeadm_install": "{{ env `KUBEADM_INSTALL`}}",
+    "kubeadm_install": "kubeadm",
     "k8s_su_user": "{{ env `K8S_SU_USER`}}",
-    "DOCKER_PKG": "17.12",
+    "DOCKER_PKG": "17.03",
     "DOCKER_COMPOSE_PKG": "1.8.0",
-    "KUBEPKG_VERSION": "1.9.5",
+    "KUBEPKG_VERSION": "1.8.10",
     "ETCD_VERSION": "3.2.7",
     "cpus": "1",
     "disk_size": "65536",
@@ -353,10 +353,10 @@
     "memory": "1024",
     "mirror": "http://releases.ubuntu.com",
     "mirror_directory": "16.04.3",
-    "name": "ubuntu195-16.04",
+    "name": "ubuntu1.8.10-16.04",
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "preseed.cfg",
-    "template": "ubuntu195-16.04-amd64",
+    "template": "ubuntu1.8.10-16.04-amd64",
     "version": "TIMESTAMP"
   }
 }

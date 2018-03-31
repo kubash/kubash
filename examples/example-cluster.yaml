@@ -1,4 +1,6 @@
 ---
+  csv_version: '2.0.0'
+  kubernetes_version: 'v1.9.6'
   hosts:
     my-master1:
       hostname: master01
@@ -14,9 +16,9 @@
       virt: qemu
       sshPort: 22
       network1:
+        ip: dhcp
         network: network=default
         mac: '52:54:00:e2:8a:11'
-        ip: dhcp
     my-master2:
       hostname: master02
       role: master
@@ -105,7 +107,9 @@
       network2:
         network: network=default
         mac: '52:54:00:e2:8a:17'
-        ip: dhcp
+        ip: '10.0.0.33'
+        routingprefix: '10.0.0.0'
+        subnetmask: '255.255.255.0'
       network3:
         network: network=default
         mac: '52:54:00:e2:8a:18'

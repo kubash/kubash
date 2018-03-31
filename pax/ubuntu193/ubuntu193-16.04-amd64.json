@@ -313,7 +313,7 @@
         "https_proxy={{user `https_proxy`}}",
         "KUBASH_SET_ROOT_PW={{user `root_password_to_set`}}",
         "KUBASH_SET_SU_PW={{user `su_password_to_set`}}",
-        "K8S_SU_USER=coopadmin",
+        "K8S_SU_USER={{user `k8s_su_user`}}",
         "no_proxy={{user `no_proxy`}}"
       ],
       "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
@@ -334,6 +334,7 @@
     "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
     "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
     "kubeadm_install": "{{ env `KUBEADM_INSTALL`}}",
+    "k8s_su_user": "{{ env `K8S_SU_USER`}}",
     "DOCKER_PKG": "17.12",
     "DOCKER_COMPOSE_PKG": "1.8.0",
     "KUBEPKG_VERSION": "1.9.3",

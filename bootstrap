@@ -140,6 +140,7 @@ main () {
   make ct
   make kubectl
   check_install crictl
+  check_install onessl
   sudo pip install netaddr
   $KUBASH_BIN/kubash dotfiles
   echo 'logout and log back in, or source your RC files'

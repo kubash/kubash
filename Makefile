@@ -146,7 +146,9 @@ all-examples:
 	rsync -av example/ centos; \
 	rsync -av example/ debian; \
 	rsync -av example/ ubuntu; \
-	rsync -av example/ coreos;
+	rsync -av example/ coreos; \
+	rsync -av example/ kubeadm196; \
+	rsync -av example/ ubuntu196;
 	sed -i 's/kubeadm/openshift/' $(KUBASH_DIR)/clusters/openshift/provision.csv
 	sed -i 's/master0/openshiftm0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
 	sed -i 's/node0/openshiftn0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
@@ -182,6 +184,14 @@ all-examples:
 	sed -i 's/node0/coreosn0/' $(KUBASH_DIR)/clusters/coreos/provision.csv
 	sed -i 's/8a/a1/g' $(KUBASH_DIR)/clusters/coreos/provision.csv
 	sed -i 's/^my-/coreos-/' $(KUBASH_DIR)/clusters/coreos/provision.csv
+	sed -i 's/kubeadm/kubeadm196/' $(KUBASH_DIR)/clusters/kubeadm196/provision.csv
+	sed -i 's/master0/kubeadm196m0/' $(KUBASH_DIR)/clusters/kubeadm196/provision.csv
+	sed -i 's/node0/kubeadm196n0/' $(KUBASH_DIR)/clusters/kubeadm196/provision.csv
+	sed -i 's/8a/c0/g' $(KUBASH_DIR)/clusters/kubeadm196/provision.csv
+	sed -i 's/kubeadm/ubuntu196/' $(KUBASH_DIR)/clusters/ubuntu196/provision.csv
+	sed -i 's/master0/ubuntu196m0/' $(KUBASH_DIR)/clusters/ubuntu196/provision.csv
+	sed -i 's/node0/ubuntu196n0/' $(KUBASH_DIR)/clusters/ubuntu196/provision.csv
+	sed -i 's/8a/b0/g' $(KUBASH_DIR)/clusters/ubuntu196/provision.csv
 
 example:
 	rm -Rf $(KUBASH_DIR)/clusters/example
@@ -312,9 +322,11 @@ prometheus: .prometheus.rn view-monitoring
 	kubectl create ns monitoring
 	date -I > .monitoring.ns
 
+t: tests
+
 tests:
 	@echo 'These are the bats tests'
-	bats .tests.bats
+	bats .ci/.tests.bats
 
 fail_tests:
 	@echo 'These are tests which fail and can be considered future fixes'
@@ -330,6 +342,15 @@ $(KUBASH_BIN)/ct:
 	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
 	&& chmod +x ct \
 	&& mv ct $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+onessl: $(KUBASH_BIN)/onessl
+
+$(KUBASH_BIN)/onessl:
+	$(eval TMP := $(shell mktemp -d --suffix=ONESSLTMP))
+	curl -fsSL -o $(TMP)/onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
+	chmod +x $(TMP)/onessl
+	mv $(TMP)/onessl $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 submodules/openebs:
