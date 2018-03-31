@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION='v1.9.3'
-: ${KUBERNETES_VERSION:=$KUBASH_VERSION}
+KUBASH_VERSION='v1.9.6'
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
@@ -8,6 +7,7 @@ KUBASH_VERSION='v1.9.3'
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
 : ${KUBASH_CLUSTERS_DIR:=$KUBASH_DIR/clusters}
 : ${KUBASH_CLUSTER_DIR:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME}
+: ${KUBASH_CSV_VER_FILE:=$KUBASH_CLUSTER_DIR/csv_version}
 : ${KUBASH_CLUSTER_CONFIG:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/config}
 : ${KUBASH_HOSTS_CSV:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/hosts.csv}
 : ${KUBASH_ANSIBLE_HOSTS:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/hosts}
@@ -29,6 +29,7 @@ KUBASH_VERSION='v1.9.3'
 : ${KVM_NET:='default'}
 : ${PSEUDO:=sudo}
 : ${K8S_user:=root}
+: ${K8S_SU_USER:=coopadmin}
 : ${K8S_NET:=calico}
 : ${K8S_provisionerPort:=22}
 : ${K8S_SU_PATH:='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'}
@@ -44,12 +45,16 @@ KUBASH_VERSION='v1.9.3'
 : ${INTERFACE_NET:='eth0'}
 : ${DO_KEEPALIVED:='false'}
 : ${DO_CRICTL:='false'}
-: ${ETCD_VERSION:=v3.2.16}
+: ${ETCD_VERSION:=v3.2.7}
 : ${KUBASH_RSYNC_OPTS:='-H -aze'}
 : ${CALICO_URL:=https://docs.projectcalico.org/v3.0/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml}
 : ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml}
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
+: ${VOYAGER_PROVIDER:='baremetal'}
+: ${VOYAGER_BY_HELM:= "false"}
+: ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
+: ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 
 set -e
 
@@ -72,17 +77,32 @@ net_set () {
 net_set
 
 export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
-# Rasion d'etre
+# Rasion d etre
 RAISON=false
 
 # global vars
 ANSWER_YES=no
 print_help=no
 
-# prep the columns strings for csv input
 user_csv_columns="user_email user_role"
-csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_network3 K8S_mac3 K8S_ip3"
 uniq_hosts_list_columns="K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt"
+
+set_csv_columns () {
+  # prep the columns strings for csv input
+  if [ ! -z "$1" ]; then
+    KUBASH_CSV_VER=$1
+  else
+    KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
+  fi
+  if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+    csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_routingprefix1 K8S_subnetmask1 K8S_broadcast1 K8S_gateway1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_routingprefix2 K8S_subnetmask2 K8S_broadcast2 K8S_gateway2 K8S_network3 K8S_mac3 K8S_ip3 K8S_routingprefix3 K8S_subnetmask3 K8S_broadcast3 K8S_gateway3"
+  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+    csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_network3 K8S_mac3 K8S_ip3"
+  else
+    echo 'CSV columns cannot be set CSV Version not recognized'
+    exit 1
+  fi
+}
 
 squawk () {
   # This function simplifies error reporting and verbosity
@@ -428,7 +448,15 @@ kvm-decommer () {
 
 remove_all_base_images_kvm () {
   # Now remove the cluster base images
-  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
+  if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
+  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  else
+    echo 'CSV columns cannot be set CSV Version not recognized'
+    exit 1
+  fi
   squawk 8 "$uniq_hosts"
   copy_image_tmp_para=$(mktemp -d)
   while IFS="," read -r $uniq_hosts_list_columns
@@ -444,11 +472,12 @@ decom_kvm () {
   squawk 19 "slurpy -----> $(echo $kubash_provision_csv_slurped)"
   # Write all hosts to inventory for id
   squawk 15 "decom_kvm loop starting"
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     squawk 19 "Loop $K8S_node $K8S_user $K8S_ip1 $K8S_provisionerPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
     set +e
-    kvm-decommer $K8S_node $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerPort $K8S_provisionerBasePath 
+    kvm-decommer $K8S_node $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerPort $K8S_provisionerBasePath
     set -e
   done <<< "$kubash_provision_csv_slurped"
   squawk 16 'Looped through all hosts to be decommissioned'
@@ -592,7 +621,7 @@ qemu-provisioner () {
     chkdir $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
     if [[ "$K8S_ip2" == 'null' && "$K8S_ip2" == 'null' ]]; then
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \
-      K8S_provisionerUser=$K8S_provisionerUser \
+      K8S_SU_USER=$K8S_SU_USER \
       K8S_node=$K8S_node \
       envsubst < $KUBASH_DIR/templates/user_data \
       > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data
@@ -600,7 +629,7 @@ qemu-provisioner () {
       K8S_mac2=$K8S_mac2 \
       K8S_ip2=$K8S_ip2 \
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \
-      K8S_provisionerUser=$K8S_provisionerUser \
+      K8S_SU_USER=$K8S_SU_USER \
       K8S_node=$K8S_node \
       envsubst < $KUBASH_DIR/templates/user_data_two_interface \
       > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data
@@ -611,7 +640,7 @@ qemu-provisioner () {
       K8S_mac3=$K8S_mac3 \
       K8S_ip3=$K8S_ip3 \
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \
-      K8S_provisionerUser=$K8S_provisionerUser \
+      K8S_SU_USER=$K8S_SU_USER \
       K8S_node=$K8S_node \
       envsubst < $KUBASH_DIR/templates/user_data_three_interface \
       > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data
@@ -713,6 +742,7 @@ provisioner () {
     rm $KUBASH_HOSTS_CSV
   fi
   touch $KUBASH_HOSTS_CSV
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
       if [[ "$apparmor_fixed" == 'false' && "$K8S_os" == "coreos" ]]; then
@@ -731,12 +761,116 @@ provisioner () {
   done <<< "$slurpy"
 }
 
+configure_secondary_network_interfaces () {
+  squawk 1 "configure_secondary_network_interfaces"
+  slurpy="$(grep -v '^#' $KUBASH_HOSTS_CSV)"
+  squawk 8 "$slurpy"
+  configure_static_network_addresses_tmp=$(mktemp -d)
+  set_csv_columns
+  while IFS="," read -r $csv_columns
+  do
+    squawk 7 "Os is $K8S_os"
+    if [[ $K8S_os =~ debian* || $K8S_os =~ ubuntu* ]]; then
+      if [ "$K8S_network2" = 'null' ]; then
+        squawk 7 "K8S_network2 is null"
+      else
+        squawk 7 "K8S_network2 is $K8S_network2"
+        export this_interface=eth1
+        if [ "$K8S_ip2" = 'dhcp' ]; then
+          squawk 7 "network2 is DHCP"
+          envsubst < $KUBASH_DIR/templates/debian-dhcp.interface \
+          > $configure_static_network_addresses_tmp/kubash_interface
+          rsync $KUBASH_RSYNC_OPTS "ssh -p $K8S_sshPort" \
+            $configure_static_network_addresses_tmp/kubash_interface \
+            $K8S_SU_USER@$K8S_ip1:/tmp/kubash_interface-$this_interface.cfg
+          command2run="mv -v /tmp/kubash_interface-$this_interface.cfg /etc/network/interfaces.d/kubash_interface-$this_interface.cfg"
+          sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+        else
+          squawk 7 "network2 is static setting"
+          #sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+          if [ ! "$K8S_ip2" = 'null' ]; then
+            export this_ip="address $K8S_ip2"
+          fi
+          if [ ! "$K8S_subnetmask2" = 'null' ]; then
+            export this_netmask="netmask $K8S_subnetmask2"
+          fi
+          if [ ! "$K8S_routingprefix2" = 'null' ]; then
+            export this_network="network $K8S_routingprefix2"
+          fi
+          if [ ! "$K8S_broadcast2" = 'null' ]; then
+            export this_broadcast="broadcast $K8S_broadcast2"
+          fi
+          if [ ! "$K8S_gateway2" = 'null' ]; then
+            export this_gateway="gateway $K8S_gateway2"
+          fi
+          envsubst < $KUBASH_DIR/templates/debian-static.interface \
+          > $configure_static_network_addresses_tmp/kubash_interface
+          rsync $KUBASH_RSYNC_OPTS "ssh -p $K8S_sshPort" \
+            $configure_static_network_addresses_tmp/kubash_interface \
+            $K8S_SU_USER@$K8S_ip1:/tmp/kubash_interface-$this_interface.cfg
+          command2run="mv -v /tmp/kubash_interface-$this_interface.cfg /etc/network/interfaces.d/kubash_interface-$this_interface.cfg"
+          sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+        fi
+        command2run="ifup $this_interface"
+        sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+      fi
+      if [ "$K8S_network3" = 'null' ]; then
+        squawk 7 "K8S_network3 is null"
+      else
+        squawk 7 "K8S_network3 is $K8S_network3"
+        export this_interface=eth2
+        if [ "$K8S_ip3" = 'dhcp' ]; then
+          envsubst < $KUBASH_DIR/templates/debian-dhcp.interface \
+          > $configure_static_network_addresses_tmp/kubash_interface
+          rsync $KUBASH_RSYNC_OPTS "ssh -p $K8S_sshPort" \
+            $configure_static_network_addresses_tmp/kubash_interface \
+            $K8S_SU_USER@$K8S_ip1:/tmp/kubash_interface-$this_interface.cfg
+          command2run="mv -v /tmp/kubash_interface-$this_interface.cfg /etc/network/interfaces.d/kubash_interface-$this_interface.cfg"
+          sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+        else
+          #sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+          if [ ! "$K8S_ip3" = 'null' ]; then
+            export this_ip="address $K8S_ip3"
+          fi
+          if [ ! "$K8S_subnetmask3" = 'null' ]; then
+            export this_netmask="netmask $K8S_subnetmask3"
+          fi
+          if [ ! "$K8S_routingprefix3" = 'null' ]; then
+            export this_network="network $K8S_routingprefix3"
+          fi
+          if [ ! "$K8S_broadcast3" = 'null' ]; then
+            export this_broadcast="broadcast $K8S_broadcast3"
+          fi
+          if [ ! "$K8S_gateway3" = 'null' ]; then
+            export this_gateway="gateway $K8S_gateway3"
+          fi
+          envsubst < $KUBASH_DIR/templates/debian-static.interface \
+          > $configure_static_network_addresses_tmp/kubash_interface
+          rsync $KUBASH_RSYNC_OPTS "ssh -p $K8S_sshPort" \
+            $configure_static_network_addresses_tmp/kubash_interface \
+            $K8S_SU_USER@$K8S_ip1:/tmp/kubash_interface-$this_interface.cfg
+          command2run="mv -v /tmp/kubash_interface-$this_interface.cfg /etc/network/interfaces.d/kubash_interface-$this_interface.cfg"
+          sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+        fi
+        command2run="ifup $this_interface"
+        sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+      fi
+    else
+      squawk 1 "OS not supported by network configurator"
+    fi
+  done <<< "$slurpy"
+  rm $configure_static_network_addresses_tmp/kubash_interface
+  rmdir $configure_static_network_addresses_tmp
+  squawk 19 'secondary network interfaces configured'
+}
+
 refresh_network_addresses () {
   squawk 1 "refresh_network_addresses"
   slurpy="$(grep -v '^#' $KUBASH_PROVISION_CSV)"
   squawk 8 "$slurpy"
   rm $KUBASH_HOSTS_CSV
   touch $KUBASH_HOSTS_CSV
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
       net_type=$(echo $K8S_network1|cut -f1 -d=)
@@ -787,11 +921,10 @@ refresh_network_addresses () {
       fi
       squawk 5 "adding to $KUBASH_HOSTS_CSV"
       if [[ "$K8S_os" == 'coreos' ]]; then
-        this_K8S_user=$K8S_provisionerUser
+        this_K8S_user=$K8S_SU_USER
       else
         this_K8S_user=$K8S_user
       fi
-      squawk 9 "preview $K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
       countzero=0
       set +e
       this_ssh_status=254
@@ -809,8 +942,19 @@ refresh_network_addresses () {
         ((++countzero))
       done
       set -e
-      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
-      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" >> $KUBASH_HOSTS_CSV
+      KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
+      if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+        squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3"
+        echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3" \
+          >> $KUBASH_HOSTS_CSV
+      elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+        squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
+        echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$this_node_ip,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" \
+          >> $KUBASH_HOSTS_CSV
+      else
+        echo 'CSV columns cannot be set CSV Version not recognized'
+        exit 1
+      fi
       this_node_ip=''
   done <<< "$slurpy"
   squawk 19 'network addresses refreshed'
@@ -819,7 +963,15 @@ refresh_network_addresses () {
 copy_image_to_all_provisioning_hosts () {
   squawk 1 "copy_image_to_all_provisioning_hosts"
 
-  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
+  if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
+  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  else
+    echo 'CSV columns cannot be set CSV Version not recognized'
+    exit 1
+  fi
   squawk 8 "$uniq_hosts"
   copy_image_tmp_para=$(mktemp -d)
   touch $copy_image_tmp_para/hopper
@@ -862,7 +1014,15 @@ copy_image_to_all_provisioning_hosts () {
 
 apparmor_fix_all_provisioning_hosts () {
   squawk 1 "apparmor_fix_all_provisioning_hosts"
-  uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
+  if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
+  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f9,10,11,12,13,14|sort|uniq)"
+  else
+    echo 'CSV columns cannot be set CSV Version not recognized'
+    exit 1
+  fi
   squawk 8 "$uniq_hosts"
   apparmor_tmp_para=$(mktemp -d)
   touch $apparmor_tmp_para/hopper
@@ -928,17 +1088,55 @@ do_net () {
   fi
 }
 
+do_searchlight () {
+  squawk 1 " do_searchlight"
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+    $KUBASH_DIR/templates/searchlight.yaml
+}
+
+do_voyager () {
+  squawk 1 " do_voyager"
+  if [ "$VOYAGER_BY_HELM" = "true" ]; then
+  helm install stable/voyager --name voyager \
+    --set cloudProvider=$VOYAGER_PROVIDER \
+    --set apiserver.ca="$(onessl get kube-ca)" \
+    $VOYAGER_ADMISSIONWEBHOOK
+  else
+  KUBECONFIG=$KUBECONFIG \
+  curl -fsSL \
+    https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+    | bash -s -- --provider=$VOYAGER_PROVIDER
+  fi
+  # lets encrypt
+  KUBECONFIG=$KUBECONFIG \
+  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+      | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
+}
+
+do_linkerd () {
+  squawk 1 " do_linkerd"
+  kubectl --kubeconfig=$KUBECONFIG \
+    create ns l5d-system
+  kubectl --kubeconfig=$KUBECONFIG \
+    -n l5d-system \
+    apply -f \
+    $LINKERD_URL
+  squawk 1 "kubectl create ns l5d-system"
+  squawk 1 "kubectl apply -f https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml -n l5d-system"
+  squawk 1 "visit this page: https://buoyant.io/2017/04/06/a-service-mesh-for-kubernetes-part-viii-linkerd-as-an-ingress-controller/"
+}
+
 do_traefik () {
   squawk 1 " do_traefik"
   if [[ $USE_TRAEFIK_RBAC == 'true' ]]; then
     kubectl --kubeconfig=$KUBECONFIG apply -f \
-    https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-rbac.yaml
+    $KUBASH_DIR/templates/traefik-rbac.yaml
   fi
 
   if [[ $USE_TRAEFIK_DAEMON_SET == 'true' ]]; then
-    TRAEFIK_URL=https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-ds.yaml
+    TRAEFIK_URL=$KUBASH_DIR/templates/traefik-ds.yaml
   else
-    TRAEFIK_URL=https://raw.githubusercontent.com/containous/traefik/master/examples/k8s/traefik-deployment.yaml
+    TRAEFIK_URL=$KUBASH_DIR/templates/traefik-deployment.yaml
   fi
   kubectl --kubeconfig=$KUBECONFIG apply -f \
     $TRAEFIK_URL
@@ -969,6 +1167,7 @@ write_ansible_kubeadm2ha_hosts () {
     touch $KUBASH_ANSIBLE_HOSTS
   fi
   # Write all hosts to inventory for id
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     echo "$K8S_node ansible_ssh_host=$K8S_ip1 ansible_ssh_port=$K8S_sshPort ansible_user=$K8S_provisionerUser" >> $KUBASH_ANSIBLE_HOSTS
@@ -1075,6 +1274,7 @@ write_ansible_openshift_hosts () {
     touch $KUBASH_ANSIBLE_HOSTS
   fi
   # Write all hosts to inventory for id
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     echo "$K8S_node ansible_ssh_host=$K8S_ip1 ansible_ssh_port=$K8S_sshPort ansible_user=$K8S_provisionerUser" >> $KUBASH_ANSIBLE_HOSTS
@@ -1161,6 +1361,7 @@ write_ansible_kubespray_hosts () {
     touch $KUBASH_ANSIBLE_HOSTS
   fi
   # Write all hosts to inventory for id
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     echo "$K8S_node ansible_ssh_host=$K8S_ip1 ansible_ssh_port=$K8S_sshPort ansible_user=$K8S_provisionerUser" >> $KUBASH_ANSIBLE_HOSTS
@@ -1337,6 +1538,7 @@ remove_vagrant_user () {
   remove_vagrant_user_tmp_para=$(mktemp -d)
   squawk 2 ' Remove vagrant user from all hosts using ssh'
   touch $remove_vagrant_user_tmp_para/hopper
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     squawk 1 "$K8S_ip1"
@@ -1369,6 +1571,7 @@ hostname_in_parallel () {
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     my_HOST=$K8S_node
@@ -1395,6 +1598,7 @@ hostname_in_parallel () {
 ping_in_parallel () {
   ping_tmp_para=$(mktemp -d --suffix='.para.tmp')
   squawk 2 ' Pinging all hosts using ssh'
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     squawk 1 "$K8S_ip1"
@@ -1418,6 +1622,7 @@ ping_in_parallel () {
 
 ping () {
   squawk 2 ' Pinging all hosts using ssh'
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     squawk 1 "$K8S_ip1"
@@ -1471,6 +1676,7 @@ dotfiles_install () {
 do_grab () {
   squawk 1 " do_grab"
   do_grab_master_count=0
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "primary_master" ]]; then
@@ -1485,6 +1691,7 @@ do_grab () {
 check_coreos () {
   squawk 1 " check_coreos"
   do_coreos_init_count=0
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_os" == "coreos" ]]; then
@@ -1532,6 +1739,7 @@ master_init_join () {
   rm -f $KUBASH_CLUSTER_DIR/ingress.ip2
   rm -f $KUBASH_CLUSTER_DIR/ingress.ip3
   rm -f $KUBASH_CLUSTER_DIR/primary_master.ip1
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "ingress" ]]; then
@@ -1597,7 +1805,7 @@ master_init_join () {
     squawk 3 'master_init_join kubeadm init'
     if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
       kubeadmin_config_tmp=$(mktemp)
-      KUBERNETES_VERSION=$KUBERNETES_VERSION \
+      KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
       my_master_ip=$my_master_ip \
       load_balancer_ip=$K8S_load_balancer_ip \
       my_KUBE_CIDR=$my_KUBE_CIDR \
@@ -1638,6 +1846,10 @@ master_init_join () {
     rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $my_master_user@$my_master_ip:/tmp/kube-pki.tgz $KUBASH_CLUSTER_DIR/
     squawk 5 'and copy it to master and etcd hosts'
     copy_in_parallel_to_role "master" "$KUBASH_CLUSTER_DIR/kube-pki.tgz" "/tmp/"
+    if [ "$VERBOSITY" -gt 5 ]; then
+      command2run='cd /; tar ztvf /tmp/kube-pki.tgz'
+      do_command_in_parallel_on_role "master"        "$command2run"
+    fi
     command2run='cd /; tar zxf /tmp/kube-pki.tgz'
     do_command_in_parallel_on_role "master"        "$command2run"
     command2run='rm /tmp/kube-pki.tgz'
@@ -1782,6 +1994,7 @@ read_csv () {
   squawk 1 " read_csv"
   read_master_count=0
 
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     squawk 5 "$K8S_node $K8S_user $K8S_ip1 $K8S_sshPort $K8S_role $K8S_provisionerUser $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort"
@@ -1829,6 +2042,7 @@ grant_users () {
   touch $grant_users_tmp_para/hopper
   slurpy="$(grep -v '^#' $KUBASH_USERS_CSV)"
   # user_csv_columns="user_email user_role"
+  set_csv_columns
   while IFS="," read -r $user_csv_columns
   do
     squawk 9 "user_name=$user_name user_email=$user_email user_role=$user_role"
@@ -1847,11 +2061,11 @@ grant_users () {
 }
 
 finish_pki_for_masters () {
-  squawk 5 'finish_pki_for_masters $@'
+  squawk 5 "finish_pki_for_masters $@"
   if [[ $# -ne 4 ]]; then
     kubash_interactive
     echo 'Arguments does not equal 4!'
-    echo 'Arguments: $@'
+    echo "Arguments: $@"
     exit 1
   fi
   this_user=$1
@@ -1861,7 +2075,7 @@ finish_pki_for_masters () {
   command2run='mkdir -p /etc/kubernetes/pki/etcd'
   sudo_command $this_port $this_user $this_host "$command2run"
   squawk 5 'cp the etcd pki files'
-  command2run='cp /etc/etcd/pki/ca.pem /etc/etcd/pki/client.pem /etc/etcd/pki/client-key.pem /etc/kubernetes/pki/etcd/'
+  command2run="cp -v /etc/etcd/pki/ca.pem /etc/etcd/pki/client.pem /etc/etcd/pki/client-key.pem /etc/kubernetes/pki/etcd/"
   sudo_command $this_port $this_user $this_host "$command2run"
 }
 
@@ -1891,7 +2105,7 @@ finish_etcd () {
     squawk 9 'Etcd binary already downloaded'
   else
     cd $KUBASH_DIR/tmp
-    wget -c https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz 
+    wget -c https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz
   fi
   command2run='id -u etcd &>/dev/null || useradd etcd'
   sudo_command $this_port $this_user $this_host "$command2run"
@@ -1942,6 +2156,7 @@ start_etcd () {
   touch $start_etcd_tmp_para/endpoints.line
   echo 'etcd:' >> $start_etcd_tmp_para/endpoints.line
   echo '  endpoints:' > $start_etcd_tmp_para/endpoints.line
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "etcd" || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
@@ -2025,14 +2240,10 @@ prep_init_etcd () {
 
   squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $this_port' ${KUBASH_BIN}/cfssljson $this_user@$this_host:/tmp/cfssljson"
   rsync $KUBASH_RSYNC_OPTS "ssh -p $this_port" "${KUBASH_BIN}/cfssljson" $this_user@$this_host:/tmp/cfssljson
-  copy_in_parallel_to_role "master" "${KUBASH_BIN}/cfssljson" "/tmp/cfssljson"
-  copy_in_parallel_to_role "etcd"   "${KUBASH_BIN}/cfssljson" "/tmp/cfssljson"
-  command2run='mv /tmp/cfssljson /usr/local/bin/cfssljson'
+  copy_in_parallel_to_all "${KUBASH_BIN}/cfssljson" "/tmp/cfssljson"
+  command2run='cp /tmp/cfssljson /usr/local/bin/cfssljson'
   sudo_command $this_port $this_user $this_host "$command2run"
-  do_command_in_parallel_on_role "etcd"          "$command2run"
-  if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
-    do_command_in_parallel_on_role "master"        "$command2run"
-  fi
+  do_command_in_parallel "$command2run"
 
   # Hack, delete after rebuild
   #command2run="echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile"
@@ -2094,6 +2305,7 @@ do_etcd () {
   touch $do_etcd_tmp_para/endpoints.line
   echo 'etcd:' >> $do_etcd_tmp_para/endpoints.line
   echo '  endpoints:' > $do_etcd_tmp_para/endpoints.line
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
@@ -2140,6 +2352,7 @@ do_etcd () {
   countzero=0
   prepTMP=$(mktemp -d)
   touch $prepTMP/hopper
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "primary_master"  ]]; then
@@ -2177,15 +2390,16 @@ do_primary_master () {
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "primary_master" ]]; then
       if [[ "$do_master_count" -lt "1" ]]; then
         squawk 9 "master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_sshPort"
-        master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_sshPort
+        master_init_join $K8S_node $K8S_ip1 $K8S_SU_USER $K8S_sshPort
       else
   echo 'There should only be one init master! Skipping this master'
-        echo "master_init_join $K8S_node $K8S_ip1 $K8S_provisionerUser $K8S_sshPort"
+        echo "master_init_join $K8S_node $K8S_ip1 $K8S_SU_USER $K8S_sshPort"
       fi
       ((++do_master_count))
     fi
@@ -2206,6 +2420,7 @@ do_scale_up_kube_dns () {
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" || "$K8S_role" == "primary_master" ]]; then
@@ -2225,7 +2440,7 @@ do_masters_in_parallel () {
   if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
     kubeadmin_config_tmp=$(mktemp)
     my_master_ip=$my_master_ip \
-    KUBERNETES_VERSION=$KUBERNETES_VERSION \
+    KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
     load_balancer_ip=$K8S_load_balancer_ip \
     my_KUBE_CIDR=$my_KUBE_CIDR \
     ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/endpoints.line) \
@@ -2242,17 +2457,18 @@ do_masters_in_parallel () {
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" ]]; then
       if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
         my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/tmp/config.yaml"
         squawk 5 "$my_KUBE_INIT"
-        echo "ssh -n $K8S_provisionerUser@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
+        echo "ssh -n $K8S_SU_USER@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
       else
         my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --pod-network-cidr=$my_KUBE_CIDR"
         squawk 5 "$my_KUBE_INIT"
-        echo "ssh -n $K8S_provisionerUser@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
+        echo "ssh -n $K8S_SU_USER@$K8S_ip1 '$my_KUBE_INIT'" >> $do_master_tmp/hopper
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -2283,10 +2499,11 @@ do_nodes_in_parallel () {
     hosts_csv_slurp
   fi
   countzero_do_nodes=0
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     if [[ "$K8S_role" == "node" ]]; then
-      echo "kubash -n $KUBASH_CLUSTER_NAME node_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_provisionerUser --node-join-port $K8S_sshPort --node-join-role node" \
+      echo "kubash -n $KUBASH_CLUSTER_NAME node_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_SU_USER --node-join-port $K8S_sshPort --node-join-role node" \
         >> $do_nodes_tmp_para/hopper
     else
       squawk 1 " K8S_role NOT NODE"
@@ -2311,7 +2528,7 @@ do_command_in_parallel () {
   do_command_tmp_para=$(mktemp -d)
   command2run=$1
   touch $do_command_tmp_para/hopper
-  squawk 3 " do_command_in_parallel $1"
+  squawk 3 " do_command_in_parallel $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     squawk 19 'slurp empty'
     hosts_csv_slurp
@@ -2320,12 +2537,13 @@ do_command_in_parallel () {
   fi
   countzero_do_nodes=0
   squawk 20 'Start while loop'
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     ((++countzero_do_nodes))
     squawk 19 " count $countzero_do_nodes"
-    squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
-    echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+    squawk 5 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
+    echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
         >> $do_command_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
 
@@ -2341,9 +2559,9 @@ do_command_in_parallel () {
 }
 
 do_command () {
-  squawk 3 " do_command $@" 
+  squawk 3 " do_command $@"
   if [[ ! $# -eq 4 ]]; then
-    echo "do_command $@ <--- arguments does not equal 4!!!" 
+    echo "do_command $@ <--- arguments does not equal 4!!!"
     exit 1
   fi
   this_port=$1
@@ -2361,10 +2579,10 @@ do_command () {
 
 sudo_command () {
   if [[ ! $# -eq 4 ]]; then
-    echo "sudo_command $@ <--- arguments does not equal 4!!!" 
+    echo "sudo_command $@ <--- arguments does not equal 4!!!"
     exit 1
   fi
-  squawk 3 " sudo_command '$1' '$2' '$3 '$4'" 
+  squawk 3 " sudo_command '$1' '$2' '$3 '$4'"
   this_port=$1
   this_user=$2
   this_host=$3
@@ -2383,14 +2601,15 @@ copy_in_parallel_to_all () {
   file2copy=$1
   destination=$2
   touch $copy_in_to_all_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_all"
+  squawk 3 " copy_in_parallel_to_all $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
-    squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
-    echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
+  do
+    squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"
+    echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"\
       >> $copy_in_to_all_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
 
@@ -2411,16 +2630,17 @@ copy_in_parallel_to_role () {
   file2copy=$2
   destination=$3
   touch $copy_in_to_role_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_role"
+  squawk 3 " copy_in_parallel_to_role $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     if [[ "$K8S_role" == "$role2copy2" ]]; then
       squawk 3 " count $countzero_do_nodes"
-      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
-      echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
+      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"
+      echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"\
         >> $copy_in_to_role_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -2442,16 +2662,17 @@ copy_in_parallel_to_os () {
   file2copy=$2
   destination=$3
   touch $copy_in_to_os_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_os"
+  squawk 3 " copy_in_parallel_to_os $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     if [[ "$K8S_os" == "$os2copy2" ]]; then
       squawk 3 " count $countzero_do_nodes"
-      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"
-      echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_provisionerUser@$K8S_ip1:$destination"\
+      squawk 5 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"
+      echo "rsync $KUBASH_RSYNC_OPTS 'ssh -p $K8S_sshPort' $file2copy $K8S_SU_USER@$K8S_ip1:$destination"\
         >> $copy_in_to_os_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -2472,16 +2693,17 @@ do_command_in_parallel_on_role () {
   role2runiton=$1
   command2run=$2
   touch $do_command_on_role_tmp_para/hopper
-  squawk 3 " do_command_in_parallel"
+  squawk 3 " do_command_in_parallel_on_role $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     if [[ "$K8S_role" == "$role2runiton" ]]; then
       squawk 19 " count $countzero_do_nodes"
-      squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
-      echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+      squawk 5 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
+      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
         >> $do_command_on_role_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -2498,12 +2720,13 @@ do_command_in_parallel_on_role () {
 }
 
 do_test () {
-  squawk 3 " do_command_in_parallel"
+  squawk 3 " do_test $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     echo "K8S_node=$K8S_node
 K8S_role=$K8S_role
 K8S_cpuCount=$K8S_cpuCount
@@ -2513,7 +2736,7 @@ K8S_network1=$K8S_network1
 K8S_mac1=$K8S_mac1
 K8S_ip1=$K8S_ip1
 K8S_provisionerHost=$K8S_provisionerHost
-K8S_provisionerUser=$K8S_provisionerUser
+K8S_SU_USER=$K8S_SU_USER
 K8S_provisionerPort=$K8S_provisionerPort
 K8S_provisionerBasePath=$K8S_provisionerBasePath
 K8S_os=$K8S_os
@@ -2532,16 +2755,17 @@ do_command_in_parallel_on_os () {
   os2runiton=$1
   command2run=$2
   touch $do_command_on_os_tmp_para/hopper
-  squawk 3 " do_command_in_parallel"
+  squawk 3 " do_command_in_parallel $@"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  set_csv_columns
   while IFS="," read -r $csv_columns
-  do 
+  do
     if [[ "$K8S_os" == "$os2runiton" ]]; then
       squawk 19 " count $countzero_do_nodes"
-      squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""
-      echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+      squawk 5 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
+      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
         >> $do_command_on_os_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -2573,6 +2797,7 @@ process_hosts_csv () {
 
 prep () {
   squawk 5 " prep"
+  set_csv_columns
   while IFS="," read -r $csv_columns
   do
     preppy $K8S_node $K8S_ip1 $K8S_sshPort
@@ -2770,6 +2995,7 @@ build_all_in_parallel () {
 }
 
 yaml2cluster () {
+  squawk 15 "yaml2cluster"
   yaml2cluster_tmp=$(mktemp -d)
   if [[ -z "$1" ]]; then
     echo 'yaml2cluster requires an argument'
@@ -2784,6 +3010,7 @@ yaml2cluster () {
 }
 
 json2cluster () {
+  squawk 15 "json2cluster"
   json2cluster_tmp=$(mktemp -d)
   if [[ -z "$1" ]]; then
     echo 'json2cluster requires an argument'
@@ -2798,11 +3025,33 @@ json2cluster () {
     exit 1
   fi
 
-  # provision.csv
-  jq -r \
-    '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip) "' \
-    $this_json >  $json2cluster_tmp/tmp.csv
+  # csv_version
+  # should be a string not an int!
+  jq -r '.csv_version | "\(.)" ' \
+    $this_json > $json2cluster_tmp/csv_version
+  # kubernetes_version
+  # should be a string not an int!
+  jq -r '.kubernetes_version | "\(.)" ' \
+    $this_json > $json2cluster_tmp/kubernetes_version
 
+  KUBASH_CSV_VER=$(cat $json2cluster_tmp/csv_version)
+  squawk 11 "CSV_VER=$KUBASH_CSV_VER"
+  if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+    # provision.csv
+    jq -r \
+      '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.network1.routingprefix),\(.network1.subnetmask),\(.network1.broadcast),\(.network1.gateway),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network2.routingprefix),\(.network2.subnetmask),\(.network2.broadcast),\(.network2.gateway),\(.network3.network),\(.network3.mac),\(.network3.ip),\(.network3.routingprefix),\(.network3.subnetmask),\(.network3.broadcast),\(.network3.gateway)"' \
+      $this_json >  $json2cluster_tmp/tmp.csv
+  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+    # provision.csv
+    jq -r \
+      '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \
+      $this_json >  $json2cluster_tmp/tmp.csv
+  else
+    echo 'CSV columns cannot be set CSV Version not recognized'
+    exit 1
+  fi
+
+  set_csv_columns $KUBASH_CSV_VER
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_mac1" == 'null' ]]; then
@@ -2818,15 +3067,24 @@ json2cluster () {
         K8S_mac3=$(VERBOSITY=0 kubash --verbosity=1 genmac)
       fi
     fi
-    echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" \
-      >>  $json2cluster_tmp/provision.csv
+    if [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
+      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3"
+      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3" \
+        >>  $json2cluster_tmp/provision.csv
+    elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
+      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" \
+        >>  $json2cluster_tmp/provision.csv
+    else
+      echo 'CSV columns cannot be set CSV Version not recognized'
+      exit 1
+    fi
   done < "$json2cluster_tmp/tmp.csv"
 
   rm $json2cluster_tmp/tmp.csv
   squawk 5 "$(cat $json2cluster_tmp/provision.csv)"
 
   # ca-data.yaml
-#### BEGIN --> Indention break warning <-- BEGIN
+#### BEGIN --> Indentation break warning <-- BEGIN
   jq -r \
     '.ca[] | "CERT_COMMON_NAME: \(.CERT_COMMON_NAME)
 CERT_COUNTRY: \(.CERT_COUNTRY)
@@ -2835,7 +3093,7 @@ CERT_ORGANISATION: \(.CERT_ORGANISATION)
 CERT_STATE: \(.CERT_STATE)
 CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
     $this_json >  $json2cluster_tmp/ca-data.yaml
-#### END --> Indention break warning <-- END
+#### END --> Indentation break warning <-- END
   squawk 5 "$(cat $json2cluster_tmp/ca-data.yaml)"
 
   # net_set
@@ -2846,6 +3104,7 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
   # users.csv
   jq -r '.users | to_entries[] | "\(.key),\(.value.role)"' \
     $this_json >  $json2cluster_tmp/users.csv
+
 
   $CP_CMD $KUBASH_DIR/templates/ca-csr.json $json2cluster_tmp/
   $CP_CMD $KUBASH_DIR/templates/ca-config.json $json2cluster_tmp/
@@ -2944,6 +3203,7 @@ set_name () {
   KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
   KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
   KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
+  KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
   net_set
 }
 
@@ -3274,6 +3534,15 @@ main () {
     DO_MASTER_JOIN=true
     initialize
     do_grab
+  elif [[ $RAISON == "minit" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      init_usage
+      exit 1
+    fi
+    DO_MASTER_JOIN=false
+    DO_NODE_JOIN=false
+    initialize
   elif [[ $RAISON == "nodes" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -3296,6 +3565,8 @@ main () {
       kubeadm_reset
       initialize
       do_grab
+      ping
+      exit 0
     elif [[ "$initializer" == "kubespray" ]]; then
       kubespray_initialize
       exit 0
@@ -3327,17 +3598,45 @@ main () {
       exit 1
     fi
     json2cluster $@
+  elif [[ $RAISON == "searchlight" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_searchlight
+  elif [[ $RAISON == "voyager" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_voyager
+  elif [[ $RAISON == "configure_interfaces" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    configure_secondary_network_interfaces
   elif [[ $RAISON == "traefik" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
-      init_usage
+      usage
       exit 1
     fi
     do_traefik
+  elif [[ $RAISON == "linkerd" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_linkerd
   elif [[ $RAISON == "tiller" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
-      init_usage
+      usage
       exit 1
     fi
     do_tiller
@@ -3460,6 +3759,14 @@ main () {
     elif [[ "$target_os" == "ubuntu196" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=ubuntu196-16.04-amd64
+      fi
+    elif [[ "$target_os" == "kubeadm197" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=kubeadm197-7.4-x86_64
+      fi
+    elif [[ "$target_os" == "ubuntu197" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu197-16.04-amd64
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

@@ -53,32 +53,32 @@ setup () {
 }
 
 @test "yaml2cluster localhost" {
-  result="$(cut -f9 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f13 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = 'localhost' ]
 }
 
 @test "yaml2cluster root" {
-  result="$(cut -f10 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f14 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = 'root' ]
 }
 
 @test "yaml2cluster 22" {
-  result="$(cut -f11 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f15 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" -eq 22 ]
 }
 
 @test "yaml2cluster libvirt" {
-  result="$(cut -f12 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f16 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = '/var/lib/libvirt/images' ]
 }
 
 @test "yaml2cluster kubeadm" {
-  result="$(cut -f13 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f17 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = 'kubeadm' ]
 }
 
 @test "yaml2cluster qemu" {
-  result="$(cut -f14 -d, clusters/$MY_TMP/provision.csv|head -n1)"
+  result="$(cut -f18 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = 'qemu' ]
 }
 @test "rm cluster test dir" {

@@ -199,6 +199,10 @@ See the [debugging](./docs/debug.md) page for more
 
 see the [Interactive Mode](./docs/interactive.md) documentation
 
+### [Ingress](./docs/ingress.md)
+
+There are a few shortcuts for installing ingress into the cluster
+
 ### Parallel jobs
 
 To set the number of concurrent jobs export PARALLEL_JOBS e.g.

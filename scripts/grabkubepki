@@ -2,7 +2,7 @@
 TMP=$(mktemp -d)
 tar_file=kube-pki.tgz
 cd /
-tar -czf $TMP/$tar_file /etc/kubernetes/pki/[sc]a.* /etc/kubernetes/pki/etcd
+tar -czf $TMP/$tar_file /etc/kubernetes/pki
 chmod 755 $TMP/$tar_file
 mv $TMP/$tar_file /tmp/$tar_file
 rmdir $TMP
