@@ -208,8 +208,9 @@ echo -n 'kubectl shorthand commands:
   # Drop into an interactive terminal on a container
   keti="kubectl exec -ti"
   # Pod management.
-  kgp="kubectl get pods"
-  kgpa="kubectl get pods --all-namespaces"
+  kgp="kubectl get pods| grep -v '^pvc-' "
+  kgpa="kubectl get pods --all-namespaces| grep -v '^pvc-' "
+  kgpvc="kubectl get pods | grep '^pvc-' "
   klp="kubectl logs pods"
   kep="kubectl edit pods"
   kdp="kubectl describe pods"
@@ -230,6 +231,8 @@ echo -n 'kubectl shorthand commands:
   kdeld="kubectl delete deployment"
   ksd="kubectl scale deployment"
   krsd="kubectl rollout status deployment"
+  # voyager management.
+  kei="kubectl edit ingress.voyager.appscode.com "
   # Rollout management.
   kgrs="kubectl get rs"
   krh="kubectl rollout history"
@@ -534,6 +537,179 @@ vbox-provisioner () {
   exit 1
 }
 
+gke_yaml2cluster () {
+  yaml2cluster_tmp=$(mktemp -d)
+  echo yaml2cluster
+  if [[ -z "$1" ]]; then
+    echo 'gke_yaml2cluster requires an argument'
+    exit 1
+  fi
+  this_yaml=$1
+  this_json=$yaml2cluster_tmp/this.json
+  yaml2json $this_yaml > $this_json
+  gke_json2cluster $this_json
+  rm $this_json
+  rm -Rf $yaml2cluster_tmp
+}
+
+gke_json2cluster () {
+  json2cluster_tmp=$(mktemp -d)
+  if [[ -z "$1" ]]; then
+    echo 'json2cluster requires an argument'
+    exit 1
+  fi
+  this_json=$1
+
+  # csv_version
+  # should be a string not an int!
+  jq -r '.csv_version | "\(.)" ' \
+    $this_json > $json2cluster_tmp/csv_version
+  # kubernetes_version
+  # should be a string not an int!
+  jq -r '.kubernetes_version | "\(.)" ' \
+    $this_json > $json2cluster_tmp/kubernetes_version
+  jq -r '.project | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_project=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.cluster_name | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_cluster_name=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.zone | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_zone=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.username | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_username=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.cluster_version | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_cluster_version=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.machine_type | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_machine_type=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.image_type | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_image_type=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.disk_size | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_disk_size=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.scopes | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_scopes=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.num_nodes | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_num_nodes=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.network | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_network=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.subnetwork | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_subnetwork=$(cat $json2cluster_tmp/this_tmp)
+  jq -r '.additional_opts | "\(.)" ' \
+    $this_json > $json2cluster_tmp/this_tmp
+  gke_additional_opts=$(cat $json2cluster_tmp/this_tmp)
+
+  echo 'Provisioning on GKE with these attributes'
+
+  echo "gke_project=$gke_project
+gke_cluster_name=$gke_cluster_name
+gke_zone=$gke_zone
+gke_username=$gke_username
+gke_cluster_version=$gke_cluster_version
+gke_machine_type=$gke_machine_type
+gke_image_type=$gke_image_type
+gke_disk_size=$gke_disk_size
+gke_scopes=$gke_scopes
+gke_num_nodes=$gke_num_nodes
+gke_network=$gke_network
+gke_subnetwork=$gke_subnetwork
+gke_additional_opts=$gke_additional_opts
+"
+
+  echo -n 'Ctrl-C now to stop if this is not what you intend!'
+  echo -n '!'; sleep 1; echo -n '!'; sleep 1; echo -n '!'; sleep 1; echo '!'; sleep 1;
+  sleep 2
+
+  gke_gcloud_provision $gke_project $gke_cluster_name $gke_zone $gke_username $gke_cluster_version $gke_machine_type $gke_image_type $gke_disk_size $gke_scopes $gke_num_nodes $gke_network $gke_subnetwork "$gke_additional_opts"
+}
+
+gke_gcloud_provision () {
+  gke_project=$1
+  gke_cluster_name=$2
+  gke_zone=$3
+  gke_username=$4
+  gke_cluster_version=$5
+  gke_machine_type=$6
+  gke_image_type=$7
+  gke_disk_size=$8
+  gke_scopes=$9
+  gke_num_nodes=${10}
+  gke_network=${11}
+  gke_subnetwork=${12}
+  gke_additional_opts=${13}
+
+  echo "gcloud beta container \
+  --project '$gke_project' \
+  clusters create '$gke_cluster_name' \
+  --zone '$gke_zone' \
+  --username '$gke_username' \
+  --cluster-version '$gke_cluster_version' \
+  --machine-type '$gke_machine_type' \
+  --image-type '$gke_image_type' \
+  --disk-size '$gke_disk_size' \
+  --scopes $gke_scopes \
+  --num-nodes '$gke_num_nodes' \
+  --network '$gke_network' \
+  --subnetwork '$gke_subnetwork' \
+  $gke_additional_opts"
+
+  gcloud beta container \
+    --project "$gke_project" \
+    clusters create "$gke_cluster_name" \
+    --zone "$gke_zone" \
+    --username "$gke_username" \
+    --cluster-version "$gke_cluster_version" \
+    --machine-type "$gke_machine_type" \
+    --image-type "$gke_image_type" \
+    --disk-size "$gke_disk_size" \
+    --scopes $gke_scopes \
+    --num-nodes "$gke_num_nodes" \
+    --network "$gke_network" \
+    --subnetwork "$gke_subnetwork" \
+    $gke_additional_opts
+
+  sleep 3
+
+  KUBECONFIG=$KUBECONFIG \
+  gcloud container \
+    clusters \
+    --zone $gke_zone \
+    get-credentials $gke_cluster_name
+
+  KUBECONFIG=$KUBECONFIG \
+  kubectl create clusterrolebinding cluster-admin-binding \
+    --clusterrole cluster-admin \
+    --user $(gcloud config get-value account)
+}
+
+gke-provisioner () {
+  squawk 1 "gke-provisioner $@"
+
+  if [[ -z "$1" ]]; then
+    echo 'gke-provisioner requires an argument'
+    exit 1
+  fi
+
+  if [[ "${1: -5}" == '.yaml' ]]; then
+    squawk 1 "gke_yaml2cluster $1"
+    gke_yaml2cluster $1
+  elif [ "${1: -4}" = ".yml" ]; then
+    squawk 1 "gke_yaml2cluster $1"
+    gke_yaml2cluster $1
+  elif [ "${1: -5}" = ".json" ]; then
+    squawk 1 "gke_json2cluster $1"
+    gke_json2cluster $1
+  fi
+}
 
 qemu-provisioner () {
   squawk 1 "qemu-provisioner $@"
@@ -859,6 +1035,7 @@ configure_secondary_network_interfaces () {
       squawk 1 "OS not supported by network configurator"
     fi
   done <<< "$slurpy"
+  touch $configure_static_network_addresses_tmp/kubash_interface
   rm $configure_static_network_addresses_tmp/kubash_interface
   rmdir $configure_static_network_addresses_tmp
   squawk 19 'secondary network interfaces configured'
@@ -1053,26 +1230,75 @@ apparmor_fix_all_provisioning_hosts () {
 
 do_nginx_ingress () {
   INGRESS_NAME=$1
-  KUBECONFIG=$KUBECONFIG helm install stable/nginx-ingress --name $INGRESS_NAME --set rbac.create=true
+  KUBECONFIG=$KUBECONFIG \
+    helm install \
+    stable/nginx-ingress \
+    --name $INGRESS_NAME \
+    --set rbac.create=true
 }
 
 demo () {
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/crunchy-postgres
-   KUBECONFIG=$KUBECONFIG bash run.sh
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/rabbitmq
-   KUBECONFIG=$KUBECONFIG bash run.sh
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/percona
-   kubectl --kubeconfig=$KUBECONFIG apply -f \
-     demo-percona-mysql-pvc.yaml
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/jupyter
-   kubectl --kubeconfig=$KUBECONFIG apply -f \
-     demo-jupyter-openebs.yaml
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/mongodb
-   kubectl --kubeconfig=$KUBECONFIG apply -f \
-     mongo-statefulset.yml
-   cd $KUBASH_DIR/submodules/openebs/k8s/demo/jenkins
-   kubectl --kubeconfig=$KUBECONFIG apply -f \
-     jenkins.yml
+  do_postgres
+  do_rabbitmq
+  do_percona
+  do_jupyter
+  do_mongodb
+  do_jenkins
+  do_kafka
+  do_redis
+}
+
+do_redis () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/redis
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   redis-statefulset.yml
+}
+
+do_postgres () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/crunchy-postgres
+  KUBECONFIG=$KUBECONFIG bash run.sh
+}
+
+do_rabbitmq () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/rabbitmq
+  KUBECONFIG=$KUBECONFIG bash run.sh
+}
+
+do_percona () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/percona
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   demo-percona-mysql-pvc.yaml
+}
+
+do_jupyter () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jupyter
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   demo-jupyter-openebs.yaml
+}
+
+do_mongodb () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/mongodb
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   mongo-statefulset.yml
+}
+
+do_jenkins () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jenkins
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   jenkins.yml
+}
+
+do_kafka () {
+  squawk 1 " do_kafka"
+  KUBECONFIG=$KUBECONFIG \
+  helm \
+    repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
+
+  KUBECONFIG=$KUBECONFIG \
+  helm install \
+  --name my-kafka \
+  incubator/kafka \
+    --set persistence.storageClass=openebs-kafka
 }
 
 do_net () {
@@ -1094,23 +1320,38 @@ do_searchlight () {
     $KUBASH_DIR/templates/searchlight.yaml
 }
 
+taint_ingress () {
+  squawk 1 " taint_ingress $@"
+  for ingress_node in "$@"
+  do
+    squawk 5 "kubectl --kubeconfig=$KUBECONFIG taint --overwrite node $ingress_node IngressOnly=true:NoSchedule"
+    kubectl --kubeconfig=$KUBECONFIG taint --overwrite node $ingress_node IngressOnly=true:NoSchedule
+    squawk 5 "kubectl --kubeconfig=$KUBECONFIG label --overwrite node $ingress_node ingress=true"
+    kubectl --kubeconfig=$KUBECONFIG label --overwrite node $ingress_node ingress=true
+  done
+}
+
+do_dashboard () {
+  squawk 1 " do_dashboard"
+  kubectl --kubeconfig=$KUBECONFIG \
+    apply -f \
+    https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+}
+
 do_voyager () {
   squawk 1 " do_voyager"
   if [ "$VOYAGER_BY_HELM" = "true" ]; then
+  KUBECONFIG=$KUBECONFIG \
   helm install stable/voyager --name voyager \
     --set cloudProvider=$VOYAGER_PROVIDER \
     --set apiserver.ca="$(onessl get kube-ca)" \
     $VOYAGER_ADMISSIONWEBHOOK
   else
-  KUBECONFIG=$KUBECONFIG \
-  curl -fsSL \
+    KUBECONFIG=$KUBECONFIG \
+    curl -fsSL \
     https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-    | bash -s -- --provider=$VOYAGER_PROVIDER
+        | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
   fi
-  # lets encrypt
-  KUBECONFIG=$KUBECONFIG \
-  curl -fsSL https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
-      | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
 }
 
 do_linkerd () {
@@ -1148,7 +1389,8 @@ do_tiller () {
   #kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
   kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
   sleep 5
-  KUBECONFIG=$KUBECONFIG helm init --service-account tiller
+  KUBECONFIG=$KUBECONFIG \
+   helm init --service-account tiller
 }
 
 write_ansible_hosts () {
@@ -1547,8 +1789,8 @@ remove_vagrant_user () {
     if [[ "$K8S_os" == 'coreos' ]]; then
       squawk 9 'coreos so skipping'
     else
-      REMMY="userdel -f vagrant && rm -Rf /home/vagrant"
-      squawk 5 "ssh -n -p $K8S_sshPort $K8S_user@$K8S_ip1 \"$REMMY\""
+      REMMY="userdel -fr vagrant"
+      squawk 6 "ssh -n -p $K8S_sshPort $K8S_user@$K8S_ip1 \"$REMMY\""
       echo "ssh -n -p $K8S_sshPort $K8S_user@$K8S_ip1 \"$REMMY\""\
         >> $remove_vagrant_user_tmp_para/hopper
     fi
@@ -1557,11 +1799,15 @@ remove_vagrant_user () {
   if [[ "$VERBOSITY" -gt "9" ]] ; then
     cat $remove_vagrant_user_tmp_para/hopper
   fi
+
+  set +e #some of the new builds have been erroring out as vagrant has been removed already, softening
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     $PARALLEL  -j $PARALLEL_JOBS -- < $remove_vagrant_user_tmp_para/hopper
   else
     bash $remove_vagrant_user_tmp_para/hopper
   fi
+  set -e # End softening
+
   rm -Rf $remove_vagrant_user_tmp_para
 }
 
@@ -2963,7 +3209,24 @@ packer_build  () {
 
 activate_monitoring () {
   # Prometheus
-  KUBECONFIG=$KUBECONFIG helm install stable/prometheus
+  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring/configs
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    prometheus-config.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    prometheus-env.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    prometheus-alert-rules.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    alertmanager-templates.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    alertmanager-config.yaml
+  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    prometheus-operator.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    alertmanager.yaml
+  kubectl --kubeconfig=$KUBECONFIG create -f \
+    grafana-operator.yaml
 }
 
 build_all_in_parallel () {
@@ -3138,9 +3401,10 @@ kubash_interactive () {
       l|list) helm_passthru list                          ;;
       d|describe) kubectl_passthru describe $args         ;;
       keti) kubectl_passthru exec -ti $args               ;;
-      kgn) kubectl_passthru get nodes $args                ;;
-      kgpa) kubectl_passthru get pods --all-namespaces $args ;;
-      kgp) kubectl_passthru get pods $args                ;;
+      kgn) kubectl_passthru get nodes $args               ;;
+      kgpa) kubectl_passthru get pods --all-namespaces $args | grep -v '^pvc-' ;;
+      kgp) kubectl_passthru get pods $args | grep -v '^pvc-' ;;
+      kgpvc) kubectl_passthru get pods $args | grep '^pvc-' ;;
       klp) kubectl_passthru logs pods $args               ;;
       kep) kubectl_passthru logs pods $args               ;;
       kdp) kubectl_passthru describe pods $args           ;;
@@ -3154,6 +3418,7 @@ kubash_interactive () {
       kdelsec) kubectl_passthru delete secret $args       ;;
       kgd) kubectl_passthru get deployment $args          ;;
       ked) kubectl_passthru edit deployment $args         ;;
+      kei) kubectl_passthru edit ingress.voyager.appscode.com $args ;;
       kdd) kubectl_passthru describe deployment $args     ;;
       kdeld) kubectl_passthru delete deployment $args     ;;
       ksd) kubectl_passthru scale deployment $args        ;;
@@ -3224,7 +3489,7 @@ main () {
 
   # Execute getopt on the arguments passed to this program, identified by the special character $@
   short_opts="c:hvyn:"
-  long_opts="version,oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug"
+  long_opts="version,oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug,provisioner:"
   PARSED_OPTIONS=$(getopt -n "$0" -o "$short_opts" --long "$long_opts" -- "$@")
 
   #Bad arguments, something has gone wrong with the getopt command.
@@ -3264,6 +3529,9 @@ main () {
       -c|--csv)
         KUBASH_HOSTS_CSV="$2"
         RAISON=true
+        shift 2 ;;
+      --provisioner)
+        provisioner="$2"
         shift 2 ;;
       --initializer)
         initializer="$2"
@@ -3362,16 +3630,22 @@ main () {
       -n $KUBASH_CLUSTER_NAME
     kubash ping \
       -n $KUBASH_CLUSTER_NAME
+    kubash configure_interfaces \
+      -n $KUBASH_CLUSTER_NAME
     kubash init \
       -n $KUBASH_CLUSTER_NAME
     sleep 10
     kubash openebs \
       -n $KUBASH_CLUSTER_NAME
     sleep 10
-    kubash tiller  \
+    kubash dashboard \
+      -n $KUBASH_CLUSTER_NAME
+    kubash voyager \
+      -n $KUBASH_CLUSTER_NAME
+    kubash searchlight \
       -n $KUBASH_CLUSTER_NAME
     sleep 10
-    kubash ingress \
+    kubash tiller  \
       -n $KUBASH_CLUSTER_NAME
     squawk 1 "Full auto finished"
     exit 0
@@ -3482,14 +3756,18 @@ main () {
       provision_usage
       exit 1
     fi
-    copy_image_to_all_provisioning_hosts
-    provisioner
-    squawk 1 "wating on hosts to come up"
-    sleep 33
-    refresh_network_addresses
-    prep
-    remove_vagrant_user
-    hostname_in_parallel
+    if [ "$provisioner" = 'gke' ]; then
+      gke-provisioner $@
+    else
+      copy_image_to_all_provisioning_hosts
+      provisioner
+      squawk 1 "wating on hosts to come up"
+      sleep 33
+      refresh_network_addresses
+      prep
+      remove_vagrant_user
+      hostname_in_parallel
+    fi
   elif [[ $RAISON == "hostnamer" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -3605,6 +3883,76 @@ main () {
       exit 1
     fi
     do_searchlight
+  elif [[ $RAISON == "taint_ingress" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    taint_ingress $@
+  elif [[ $RAISON == "dashboard" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_dashboard
+  elif [[ $RAISON == "kafka" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_kafka
+  elif [[ $RAISON == "redis" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_redis
+  elif [[ $RAISON == "postgres" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_postgres
+  elif [[ $RAISON == "rabbitmq" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_rabbitmq
+  elif [[ $RAISON == "percona" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_percona
+  elif [[ $RAISON == "jupyter" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_jupyter
+  elif [[ $RAISON == "mongodb" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_mongodb
+  elif [[ $RAISON == "jenkins" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+  do_jenkins
   elif [[ $RAISON == "voyager" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -3767,6 +4115,18 @@ main () {
     elif [[ "$target_os" == "ubuntu197" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=ubuntu197-16.04-amd64
+      fi
+    elif [[ "$target_os" == "ubuntu1.8.10" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu1.8.10-16.04-amd64
+      fi
+    elif [[ "$target_os" == "ubuntu1.8.11" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu1.8.11-16.04-amd64
+      fi
+    elif [[ "$target_os" == "ubuntu1.10.0" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=ubuntu1.10.0-16.04-amd64
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

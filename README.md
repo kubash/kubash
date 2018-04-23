@@ -1,6 +1,6 @@
 # Kubash
 
-Build, provision, initialize, add common components, and tear down a cluster PDQ.
+Build, provision, initialize, add common components, interact and tear down a cluster PDQ.
 
 [![Build Status](https://travis-ci.org/kubash/kubash.svg?branch=master)](https://travis-ci.org/kubash/kubash)
 [![Waffle.io - Columns and their card count](https://badge.waffle.io/kubash/kubash.svg?columns=all)](https://waffle.io/kubash/kubash)
@@ -189,8 +189,7 @@ See the [debugging](./docs/debug.md) page for more
 
 ### [Interactive Mode](./docs/interactive.md)
 
-`kubash` --  alone will invoke an interactive shell (or if you prefer
-`kubash interactive`)
+`kubash` --  alone will invoke an interactive shell
 
 see the [Interactive Mode](./docs/interactive.md) documentation
 
@@ -215,3 +214,13 @@ This project takes advantage of [GNU Parallel](https://www.gnu.org/software/para
   ;login: The USENIX Magazine, February 2011:42-47.                                                                                                                                                                
                                                        
 ```
+
+### Pseudo-etymology
+
+"The whole kubash" - a  bastardization of "The whole kit and kaboodle",
+["The whole shebang" (#!)](https://www.phrases.org.uk/meanings/the-whole-shebang.html)
+, kubernetes, and bash. The meaning here is that kubash is taking on
+everything else that kubeadm considers 'out of scope'.  From building
+images, provisioning, to usage of kubeadm itself, on through to a quick
+shell for interacting with the running cluster, and finally
+decommissioning the cluster.

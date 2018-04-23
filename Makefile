@@ -12,7 +12,7 @@ $(eval MONITORING_NAMESPACE := monitoring)
 $(eval MINIKUBE_CPU := 2)
 $(eval MINIKUBE_MEMORY := 3333)
 $(eval MINIKUBE_DRIVER := virtualbox)
-$(eval MY_KUBE_VERSION := v1.8.0)
+$(eval MY_KUBE_VERSION := v1.9.4)
 $(eval CHANGE_MINIKUBE_NONE_USER := true)
 $(eval KUBECONFIG := $(HOME)/.kube/config)
 $(eval MINIKUBE_WANTREPORTERRORPROMPT := false)
@@ -227,8 +227,8 @@ $(KUBASH_BIN)/bats:
 	&& sudo ./install.sh /usr/local
 	rm -Rf $(TMP)
 
-ci: chown autopilot 
-	
+ci: chown reqs
+
 ci-next: extended_tests monitoring
 
 chown:
@@ -257,7 +257,8 @@ extended_tests:
 	free -m
 
 .minikube.made:
-	minikube \
+	sudo cp -v $(KUBASH_BIN)/minikube /usr/local/bin/
+	sudo minikube \
 		--kubernetes-version $(MY_KUBE_VERSION) \
 		--dns-domain $(MINIKUBE_CLUSTER_DOMAIN) \
 		--memory $(MINIKUBE_MEMORY) \
@@ -352,6 +353,9 @@ $(KUBASH_BIN)/onessl:
 	chmod +x $(TMP)/onessl
 	mv $(TMP)/onessl $(KUBASH_BIN)/
 	rm -Rf $(TMP)
+
+gcloud:
+	curl https://sdk.cloud.google.com | bash
 
 submodules/openebs:
 	cd submodules; git clone https://github.com/openebs/openebs.git
