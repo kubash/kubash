@@ -1,0 +1,19 @@
+---
+  provisioner: gke
+  csv_version: '2.0.0'
+  kubernetes_version: 'v1.9.6'
+  cluster_version: "1.9.6-gke.0"
+  project: "example"
+  cluster_name: "cluster-1"
+  zone: "us-central1-a"
+  username: "admin"
+  machine_type: "custom-1-1280"
+  image_type: "UBUNTU"
+  disk_size: "50"
+  scopes: '"https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append"'
+  num_nodes: "3"
+  network: "default"
+  subnetwork: "default"
+  additional_opts: '--enable-cloud-logging --enable-cloud-monitoring'
+  # These additional three options are COS only and do not work for the UBUNTU image-type
+  # additional_opts: '--enable-cloud-logging --enable-cloud-monitoring --enable-legacy-authorization --enable-autoupgrade --enable-autorepair'
