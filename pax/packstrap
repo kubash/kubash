@@ -53,7 +53,7 @@ install_default_docker () {
   systemctl enable kubelet && systemctl start kubelet
 
   sudo rm -Rf /home/vagrant/.cache
-  pip install --upgrade pip
+  sudo -H pip install --upgrade pip
   pip install docker-py
 
   #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
