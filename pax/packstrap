@@ -52,6 +52,7 @@ install_default_docker () {
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
 
+  sudo rm -Rf /home/vagrant/.cache
   pip install --upgrade pip
   pip install docker-py
 
