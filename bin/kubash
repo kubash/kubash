@@ -4120,6 +4120,10 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=$target_os-16.04-amd64
       fi
+    elif [[ "$target_os" == "ubuntu1910" ]]; then
+      if [[ -z "$target_build" ]]; then
+        target_build=$target_os-16.04-amd64
+      fi
     elif [[ "$target_os" == "ubuntu1.8.10" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=ubuntu1.8.10-16.04-amd64
