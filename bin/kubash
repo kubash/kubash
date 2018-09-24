@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION='v1.9.6'
+KUBASH_VERSION='v1.11.3'
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
@@ -4044,10 +4044,6 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm-7.4-x86_64
       fi
-    elif [[ "$target_os" == "ubuntu" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu-16.04-amd64
-      fi
     elif [[ "$target_os" == "debian" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=debian-9.3-amd64
@@ -4080,61 +4076,27 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm193-7.4-x86_64
       fi
-    elif [[ "$target_os" == "ubuntu193" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu193-16.04-amd64
-      fi
     elif [[ "$target_os" == "kubeadm194" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm194-7.4-x86_64
-      fi
-    elif [[ "$target_os" == "ubuntu194" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu194-16.04-amd64
       fi
     elif [[ "$target_os" == "kubeadm195" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm195-7.4-x86_64
       fi
-    elif [[ "$target_os" == "ubuntu195" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu195-16.04-amd64
-      fi
     elif [[ "$target_os" == "kubeadm196" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm196-7.4-x86_64
-      fi
-    elif [[ "$target_os" == "ubuntu196" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu196-16.04-amd64
       fi
     elif [[ "$target_os" == "kubeadm197" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm197-7.4-x86_64
       fi
-    elif [[ "$target_os" == "ubuntu197" ]]; then
+    elif [[ "$target_os" =~ 'ubuntu' ]]; then
       if [[ -z "$target_build" ]]; then
-        target_build=ubuntu197-16.04-amd64
-      fi
-    elif [[ "$target_os" == "ubuntu198" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=$target_os-16.04-amd64
-      fi
-    elif [[ "$target_os" == "ubuntu1910" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=$target_os-16.04-amd64
-      fi
-    elif [[ "$target_os" == "ubuntu1.8.10" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu1.8.10-16.04-amd64
-      fi
-    elif [[ "$target_os" == "ubuntu1.8.11" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu1.8.11-16.04-amd64
-      fi
-    elif [[ "$target_os" == "ubuntu1.10.0" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=ubuntu1.10.0-16.04-amd64
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/ubuntu//')
+        target_build=ubuntu$build_num-16.04-amd64
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm
