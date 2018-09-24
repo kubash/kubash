@@ -335,7 +335,7 @@
     "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
     "kubeadm_install": "{{ env `KUBEADM_INSTALL`}}",
     "k8s_su_user": "{{ env `K8S_SU_USER`}}",
-    "DOCKER_PKG": "17.12",
+    "DOCKER_PKG": "17.03",
     "DOCKER_COMPOSE_PKG": "1.8.0",
     "KUBEPKG_VERSION": "1.11.3",
     "ETCD_VERSION": "3.2.7",
