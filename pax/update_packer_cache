@@ -1,0 +1,3 @@
+#!/bin/bash
+: ${packer_cache_path=/mnt/unreal/packer_cache}
+find . -type l -name packer_cache|sed "s/\/packer_cache//:|xargs -n1 -I%  bash -c  "cd %;rm  packer_cache;ln -s $packer_cache_path /mnt/unreal/packer_cache ./"
