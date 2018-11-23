@@ -1,0 +1,121 @@
+---
+  csv_version: '2.0.0'
+  hosts:
+    testy-master1:
+      hostname: testymaster1
+      role: primary_master
+      cpuCount: 22
+      Memory: 2800
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:11'
+        ip: dhcp
+    testy-master2:
+      hostname: testymaster2
+      role: master
+      cpuCount: 1
+      Memory: 1500
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:12'
+        ip: dhcp
+    testy-master3:
+      hostname: testymaster3
+      role: master
+      cpuCount: 1
+      Memory: 1500
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:13'
+        ip: dhcp
+    testy-node1:
+      hostname: testynode1
+      role: node
+      cpuCount: 4
+      Memory: 4096
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:17'
+        ip: dhcp
+    testy-node2:
+      hostname: testynode2
+      role: node
+      cpuCount: 3
+      Memory: 2222
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:18'
+        ip: dhcp
+    testy-node3:
+      hostname: testynode3
+      role: node
+      cpuCount: 2
+      Memory: 2222
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.12.2
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:3d:19'
+        ip: dhcp
+  ca:
+    cert:
+      CERT_COMMON_NAME: etcd
+      CERT_COUNTRY: US
+      CERT_LOCALITY: Austin
+      CERT_ORGANISATION: testy
+      CERT_STATE: Texas
+      CERT_ORG_UNIT: Deployment
+  net_set: flannel
+  users:
+    admin:
+      role: admin
+    bob:
+      role: provisioner
+    logger:
+      role: log

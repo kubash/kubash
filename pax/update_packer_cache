@@ -1,3 +1,10 @@
 #!/bin/bash
-: ${packer_cache_path=/mnt/unreal/packer_cache}
-find . -type l -name packer_cache|sed "s/\/packer_cache//:|xargs -n1 -I%  bash -c  "cd %;rm  packer_cache;ln -s $packer_cache_path /mnt/unreal/packer_cache ./"
+if [ $# -ne 1 ]; then
+  # Print usage
+  echo 'Error! wrong number of arguments'
+  echo 'usage:'
+  echo "$0 /path/to/packer_cache"
+  exit 1
+fi
+packer_cache_path=$1
+find . -type l -name packer_cache|sed "s/\/packer_cache//"|xargs -n1 -I%  bash -c  "cd %;rm  packer_cache;ln -s $packer_cache_path ./"

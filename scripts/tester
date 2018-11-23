@@ -1,0 +1,7 @@
+#!/bin/bash
+this_test=$1
+	kubash -n $this_test decommission -y
+	rm -Rf ~/.kubash/clusters/$this_test
+	kubash yaml2cluster -n $this_test ~/.kubash/examples/$this_test.yaml
+	kubash -n $this_test -y provision
+	#kubash -n $this_test --verbosity=105 etcd_ext

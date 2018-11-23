@@ -6,9 +6,9 @@ TMP=$(mktemp -d)
 : ${DOCKER_PKG:='17.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
 : ${KUBEPKG_VERSION:="1.9.3"}
-: ${ETCD_VERSION:="3.2.7"}
+: ${ETCD_VERSION:="3.2.17"}
 
-cat <<EOF > $TMP/inventory 
+cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
 
 [nodes]
@@ -43,6 +43,16 @@ echo 'export GOPATH=$HOME/.go
 export PATH=${GOPATH//://bin:}/bin:$PATH' \
 >> .bashrc
 
+echo ip_vs >> /etc/modules
+echo ip_vs_wrr >> /etc/modules
+echo ip_vs_sh >> /etc/modules
+echo ip_vs_rr >> /etc/modules
+
+install_pips () {
+  sudo -H pip install --upgrade pip
+  sudo -H pip install --upgrade docker-py jinja2-cli jinja2
+}
+
 install_default_docker () {
   apt-get install -yqq --allow-downgrades \
    docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
@@ -53,8 +63,7 @@ install_default_docker () {
   systemctl enable kubelet && systemctl start kubelet
 
   sudo rm -Rf /home/vagrant/.cache
-  sudo -H pip install --upgrade pip
-  pip install docker-py
+  install_pips
 
   #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
   #sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
@@ -72,8 +81,7 @@ install_spec_docker () {
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
 
-  pip install --upgrade pip
-  pip install docker-py
+  install_pips
 }
 
 apt-get update
@@ -112,7 +120,7 @@ if [ "$KUBEADM_INSTALL" = "openshift" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to defaults for kubespray'
-  install_default_docker
+  #install_default_docker
 elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
   install_spec_docker
   cd $TMP
@@ -121,8 +129,10 @@ elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
   ansible-playbook -i $TMP/inventory cluster-images.yaml
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
   install_spec_docker
+  #kubeadm config images pull
   kubeadm init
-  kubeadm reset
+  yes y|kubeadm reset
+  rm -Rf /etc/kubernetes/*
 else
   echo 'Sticking to defaults'
   install_default_docker
@@ -138,7 +148,7 @@ cat << EOF > /usr/local/bin/get-ip-address
 echo -n 'IP address = '
 /sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
 echo -n 'SSH is on port: '
-grep Port /etc/ssh/sshd_config 
+grep Port /etc/ssh/sshd_config
 EOF
 
 chmod +x /usr/local/bin/get-ip-address

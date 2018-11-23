@@ -327,7 +327,7 @@
     }
   ],
   "variables": {
-    "box_basename": "ubuntu1910-16.04",
+    "box_basename": "kubash-ubuntu-16.04",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
@@ -338,8 +338,8 @@
     "DOCKER_PKG": "17.03",
     "DOCKER_COMPOSE_PKG": "1.8.0",
     "KUBEPKG_VERSION": "1.11.3",
-    "ETCD_VERSION": "3.2.7",
-    "cpus": "1",
+    "ETCD_VERSION": "3.2.17",
+    "cpus": "4",
     "disk_size": "65536",
     "git_revision": "__unknown_git_revision__",
     "headless": "true",
@@ -350,7 +350,7 @@
     "iso_checksum": "c94de1cc2e10160f325eb54638a5b5aa38f181d60ee33dae9578d96d932ee5f8",
     "iso_checksum_type": "sha256",
     "iso_name": "ubuntu-16.04.5-server-amd64.iso",
-    "memory": "1024",
+    "memory": "2048",
     "mirror": "http://releases.ubuntu.com",
     "mirror_directory": "16.04.5",
     "name": "ubuntu1.11.3-16.04",

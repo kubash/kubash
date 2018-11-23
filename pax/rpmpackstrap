@@ -39,6 +39,11 @@ localhost
 localhost
 EOF
 
+echo ip_vs >> /etc/modules
+echo ip_vs_wrr >> /etc/modules
+echo ip_vs_sh >> /etc/modules
+echo ip_vs_rr >> /etc/modules
+
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -107,13 +112,16 @@ install_spec_docker () {
   pip install docker-py
 }
 
+echo "kubeadm install is $KUBEADM_INSTALL"
+
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
-  install_default_docker
+  echo 'Sticking to default centos'
+  #install_default_docker
   #yum install -y centos-release-openshift-origin origin-clients
 elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to default centos'
-  install_default_docker
+  #install_default_docker
 elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
   install_spec_docker
   cd $TMP
@@ -124,8 +132,10 @@ elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
   install_spec_docker
   #systemctl restart docker
-  #kubeadm init
-  #kubeadm reset
+  #kubeadm config images pull
+  kubeadm init
+  yes y|kubeadm reset
+  rm -Rf /etc/kubernetes/*
 else
   # Defaults to nothing barebones
   echo 'barebone'

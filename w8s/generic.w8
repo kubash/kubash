@@ -3,7 +3,7 @@ if [ $# -ne 2 ]; then
   # Print usage
   echo 'Error! wrong number of arguments'
   echo 'usage:'
-  echo 'w8/generic.w8 what-to-wait-for in-what-namespace'
+  echo "$0 what-to-wait-for in-what-namespace"
   exit 1
 fi
 
