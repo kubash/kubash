@@ -63,6 +63,7 @@ KUBASH_VERSION='v1.12.2'
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='baremetal'}
 : ${VOYAGER_BY_HELM:= "false"}
+: ${VOYAGER_VERSION:='8.0.1'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${TAB_1:='  '}
@@ -2215,16 +2216,27 @@ do_dashboard () {
 do_voyager () {
   squawk 1 " do_voyager"
   #taint_all_ingress
-  if [ "$VOYAGER_BY_HELM" = "true" ]; then
+  if [ "$VOYAGER_BY_HELM" = "stable" ]; then
   KUBECONFIG=$KUBECONFIG \
   helm install stable/voyager --name voyager \
+    --set cloudProvider=$VOYAGER_PROVIDER \
+    --set apiserver.ca="$(onessl get kube-ca)" \
+    $VOYAGER_ADMISSIONWEBHOOK
+  elif [ "$VOYAGER_BY_HELM" = "appscode" ]; then
+  KUBECONFIG=$KUBECONFIG \
+  helm repo add appscode https://charts.appscode.com/stable/
+  helm repo update
+  helm install appscode/voyager \
+    --name voyager-operator \
+    --version $VOYAGER_VERSION \
+    --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
     --set apiserver.ca="$(onessl get kube-ca)" \
     $VOYAGER_ADMISSIONWEBHOOK
   else
     KUBECONFIG=$KUBECONFIG \
     curl -fsSL \
-    https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+    https://raw.githubusercontent.com/appscode/voyager/$VOYAGER_VERSION/hack/deploy/voyager.sh \
         | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
   fi
 }
