@@ -4,7 +4,7 @@
     stacked-master1:
       hostname: stackedmaster1
       role: primary_master
-      cpuCount: 22
+      cpuCount: 4
       Memory: 2800
       provisioner:
         Host: '10.0.23.12'
@@ -21,8 +21,8 @@
     stacked-master2:
       hostname: stackedmaster2
       role: master
-      cpuCount: 1
-      Memory: 1500
+      cpuCount: 4
+      Memory: 2500
       provisioner:
         Host: '10.0.23.12'
         User: root
@@ -38,8 +38,8 @@
     stacked-master3:
       hostname: stackedmaster3
       role: master
-      cpuCount: 1
-      Memory: 1500
+      cpuCount: 4
+      Memory: 2500
       provisioner:
         Host: '10.0.23.12'
         User: root

@@ -1,17 +1,10 @@
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: required
       services:
       - docker
-      cache:
-        directories:
-        - $HOME/.minikube
-        - $HOME/.kube
-        - $HOME/.local/bin
-        - .git
-        - /usr/local
       env:
         - MINIKUBE_MEMORY=7777
         - MINIKUBE_CPU=4
@@ -19,8 +12,17 @@ matrix:
         - HELM_INSTALL_DIR=$HOME/.local/bin
         - NVM_DIR="$HOME/.nvm"
         - CHANGE_MINIKUBE_NONE_USER=true
-        - MINIKUBE_VERSION=v0.25.2
-        - KUBE_VERSION=v1.9.4
+        - MINIKUBE_VERSION=v0.30.0
+        - KUBE_VERSION=v1.12.2
+        - CHANGE_MINIKUBE_NONE_USER=true
+      cache: npm
+      cache: pip
+      cache:
+          directories:
+            - $HOME/.local/bin
+            #- .git
+          #- $HOME/.kube
+          #- $HOME/.minikube
 
 language: node_js
 node_js:
@@ -41,57 +43,79 @@ addons:
       - python-pip
       - rlwrap
 
+
 before_install:
-# install nsenter which is required for port forwarding
+- ln -s $(pwd) /home/travis/.kubash
 
 before_script:
+- make bats
+- pip install --user jinja2-cli
+- npm i -g yaml2json
+- if [[ ! -e "$HOME/.local/bin/ct" ]]; then make ct && mv /home/travis/.kubash/bin/ct /home/travis/.local/bin/ct; fi
+- if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo mv .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
+- if [[ ! -e "$HOME/.local/bin/helm" ]]; then curl https://raw.githubusercontent.com/helm/helm/master/scripts/get|bash &> /dev/null; fi
+# Wait for Kubernetes to be up and ready.
+#- ls -alh /home/travis/.kubash/bin
+#- export PATH=/home/travis/.local/bin:$PATH
+#- echo "export PATH=/home/travis/.local/bin:$PATH" >> /home/travis/.bashrc
+#- echo $PATH
+# Make root mounted as rshared to fix kube-dns issues.
+- sudo mount --make-rshared /
 # Download kubectl, which is a requirement for using minikube.
-# Download minikube.
 - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+# Download minikube.
 - curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
 - sudo minikube start --vm-driver=none --kubernetes-version=$KUBE_VERSION
+- bash scripts/dotfiles
+- bash scripts/chkdirs
+- sudo chown $USER /var/lib
+  #- /bin/bash -l -c "/usr/bin/time -v make -e ci"
+- /bin/bash -l -c "/usr/bin/time -v make -e chown"
+- mkdir -p clusters/default
 # Fix the kubectl context, as it's often stale.
 - minikube update-context
-# Wait for Kubernetes to be up and ready.
-- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+- cp $HOME/.kube/config clusters/default/
+- echo '2.0.0' > clusters/default/csv_version
+- echo 'extetcdmaster1,primary_master,22,2800,22,bridge=br1,52:54:00:e2:9f:11,127.0.0.1,null,null,null,null,127.0.0.1,root,22,/var/lib/libvirt/images,ubuntu1.12.2,qemu,null,null,null,null,null,null,null,null,null,null,null,null,null,null' > clusters/default/hosts.csv
+- which bats
 
 script:
-  - npm i -g yaml2json
-  - ln -s $(pwd) /home/travis/.kubash
-  - make bats
-  - make ct
-  - ls -alh /home/travis
-  - ls -alh /home/travis/.kubash
-  - ls -alh /home/travis/.kubash/bin
-  - if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo cp .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
-  - curl -sL --silent https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get|bash
-  - bash scripts/dotfiles
-  - bash scripts/chkdirs
-  - sudo chown $USER /var/lib
-  - /bin/bash -l -c "/usr/bin/time -v make -e ci"
-  - env
-  - pwd
-  - mkdir -p clusters/default
-  - cp $HOME/.kube/config clusters/default/
-  - /bin/bash -l -c "kubash tiller"
-  - /bin/bash -l -c "kubash openebs"
-  - /bin/bash -l -c "w8s/generic.w8 openebs-provisioner default"
-  - sleep 5
-  - bats .ci/.tests.bats
-    #- /bin/bash -l -c "kubash demo"
-  # too much memory usage so we will end it there and destroy the VM
-  # as the next though successful take too long
-    #- /bin/bash -l -c "kubash demo"
-    #- /bin/bash -l -c "w8s/generic.w8 percona default"
-    #- /bin/bash -l -c "w8s/generic.w8 pgset-0 default"
-    #- /bin/bash -l -c "w8s/generic.w8 rabbitmq-0 default"
-    #- sudo chown -R $USER /usr/local
-    #- sudo ls -lh /usr/bin
-    #- sudo chown -R $USER /lib/systemd/system
-    #- sudo chown $USER /usr/bin
-    #- sudo mkdir -p /etc/kubernetes
-    #- sudo chown $USER /etc
-    #- sudo chown -R $USER /etc/kubernetes
-    #- sudo mkdir /etc/system.d
-    #- sudo chown -R $USER /etc/system.d
-    #- /bin/bash -l -c "w8s/generic.w8 mongo-0 default"
+- kubectl cluster-info
+# Verify kube-addon-manager.
+# Wait for Kubernetes to be up and ready.
+#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# kube-addon-manager is responsible for managing other kubernetes components, such as kube-dns, dashboard, storage-provisioner..
+#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lcomponent=kube-addon-manager -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-addon-manager to be available"; kubectl get pods --all-namespaces; done
+# Wait for kube-dns to be ready.
+#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lk8s-app=kube-dns -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-dns to be available"; kubectl get pods --all-namespaces; done
+#- which ct
+#- which nsenter
+#- which jinja2
+#- which helm
+#- which yaml2json
+- bin/kubash --verbosity=50 tiller
+#- bin/kubash --verbosity=50 known_hosts
+#- bin/kubash --verbosity=50 ping
+- bats .ci/.tests.bats
+#- /bin/bash -l -c "kubash openebs"
+#- /bin/bash -l -c "w8s/generic.w8 openebs-provisioner default"
+#- sleep 5
+#- /bin/bash -l -c "kubash demo"
+# too much memory usage so we will end it there and destroy the VM
+# as the next though successful take too long
+#- /bin/bash -l -c "kubash demo"
+#- /bin/bash -l -c "w8s/generic.w8 percona default"
+#- /bin/bash -l -c "w8s/generic.w8 pgset-0 default"
+#- /bin/bash -l -c "w8s/generic.w8 rabbitmq-0 default"
+#- sudo chown -R $USER /usr/local
+#- sudo ls -lh /usr/bin
+#- sudo chown -R $USER /lib/systemd/system
+#- sudo chown $USER /usr/bin
+#- sudo mkdir -p /etc/kubernetes
+#- sudo chown $USER /etc
+#- sudo chown -R $USER /etc/kubernetes
+#- sudo mkdir /etc/system.d
+#- sudo chown -R $USER /etc/system.d
+#- /bin/bash -l -c "w8s/generic.w8 mongo-0 default"
+#- env
+#- pwd

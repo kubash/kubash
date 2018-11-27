@@ -53,7 +53,7 @@ EOF"
     echo $run_join > $finalize_master_tmp/join.sh
     echo $run_join > $finalize_master_tmp/node_join.sh
     sed -i 's/$/ --experimental-control-plane/' $finalize_master_tmp/join.sh
-    #sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $finalize_master_tmp/node_join.sh
+    sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $finalize_master_tmp/node_join.sh
     echo $join_token > $finalize_master_tmp/join_token
   fi
 }
@@ -228,23 +228,22 @@ EOF"
 }
 
 join_node () {
-  echo "joining node $NODE_HOST"
   # push certs to node
 # break indentation
-  #command2run="cat << EOF > etcd-pki-files.txt
-#/etc/kubernetes/pki/ca.crt
-#/etc/kubernetes/pki/ca.key
-#/etc/kubernetes/pki/sa.key
-#/etc/kubernetes/pki/sa.pub
-#/etc/kubernetes/pki/front-proxy-ca.crt
-#/etc/kubernetes/pki/front-proxy-ca.key
-#EOF"
-  #ssh ${USER}@${MASTER_HOST} "$command2run"
+  command2run="cat << EOF > etcd-pki-files.txt
+/etc/kubernetes/pki/ca.crt
+/etc/kubernetes/pki/ca.key
+/etc/kubernetes/pki/sa.key
+/etc/kubernetes/pki/sa.pub
+/etc/kubernetes/pki/front-proxy-ca.crt
+/etc/kubernetes/pki/front-proxy-ca.key
+EOF"
+  ssh ${USER}@${MASTER_HOST} "$command2run"
 # unbreak indentation
-  #command2run="tar -czf etcd-pki.tar.gz -T etcd-pki-files.txt"
-  #ssh ${USER}@${MASTER_HOST} "$command2run"
-  #command2run="tar -czf - -T etcd-pki-files.txt"
-  #ssh ${USER}@${MASTER_HOST} "$command2run" | ssh ${USER}@${NODE_HOST} "cd /; tar zxvf -"
+  command2run="tar -czf etcd-pki.tar.gz -T etcd-pki-files.txt"
+  ssh ${USER}@${MASTER_HOST} "$command2run"
+  command2run="tar -czf - -T etcd-pki-files.txt"
+  ssh ${USER}@${MASTER_HOST} "$command2run" | ssh ${USER}@${NODE_HOST} "cd /; tar zxvf -"
 
   #join the node
   join_cmd=$(cat $finalize_master_tmp/node_join.sh)
