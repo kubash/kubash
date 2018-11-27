@@ -63,6 +63,7 @@ KUBASH_VERSION='v1.12.2'
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='baremetal'}
 : ${VOYAGER_BY_HELM:= "false"}
+: ${VOYAGER_VERSION:='8.0.1'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${TAB_1:='  '}
@@ -284,10 +285,21 @@ determine_api_version () {
     if [[ $KUBE_MINOR_VER -lt 9 ]]; then
       echo "$KUBE_MINOR_VER is too old may not ever be supported"
       exit 1
+    elif [[ $KUBE_MINOR_VER -eq 9 ]]; then
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
+      kubeadm_cfg_kind=MasterConfiguration
+      echo "$KUBE_MINOR_VER is too old and is not supported"
+    elif [[ $KUBE_MINOR_VER -eq 10 ]]; then
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
+      kubeadm_cfg_kind=MasterConfiguration
+      echo "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 11 ]]; then
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       kubeadm_cfg_kind=MasterConfiguration
+      echo "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 12 ]]; then
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
@@ -701,14 +713,14 @@ EOF
   for i in "${!MASTERHOSTS[@]}"; do
     HOST=${MASTERHOSTS[$i]}
     NAME=${MASTERNAMES[$i]}
-    if [[ -e "$KUBASH_CLUSTER_DIR/join.sh" ]]; then
-      rsync $KUBASH_RSYNC_OPTS "ssh -p ${MASTERPORTS[$i]}" $KUBASH_CLUSTER_DIR/join.sh $INIT_USER@$HOST:/tmp/
+    if [[ -e "$KUBASH_CLUSTER_DIR/master_join.sh" ]]; then
+      rsync $KUBASH_RSYNC_OPTS "ssh -p ${MASTERPORTS[$i]}" $KUBASH_CLUSTER_DIR/master_join.sh $INIT_USER@$HOST:/tmp/
       push_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
       #command2run="ls -Rl /etc/kubernetes"
       #sudo_command ${MASTERPORTS[$i]} ${INIT_USER} ${MASTERHOSTS[$i]} "$command2run"
       #command2run="rm -fv /etc/kubernetes/kubelet.conf"
       #sudo_command ${MASTERPORTS[$i]} ${INIT_USER} ${MASTERHOSTS[$i]} "$command2run"
-      my_KUBE_INIT="bash /tmp/join.sh"
+      my_KUBE_INIT="bash /tmp/master_join.sh"
       squawk 5 "kube init --> $my_KUBE_INIT"
       ssh -n -p ${MASTERPORTS[$i]} root@${HOST} "$my_KUBE_INIT" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
   #    w8_node $my_node_name
@@ -736,7 +748,9 @@ EOF
         exit 1
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/join.sh
+        echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
+        #sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $KUBASH_CLUSTER_DIR/join.sh
+        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -747,9 +761,10 @@ EOF
   do
     squawk 85 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
     if [[ "$K8S_role" == 'node' ]]; then
-      squawk 65 "push kube pki ext etcd sub $K8S_user $K8S_ip1 $K8S_sshPort"
+      squawk 101 'neutered'
+      #squawk 65 "push kube pki ext etcd sub $K8S_user $K8S_ip1 $K8S_sshPort"
       #push_pki_ext_etcd_method   $K8S_user $K8S_ip1 $K8S_sshPort
-      push_kube_pki_ext_etcd_sub $K8S_user $K8S_ip1 $K8S_sshPort
+      #push_kube_pki_ext_etcd_sub $K8S_user $K8S_ip1 $K8S_sshPort
     fi
   done <<< "$kubash_hosts_csv_slurped"
   rm -Rf $etcd_test_tmp
@@ -923,7 +938,7 @@ EOF
       my_KUBE_INIT="bash /etc/kubernetes/kube_stacked_init.sh ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERHOSTS[$i]} ${MASTERNAMES[$i]}"
       squawk 5 "kube init --> $my_KUBE_INIT"
       ssh -n -p ${MASTERPORTS[$i]} root@${HOST} "$my_KUBE_INIT" 2>&1 | tee $etcd_stacked_tmp/${HOST}-rawresults.k8s
-      w8_node $my_node_name
+      #w8_node $my_node_name
       #rolero $my_node_name master
     else
       #my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/etc/kubernetes/kubeadmcfg.yaml"
@@ -2214,17 +2229,28 @@ do_dashboard () {
 
 do_voyager () {
   squawk 1 " do_voyager"
-  #taint_all_ingress
-  if [ "$VOYAGER_BY_HELM" = "true" ]; then
+  taint_all_ingress
+  if [ "$VOYAGER_BY_HELM" = "stable" ]; then
   KUBECONFIG=$KUBECONFIG \
   helm install stable/voyager --name voyager \
+    --set cloudProvider=$VOYAGER_PROVIDER \
+    --set apiserver.ca="$(onessl get kube-ca)" \
+    $VOYAGER_ADMISSIONWEBHOOK
+  elif [ "$VOYAGER_BY_HELM" = "appscode" ]; then
+  KUBECONFIG=$KUBECONFIG \
+  helm repo add appscode https://charts.appscode.com/stable/
+  helm repo update
+  helm install appscode/voyager \
+    --name voyager-operator \
+    --version $VOYAGER_VERSION \
+    --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
     --set apiserver.ca="$(onessl get kube-ca)" \
     $VOYAGER_ADMISSIONWEBHOOK
   else
     KUBECONFIG=$KUBECONFIG \
     curl -fsSL \
-    https://raw.githubusercontent.com/appscode/voyager/6.0.0/hack/deploy/voyager.sh \
+    https://raw.githubusercontent.com/appscode/voyager/$VOYAGER_VERSION/hack/deploy/voyager.sh \
         | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
   fi
 }
@@ -2259,7 +2285,7 @@ do_traefik () {
 }
 
 do_tiller () {
-  w8_kubedns
+  #w8_kubedns
   squawk 1 " do_tiller"
   #kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
   kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
@@ -4479,7 +4505,6 @@ do_nodes_in_parallel () {
     bash $do_nodes_tmp_para/hopper
   fi
   rm -Rf $do_nodes_tmp_para
-  taint_all_ingress
 }
 
 do_command_in_parallel () {
@@ -5828,7 +5853,7 @@ main () {
       fi
     elif [[ "$target_os" == "openshift" ]]; then
       if [[ -z "$target_build" ]]; then
-        target_build=openshift-7.4-x86_64
+        target_build=openshift-7.5-x86_64
       fi
     elif [[ "$target_os" == "kubespray" ]]; then
       if [[ -z "$target_build" ]]; then

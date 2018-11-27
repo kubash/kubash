@@ -3,7 +3,7 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${INSTALL_PKGS:='sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
 : ${DOCKER_PKG:='docker-ce-17.12.1.ce-1.el7.centos.x86_64'}
 : ${DOCKER_COMPOSE_PKG:='docker-compose-1.9.0-5.el7.noarch'}
 : ${KUBEPKG_VERSION:="1.9.3-0"}
@@ -39,10 +39,11 @@ localhost
 localhost
 EOF
 
+# Add modules ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh
 echo ip_vs >> /etc/modules
+echo ip_vs_rr >> /etc/modules
 echo ip_vs_wrr >> /etc/modules
 echo ip_vs_sh >> /etc/modules
-echo ip_vs_rr >> /etc/modules
 
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -61,6 +62,8 @@ yum repolist enabled
 
 yum install -y $PRE_INSTALL_PKGS
 yum install -y $INSTALL_PKGS
+
+systemctl enable sysstat.service
 
 swapoff --all
 
