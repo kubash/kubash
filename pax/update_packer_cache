@@ -7,4 +7,5 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 packer_cache_path=$1
-find . -type l -name packer_cache|sed "s/\/packer_cache//"|xargs -n1 -I%  bash -c  "cd %;rm  packer_cache;ln -s $packer_cache_path ./"
+find . -type l -name packer_cache|sed "s/\/packer_cache//"|xargs -n1 -I%  bash -c  "cd %;pwd;rm  packer_cache;ln -s $packer_cache_path ./ && ls -alh packer_cache"
+find . -type d -name packer_cache|sed "s/\/packer_cache//"|xargs -n1 -I%  bash -c  "cd %;rsync -av packer_cache/*.iso $packer_cache_path/ && rm packer_cache/*.iso && rmdir packer_cache;ln -s $packer_cache_path ./"

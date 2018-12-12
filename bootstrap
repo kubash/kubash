@@ -111,6 +111,7 @@ main () {
   check_cmd uname
   check_cmd go
   check_cmd pip
+  check_cmd npm
   check_cmd make
   check_cmd parallel
   check_cmd 'grep'
@@ -128,6 +129,7 @@ main () {
   cd $KUBASH_DIR
   git submodule update --init --recursive
   make submodules/openebs
+  make nvm
   make jinja2
   make yaml2json
   check_install ct

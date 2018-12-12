@@ -4,14 +4,14 @@
     stacked-master1:
       hostname: stackedmaster1
       role: primary_master
-      cpuCount: 22
+      cpuCount: 4
       Memory: 2800
       provisioner:
         Host: '10.0.23.12'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
@@ -21,14 +21,14 @@
     stacked-master2:
       hostname: stackedmaster2
       role: master
-      cpuCount: 1
-      Memory: 1500
+      cpuCount: 4
+      Memory: 2500
       provisioner:
         Host: '10.0.23.12'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
@@ -38,14 +38,14 @@
     stacked-master3:
       hostname: stackedmaster3
       role: master
-      cpuCount: 1
-      Memory: 1500
+      cpuCount: 4
+      Memory: 2500
       provisioner:
         Host: '10.0.23.12'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
@@ -62,7 +62,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
@@ -79,7 +79,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
@@ -96,12 +96,29 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.9.11
+      os: $REPLACEME_OS_TPL
       virt: qemu
       sshPort: 22
       network1:
         network: bridge=br1
         mac: '52:54:00:e2:9e:19'
+        ip: dhcp
+    stacked-ingress1:
+      hostname: stackedingress1
+      role: ingress
+      cpuCount: 2
+      Memory: 2222
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: $REPLACEME_OS_TPL
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:9e:20'
         ip: dhcp
   ca:
     cert:

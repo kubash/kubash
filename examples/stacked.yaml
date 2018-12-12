@@ -11,7 +11,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -28,7 +28,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -45,7 +45,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -62,7 +62,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -79,7 +79,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -96,7 +96,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:
@@ -113,7 +113,7 @@
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
-      os: ubuntu1.12.2
+      os: ubuntu1.12.3
       virt: qemu
       sshPort: 22
       network1:

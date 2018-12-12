@@ -1,7 +1,32 @@
 #!/bin/bash
+if [ $# -ne 2 ]; then
+  # Print usage
+  echo 'Error! wrong number of arguments'
+  echo 'usage:'
+  echo "$0 cluster_name cluster_version"
+  echo 'e.g.'
+  echo "$0 stacked ubuntu1.12.3"
+  exit 1
+fi
+TMP=$(mktemp -d)
 this_test=$1
-	kubash -n $this_test decommission -y
-	rm -Rf ~/.kubash/clusters/$this_test
-	kubash yaml2cluster -n $this_test ~/.kubash/examples/$this_test.yaml
-	kubash -n $this_test -y provision
-	#kubash -n $this_test --verbosity=105 etcd_ext
+this_os_ver=$2
+
+# delete the cluster
+kubash -n $this_test decommission -y
+rm -Rf ~/.kubash/clusters/$this_test
+
+# prep for the cluster
+REPLACEME_OS_TPL=$this_os_ver \
+envsubst \
+    < ~/.kubash/examples/$this_test.tpl \
+    > $TMP/cluster.yaml
+kubash yaml2cluster -n $this_test $TMP/cluster.yaml
+rm $TMP/cluster.yaml
+
+# make the cluster
+kubash -n $this_test -y provision
+kubash -n $this_test --verbosity=105 init
+
+#remove temp
+rmdir $TMP
