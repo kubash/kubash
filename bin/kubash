@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION='v1.12.3'
+KUBASH_VERSION='v1.13.0'
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
