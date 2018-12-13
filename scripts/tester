@@ -19,7 +19,7 @@ rm -Rf ~/.kubash/clusters/$this_test
 # prep for the cluster
 REPLACEME_OS_TPL=$this_os_ver \
 envsubst \
-    < ~/.kubash/examples/$this_test.tpl \
+    < ~/.kubash/templates/$this_test.tpl \
     > $TMP/cluster.yaml
 kubash yaml2cluster -n $this_test $TMP/cluster.yaml
 rm $TMP/cluster.yaml
