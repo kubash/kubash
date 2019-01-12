@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-KUBASH_VERSION='v1.13.0'
+KUBASH_VERSION='v1.13.1'
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
-: ${KUBE_VERSION:='v1.12.3'}
+: ${KUBE_VERSION:='v1.13.1'}
 : ${KUBE_MAJOR_VER:=1}
-: ${KUBE_MINOR_VER:=12}
+: ${KUBE_MINOR_VER:=13}
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
@@ -17,6 +17,7 @@ KUBASH_VERSION='v1.13.0'
 : ${KUBASH_CLUSTER_CONFIG:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/config}
 : ${KUBASH_HOSTS_CSV:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/hosts.csv}
 : ${KUBASH_ANSIBLE_HOSTS:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/hosts}
+: ${KUBASH_KUBESPRAY_HOSTS:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/inventory/hosts.ini}
 : ${KUBASH_PROVISION_CSV:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/provision.csv}
 : ${KUBASH_USERS_CSV:=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/users.csv}
 : ${KUBASH_INGRESS_NAME:='kubashingress'}
@@ -62,7 +63,7 @@ KUBASH_VERSION='v1.13.0'
 : ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml}
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
-: ${VOYAGER_PROVIDER:='baremetal'}
+: ${VOYAGER_PROVIDER:='metallb'}
 : ${VOYAGER_BY_HELM:= "false"}
 : ${VOYAGER_VERSION:='8.0.1'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
@@ -2657,6 +2658,7 @@ demo () {
   do_jenkins
   do_kafka
   do_redis
+  do_minio
 }
 
 do_redis () {
@@ -2697,6 +2699,12 @@ do_jenkins () {
   cd $KUBASH_DIR/submodules/openebs/k8s/demo/jenkins
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    jenkins.yml
+}
+
+do_minio () {
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/minio
+  kubectl --kubeconfig=$KUBECONFIG apply -f \
+   minio.yaml
 }
 
 do_kafka () {
@@ -3050,110 +3058,110 @@ osm_default_node_selector="region=lab"' >> $KUBASH_ANSIBLE_HOSTS
 
 write_ansible_kubespray_hosts () {
   squawk 1 " Make a hosts file for ansible"
+  cp -av $KUBASH_DIR/submodules/kubespray/inventory/sample $KUBASH_CLUSTER_DIR/inventory
   # Make a fresh hosts file
   slurpy="$(grep -v '^#' $KUBASH_HOSTS_CSV)"
-  if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
+  if [[ -e "$KUBASH_KUBESPRAY_HOSTS" ]]; then
     horizontal_rule
-    rm $KUBASH_ANSIBLE_HOSTS
-    touch $KUBASH_ANSIBLE_HOSTS
+    rm $KUBASH_KUBESPRAY_HOSTS
+    touch $KUBASH_KUBESPRAY_HOSTS
   else
-    touch $KUBASH_ANSIBLE_HOSTS
+    touch $KUBASH_KUBESPRAY_HOSTS
   fi
-  cp -av $KUBASH_DIR/submodules/kubespray/inventory/sample/group_vars $KUBASH_CLUSTER_DIR/
   # Write all hosts to inventory for id
   set_csv_columns
-  echo '[all]'  >> $KUBASH_ANSIBLE_HOSTS
+  echo '[all]'  >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
-    echo "$K8S_node ip=$K8S_ip1 etcd_member_name=$K8S_node ansible_ssh_host=$K8S_ip1 ansible_ssh_port=$K8S_sshPort ansible_user=$K8S_provisionerUser" >> $KUBASH_ANSIBLE_HOSTS
+    echo "$K8S_node ip=$K8S_ip1 etcd_member_name=$K8S_node ansible_ssh_host=$K8S_ip1 ansible_ssh_port=$K8S_sshPort ansible_user=$K8S_provisionerUser" >> $KUBASH_KUBESPRAY_HOSTS
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[kube-node]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-node]' >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "node" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[kube-node:vars]' >> $KUBASH_ANSIBLE_HOSTS
-  echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-node:vars]' >> $KUBASH_KUBESPRAY_HOSTS
+  echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[calico-rr]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[calico-rr]' >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     elif [[ "$K8S_role" == "primary_master" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
-  echo '[kube-master]' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
+  echo '[kube-master]' >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "master" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     elif [[ "$K8S_role" == "primary_master" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[kube-master:vars]' >> $KUBASH_ANSIBLE_HOSTS
-  echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[kube-master:vars]' >> $KUBASH_KUBESPRAY_HOSTS
+  echo 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[etcd]'  >> $KUBASH_ANSIBLE_HOSTS
+  echo '[etcd]'  >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" = "etcd"  || "$K8S_role" == "primary_etcd" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     elif [[ "$MASTERS_AS_ETCD" == "true" ]]; then
       if [[ "$K8S_role" == "master" || "$K8S_role" == "primary_master" ]]; then
-        echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+        echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
       fi
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[vault]'  >> $KUBASH_ANSIBLE_HOSTS
+  echo '[vault]'  >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" = "etcd"  || "$K8S_role" == "primary_etcd" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     elif [[ "$K8S_role" == "master" || "$K8S_role" == "primary_master" ]]; then
       if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
-        echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+        echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
       fi
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[ingress]'  >> $KUBASH_ANSIBLE_HOSTS
+  echo '[ingress]'  >> $KUBASH_KUBESPRAY_HOSTS
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" = "ingress" ]]; then
-      echo "$K8S_node" >> $KUBASH_ANSIBLE_HOSTS
+      echo "$K8S_node" >> $KUBASH_KUBESPRAY_HOSTS
     fi
   done <<< "$slurpy"
 
-  echo '' >> $KUBASH_ANSIBLE_HOSTS
+  echo '' >> $KUBASH_KUBESPRAY_HOSTS
 
-  echo '[k8s-cluster:children]' >> $KUBASH_ANSIBLE_HOSTS
-  echo 'kube-node' >> $KUBASH_ANSIBLE_HOSTS
-  echo 'kube-master' >> $KUBASH_ANSIBLE_HOSTS
+  echo '[k8s-cluster:children]' >> $KUBASH_KUBESPRAY_HOSTS
+  echo 'kube-node' >> $KUBASH_KUBESPRAY_HOSTS
+  echo 'kube-master' >> $KUBASH_KUBESPRAY_HOSTS
 }
 
 removestalekeys () {
@@ -3710,6 +3718,7 @@ initialize () {
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
+  scanlooper
   check_coreos
   process_hosts_csv
 }
@@ -3747,19 +3756,18 @@ kubeadm2ha_initialize () {
 kubespray_initialize () {
   squawk 1 "kubespray initialize"
   check_csv
-  if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
+  if [[ -e "$KUBASH_KUBESPRAY_HOSTS" ]]; then
     squawk 1 'Hosts file found, not overwriting'
   else
     write_ansible_kubespray_hosts
   fi
   #yes yes|ansible-playbook \
-    #-i $KUBASH_ANSIBLE_HOSTS \
+    #-i $KUBASH_KUBESPRAY_HOSTS \
     #-e kube_version=$KUBE_VERSION \
     #$KUBASH_DIR/submodules/kubespray/reset.yml
   ansible-playbook \
-    -i $KUBASH_ANSIBLE_HOSTS \
-    -e kube_version=$KUBE_VERSION \
-    -e kubeadm_enabled=true \
+    -i $KUBASH_KUBESPRAY_HOSTS \
+    -e '{ kubeadm_enabled: True }' \
     $KUBASH_DIR/submodules/kubespray/cluster.yml
 }
 
@@ -5377,19 +5385,38 @@ process_hosts_csv () {
 prep () {
   squawk 5 " prep"
   set_csv_columns
+  hosts_csv_slurp
   while IFS="," read -r $csv_columns
   do
     preppy $K8S_node $K8S_ip1 $K8S_sshPort
-  done < $KUBASH_HOSTS_CSV
+  done <<< "$kubash_hosts_csv_slurped"
 }
 
 preppy () {
-  squawk 7 " preppy"
+  squawk 7 "preppy $@"
   node_name=$1
   node_ip=$2
   node_port=$3
+  #removestalekeys $node_ip
+  #ssh-keyscan -p $node_port $node_ip >> ~/.ssh/known_hosts
+  scanner $node_ip $node_port
+}
+
+scanner () {
+  squawk 17 "scanner $@"
+  node_ip=$1
+  node_port=$2
   removestalekeys $node_ip
   ssh-keyscan -p $node_port $node_ip >> ~/.ssh/known_hosts
+}
+
+scanlooper () {
+  squawk 5 "scanlooper"
+  set_csv_columns
+  while IFS="," read -r $csv_columns
+  do
+    scanner $K8S_ip1 $K8S_sshPort
+  done <<< "$kubash_hosts_csv_slurped"
 }
 
 do_decom () {
@@ -5480,6 +5507,34 @@ do_metallb () {
     fi
 }
 
+do_istio () {
+    cd $KUBASH_DIR/submodules/istio/install
+    cd kubernetes/helm
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      istio
+}
+
+do_efk () {
+    cd $KUBASH_DIR/submodules/openebs/k8s/demo/efk
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      es
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      fluentd
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      kibana
+}
+
+do_rook () {
+    kubectl --kubeconfig=$KUBECONFIG create -f \
+      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/operator.yaml
+
+    KUBECONFIG=$KUBECONFIG \
+        $KUBASH_DIR/w8s/generic.w8 rook-minio-operator rook-minio-system
+
+    kubectl --kubeconfig=$KUBECONFIG create -f \
+      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/object-store.yaml
+}
+
 do_openebs () {
     if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
     KUBECONFIG=$KUBECONFIG \
@@ -5491,7 +5546,6 @@ do_openebs () {
       kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
     fi
     kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
-  
 }
 
 coreos_build  () {
@@ -5519,7 +5573,7 @@ coreos_build  () {
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 }
 
-packer_build  () {
+packer_build () {
   build_virt=$1
   target_os=$2
   target_build=$3
@@ -5813,6 +5867,7 @@ set_name () {
   export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
   KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
   KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
+  KUBASH_KUBESPRAY_HOSTS=$KUBASH_CLUSTER_DIR/inventory/hosts.ini
   KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
   KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
   KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
@@ -6037,6 +6092,13 @@ main () {
       exit 1
     fi
     exit 0
+  elif [[ $RAISON == "istio" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_istio
   elif [[ $RAISON == "metallb" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -6044,6 +6106,29 @@ main () {
       exit 1
     fi
         do_metallb
+  elif [[ $RAISON == "minio" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_minio
+  elif [[ $RAISON == "scan" ]]; then
+        scanlooper
+  elif [[ $RAISON == "efk" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_efk
+  elif [[ $RAISON == "rook" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_rook
   elif [[ $RAISON == "openebs" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -6133,7 +6218,7 @@ main () {
     else
       copy_image_to_all_provisioning_hosts
       provisioner
-      squawk 1 "wating on hosts to come up"
+      squawk 1 "waiting on hosts to come up"
       sleep 33
       refresh_network_addresses
       prep
@@ -6448,10 +6533,6 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm-7.4-x86_64
       fi
-    elif [[ "$target_os" == "debian" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=debian-9.3-amd64
-      fi
     elif [[ "$target_os" == "centos" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=centos-7.4-x86_64
@@ -6476,9 +6557,17 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=fedora-27-x86_64
       fi
-    elif [[ "$target_os" == "kubeadm197" ]]; then
+    elif [[ "$target_os" =~ 'centos7' ]]; then
       if [[ -z "$target_build" ]]; then
-        target_build=kubeadm197-7.4-x86_64
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/centos7//')
+        target_build=centos7$build_num
+      fi
+    elif [[ "$target_os" =~ 'stretch' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/stretch//')
+        target_build=stretch$build_num
       fi
     elif [[ "$target_os" =~ 'beaver' ]]; then
       if [[ -z "$target_build" ]]; then
@@ -6499,7 +6588,7 @@ main () {
         croak 3  'packer not supported for coreos at this time'
       elif [[ $builder == "coreos" ]]; then
         if [[ -z "$target_build" ]]; then
-    squawk 5 "Setting coreos channel to stable"
+          squawk 5 "Setting coreos channel to stable"
           target_build=stable
         fi
       fi

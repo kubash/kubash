@@ -110,6 +110,7 @@ crictl: $(KUBASH_BIN)
 $(KUBASH_BIN)/crictl: SHELL:=/bin/bash
 $(KUBASH_BIN)/crictl:
 	@echo 'Installing cri-tools'
+	GOPATH=${GOPATH} \
 	go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
 	cp ${GOPATH}/bin/crictl $(KUBASH_BIN)/
 

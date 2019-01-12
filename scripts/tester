@@ -25,6 +25,7 @@ kubash yaml2cluster -n $this_test $TMP/cluster.yaml
 rm $TMP/cluster.yaml
 
 # make the cluster
+set -e
 kubash -n $this_test -y provision
 kubash -n $this_test --verbosity=105 init
 
