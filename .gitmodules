@@ -7,3 +7,6 @@
 [submodule "submodules/kubeadm2ha"]
 	path = submodules/kubeadm2ha
 	url = https://github.com/joshuacox/kubeadm2ha.git
+[submodule "submodules/istio"]
+	path = submodules/istio
+	url = https://github.com/istio/istio.git

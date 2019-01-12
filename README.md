@@ -224,3 +224,13 @@ everything else that kubeadm considers 'out of scope'.  From building
 images, provisioning, to usage of kubeadm itself, on through to a quick
 shell for interacting with the running cluster, and finally
 decommissioning the cluster.
+
+### Troubleshooting
+
+Sometimes your router will give new addresses to the MAC addresses and the kubash host will have stale arp table entries, flush  them all:
+
+```
+ip -s -s neigh flush all
+```
+
+Another issue is that the kubash user will have conflicting known_hosts entries for ssh, move your known_hosts file temporarily to test.

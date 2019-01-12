@@ -3,15 +3,17 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
-: ${DOCKER_PKG:='docker-ce-17.12.1.ce-1.el7.centos.x86_64'}
-: ${DOCKER_COMPOSE_PKG:='docker-compose-1.9.0-5.el7.noarch'}
-: ${KUBEPKG_VERSION:="1.9.3-0"}
-: ${ETCD_VERSION:="3.2.7-1"}
-: ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION.x86_64"}
-: ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION.x86_64"}
-: ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION.x86_64"}
-: ${ETCD_PKG="etcd-$ETCD_VERSION.el7"}
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${DOCKER_PKG:='17.12.1.ce'}
+: ${DOCKER_COMPOSE_PKG:='1.18.0'}
+: ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
+: ${DOCKER_COMPOSE_PKG_NAME:="docker-compose-${DOCKER_PKG}"}
+: ${KUBEPKG_VERSION:="1.13.1"}
+: ${ETCD_VERSION:="3.2.22"}
+: ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
+: ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION"}
+: ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION"}
+: ${ETCD_PKG="etcd-$ETCD_VERSION"}
 
 cd $TMP
 cat <<EOF > $TMP/inventory
@@ -86,7 +88,8 @@ install_default_docker () {
   systemctl enable kubelet && systemctl start kubelet
   
   pip install --upgrade pip
-  pip install docker-py
+  pip install --upgrade jinja2-cli jinja2
+  pip install --upgrade 'docker<3.0'
 
   #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
   sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
@@ -102,17 +105,18 @@ install_spec_docker () {
   # sudo yum-config-manager --enable docker-ce-test
   #curl -fsSL https://get.docker.com/ | sh
   #yum install docker-ce
-  yum install -y $DOCKER_PKG $DOCKER_COMPOSE_PKG $KUBECTL_PKG $KUBEADM_PKG $KUBELET_PKG $ETCD_PKG
+  yum install -y $DOCKER_PKG_NAME $DOCKER_COMPOSE_PKG_NAME $KUBECTL_PKG $KUBEADM_PKG $KUBELET_PKG $ETCD_PKG
   #yum install -y kubelet kubeadm kubectl
   echo 'Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"' \
     >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
   #######
-  
+
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
-  
+
   pip install --upgrade pip
-  pip install docker-py
+  pip install --upgrade jinja2-cli jinja2
+  pip install --upgrade 'docker<3.0'
 }
 
 echo "kubeadm install is $KUBEADM_INSTALL"
@@ -150,6 +154,7 @@ export GOPATH=$HOME/.go
 #mv $HOME/go/bin/crictl /usr/local/bin/
 
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
+echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
 
 # remove temp
 cd

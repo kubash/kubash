@@ -51,4 +51,17 @@ echo 'PATH=/usr/local/bin:$PATH' >> /home/$K8S_SU_USER/.bash_profile
 chown -R $K8S_SU_USER. /home/$K8S_SU_USER
 chown -R $K8S_SU_USER. /home/$K8S_SU_USER/.ssh
 
+if [ -e /bin/zsh ]; then
+#chsh -s /bin/zsh
+chsh -s /bin/zsh $K8S_SU_USER
+else
+#chsh -s /usr/bin/zsh
+chsh -s /usr/bin/zsh $K8S_SU_USER
+fi
+
+#curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -o $TMP/ohmyzsh.sh
+#bash $TMP/ohmyzsh.sh
+#sudo -i -u $K8S_SU_USER bash $TMP/ohmyzsh.sh
+#rm $TMP/ohmyzsh.sh
+
 rm -Rf $TMP
