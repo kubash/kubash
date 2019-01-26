@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
+<<<<<<< HEAD
+KUBASH_VERSION='v1.13.1'
+# set default fall-through variables
+# if set in the environment these variables will fall-through and retain their value
+# otherwise use the defaults here
+: ${KUBE_VERSION:='v1.13.1'}
+=======
 KUBASH_VERSION='v1.13.2'
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
 : ${KUBE_VERSION:='v1.13.2'}
+>>>>>>> 1.13.2
 : ${KUBE_MAJOR_VER:=1}
 : ${KUBE_MINOR_VER:=13}
 : ${KUBASH_CLUSTER_NAME=default}

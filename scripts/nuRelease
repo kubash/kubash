@@ -1,0 +1,13 @@
+#!/bin/bash
+if [ $# -ne 1 ]; then
+  # Print usage
+  echo 'Error! wrong number of arguments'
+  echo 'usage:'
+  echo "$0 what_version_kubernetes"
+  exit 1
+fi
+RELEASE_VER=$1
+./scripts/mkstretch $RELEASE_VER
+./scripts/mkcentos7 $RELEASE_VER
+./scripts/mkbeaver $RELEASE_VER
+./scripts/mknewubuntupax.sh $RELEASE_VER
