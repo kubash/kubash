@@ -99,9 +99,9 @@ flight_checks () {
 main () {
 
   if type "apt-get" &> /dev/null; then
-    sudo apt-get install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap
+    sudo apt-get install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap python-pip
   elif type "yum" &> /dev/null; then
-    sudo yum install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap
+    sudo yum install -y jq git build-essential golang unzip curl wget parallel ansible rlwrap python-pip
   fi
   check_cmd git
   check_cmd ssh
@@ -143,7 +143,8 @@ main () {
   make kubectl
   check_install crictl
   check_install onessl
-  pip install --user --upgrade install netaddr
+  pip install --user --upgrade netaddr
+  pip install --user --upgrade jinja2-cli
   $KUBASH_BIN/kubash dotfiles
   echo 'logout and log back in, or source your RC files'
 }
