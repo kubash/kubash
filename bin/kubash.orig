@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 <<<<<<< HEAD
-KUBASH_VERSION='v1.13.1'
-# set default fall-through variables
-# if set in the environment these variables will fall-through and retain their value
-# otherwise use the defaults here
-: ${KUBE_VERSION:='v1.13.1'}
-=======
 KUBASH_VERSION='v1.13.2'
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
 : ${KUBE_VERSION:='v1.13.2'}
->>>>>>> 1.13.2
+=======
+KUBASH_VERSION='v1.13.3'
+# set default fall-through variables
+# if set in the environment these variables will fall-through and retain their value
+# otherwise use the defaults here
+: ${KUBE_VERSION:='v1.13.3'}
+>>>>>>> 1.13.3
 : ${KUBE_MAJOR_VER:=1}
 : ${KUBE_MINOR_VER:=13}
 : ${KUBASH_CLUSTER_NAME=default}
@@ -5585,6 +5585,7 @@ packer_build () {
   build_virt=$1
   target_os=$2
   target_build=$3
+  build_num=$4
   chkdir $KVM_builderDir
   chkdir $KVM_builderTMP
 
@@ -6541,30 +6542,50 @@ main () {
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm-7.4-x86_64
       fi
+<<<<<<< HEAD
+=======
+      build_usage
+      croak 3  'support removed request repair :('
+>>>>>>> 1.13.3
     elif [[ "$target_os" == "centos" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=centos-7.4-x86_64
       fi
+      build_usage
+      croak 3  'support removed request repair :('
     elif [[ "$target_os" == "openshift" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=openshift-7.5-x86_64
       fi
+      build_usage
+      croak 3  'support removed request repair :('
     elif [[ "$target_os" == "kubespray" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubespray-7.5-x86_64
       fi
+      build_usage
+      croak 3  'support removed request repair :('
     elif [[ "$target_os" == "kubeadm2ha" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm2ha-7.4-x86_64
       fi
+      build_usage
+      croak 3  'support removed request repair :('
     elif [[ "$target_os" == "kubeadm" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=kubeadm-7.4-x86_64
       fi
+      build_usage
+      croak 3  'support removed request repair :('
     elif [[ "$target_os" == "fedora" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=fedora-27-x86_64
       fi
+<<<<<<< HEAD
+=======
+      build_usage
+      croak 3  'support removed request repair :('
+>>>>>>> 1.13.3
     elif [[ "$target_os" =~ 'centos7' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
@@ -6604,12 +6625,13 @@ main () {
     if [[ -z "$target_build" ]]; then
       target_build=ubuntu-16.04-amd64
     fi
+    build_usage
     if [[ -z "$build_virt" ]]; then
       build_virt=qemu
     fi
     if [[ $builder == "packer" ]]; then
       squawk 5 "packer_build $build_virt $target_os $target_build"
-      packer_build $build_virt $target_os $target_build
+      packer_build $build_virt $target_os $target_build $build_num
     elif [[ $builder == "coreos" ]]; then
       squawk 5 "coreos_build $build_virt $target_os $target_build"
       coreos_build $build_virt $target_os $target_build

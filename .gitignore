@@ -16,3 +16,5 @@ tmp/*
 submodules/openebs
 */packer_cache
 .kubash_history
+.tmpax
+*.packer_cache_path

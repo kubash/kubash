@@ -68,6 +68,7 @@ yum install -y $INSTALL_PKGS
 systemctl enable sysstat.service
 
 swapoff --all
+sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
 
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
