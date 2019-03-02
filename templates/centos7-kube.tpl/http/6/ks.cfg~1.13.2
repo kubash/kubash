@@ -2,45 +2,39 @@ install
 cdrom
 lang en_US.UTF-8
 keyboard us
-network --bootproto=dhcp
+network --bootproto=dhcp --onboot=on --device=eth0
 rootpw vagrant
 firewall --disabled
-authconfig --enableshadow --passalgo=sha512
 selinux --permissive
 timezone UTC
+unsupported_hardware
 bootloader --location=mbr
 text
 skipx
 zerombr
 clearpart --all --initlabel
 autopart
+auth --enableshadow --passalgo=sha512 --kickstart
 firstboot --disabled
-reboot
-user --name=vagrant --password vagrant
+reboot --eject
+user --name=vagrant --plaintext --password vagrant
 key --skip
 
 %packages --nobase --ignoremissing --excludedocs --instLangs=en_US.utf8
 # vagrant needs this to copy initial files via scp
 openssh-clients
-openssh-server
-bzip2
-curl
-dhclient
-gcc
-kernel-devel
-kernel-headers
-make
-nfs-utils
-perl
 sudo
+kernel-headers
+kernel-devel
+gcc
+make
+perl
 wget
-yum
+nfs-utils
+virt-what
 -fprintd-pam
 -intltool
--avahi
--bluez-utils
--dogtail
--kudzu
+
 # unnecessary firmware
 -aic94xx-firmware
 -atmel-firmware
@@ -68,11 +62,19 @@ yum
 -rt73usb-firmware
 -xorg-x11-drv-ati-firmware
 -zd1211-firmware
-# Not Needed
--selinux-policy
--selinux-policy-targeted
+-kernel-firmware
 
 %post
+# Force to set SELinux to a permissive mode
+sed -i -e 's/\(^SELINUX=\).*$/\1permissive/' /etc/selinux/config
 # sudo
-echo "vagrant        ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
-sed -i "s/^[^#].*requiretty/#Defaults requiretty/" /etc/sudoers
+echo "%vagrant ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vagrant
+chmod 0440 /etc/sudoers.d/vagrant
+
+#Enable hyper-v daemons only if using hyper-v virtualization
+if [ $(virt-what) == "hyperv" ]; then
+    ifup eth0
+    yum -y install hyperv-daemons
+    chkconfig hypervvssd on
+    chkconfig hypervkvpd on
+fi

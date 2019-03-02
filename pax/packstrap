@@ -114,6 +114,7 @@ export GOPATH=$HOME/.go
 #go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
 #mv $HOME/go/bin/crictl /usr/local/bin/
 swapoff --all
+sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
 
 if [ "$KUBEADM_INSTALL" = "openshift" ]; then
   # leaving clean for now, let ansible initialize
