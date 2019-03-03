@@ -2,9 +2,10 @@
   "builders": [
     {
       "boot_command": [
-        "<esc><wait>",
-        "<esc><wait>",
-        "<enter><wait>",
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "/install/vmlinuz<wait>",
         " auto<wait>",
         " console-setup/ask_detect=false<wait>",
@@ -62,9 +63,10 @@
     },
     {
       "boot_command": [
-        "<esc><wait>",
-        "<esc><wait>",
-        "<enter><wait>",
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "/install/vmlinuz<wait>",
         " auto<wait>",
         " console-setup/ask_detect=false<wait>",
@@ -113,9 +115,10 @@
     },
     {
       "boot_command": [
-        "<esc><wait>",
-        "<esc><wait>",
-        "<enter><wait>",
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "/install/vmlinuz<wait>",
         " auto<wait>",
         " console-setup/ask_detect=false<wait>",
@@ -171,9 +174,10 @@
     },
     {
       "boot_command": [
-        "<esc><wait>",
-        "<esc><wait>",
-        "<enter><wait>",
+        "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+        "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "/install/vmlinuz<wait>",
         " auto<wait>",
         " console-setup/ask_detect=false<wait>",
@@ -206,11 +210,13 @@
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
       "output_directory": "../builds/packer-{{user `template`}}-qemu",
-      "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+      "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
       "ssh_password": "vagrant",
       "ssh_port": 22,
       "ssh_username": "vagrant",
+      "net_device": "virtio-net",
       "ssh_wait_timeout": "10000s",
+      "net_device": "virtio-net",
       "type": "qemu",
       "vm_name": "{{ user `template` }}",
       "qemuargs": [
@@ -230,7 +236,7 @@
         "set gfxpayload=1024x768<enter>",
         "linux /install/vmlinuz ",
         "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed-hyperv.cfg ",
-        "debian-installer=en_US.UTF-8 auto locale=en_US.UTF-8 kbd-chooser/method=us ",
+        "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
         "hostname={{.Name}} ",
         "fb=false debconf/frontend=noninteractive ",
         "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
@@ -273,11 +279,6 @@
         "HOME_DIR=/home/vagrant",
         "http_proxy={{user `http_proxy`}}",
         "https_proxy={{user `https_proxy`}}",
-        "KEYS_TO_ADD={{user `keys_to_add`}}",
-        "KEYS_URL={{user `keys_url`}}",
-        "KUBASH_SET_ROOT_PW={{user `root_password_to_set`}}",
-        "KUBASH_SET_SU_PW={{user `su_password_to_set`}}",
-        "K8S_SU_USER={{user `k8s_su_user`}}",
         "KUBEADM_INSTALL={{ user `kubeadm_install`}}",
         "DOCKER_PKG={{ user `DOCKER_PKG`}}",
         "DOCKER_COMPOSE_PKG={{ user `DOCKER_COMPOSE_PKG`}}",
@@ -299,7 +300,25 @@
         "scripts/hyperv.sh",
         "../packstrap",
         "scripts/cleanup.sh",
-        "../_common/minimize.sh",
+        "../_common/minimize.sh"
+      ],
+      "type": "shell"
+    },
+    {
+      "environment_vars": [
+        "HOME_DIR=/home/vagrant",
+        "KEYS_TO_ADD={{user `keys_to_add`}}",
+        "KEYS_URL={{user `keys_url`}}",
+        "http_proxy={{user `http_proxy`}}",
+        "https_proxy={{user `https_proxy`}}",
+        "KUBASH_SET_ROOT_PW={{user `root_password_to_set`}}",
+        "KUBASH_SET_SU_PW={{user `su_password_to_set`}}",
+        "K8S_SU_USER={{user `k8s_su_user`}}",
+        "no_proxy={{user `no_proxy`}}"
+      ],
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
+      "expect_disconnect": true,
+      "scripts": [
         "../keyer",
         "../kubashgrouper",
         "../removeswap"
@@ -308,7 +327,7 @@
     }
   ],
   "variables": {
-    "box_basename": "kubash-beaver-18.04",
+    "box_basename": "kubash-ubuntu-16.04",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
@@ -316,9 +335,9 @@
     "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
     "kubeadm_install": "kubeadm",
     "k8s_su_user": "{{ env `K8S_SU_USER`}}",
-    "DOCKER_PKG": "18.06",
-    "DOCKER_COMPOSE_PKG": "1.17.1",
-    "KUBEPKG_VERSION": "1.13.3",
+    "DOCKER_PKG": "17.03",
+    "DOCKER_COMPOSE_PKG": "1.8.0",
+    "KUBEPKG_VERSION": "1.13.4",
     "ETCD_VERSION": "3.2.17",
     "cpus": "4",
     "disk_size": "65536",
@@ -328,16 +347,16 @@
     "https_proxy": "{{env `https_proxy`}}",
     "hyperv_generation": "2",
     "hyperv_switch": "{{env `hyperv_switch`}}",
-    "iso_checksum": "a5b0ea5918f850124f3d72ef4b85bda82f0fcd02ec721be19c1a6952791c8ee8",
+    "iso_checksum": "16afb1375372c57471ea5e29803a89a5a6bd1f6aabea2e5e34ac1ab7eb9786ac",
     "iso_checksum_type": "sha256",
-    "iso_name": "ubuntu-18.04.1-server-amd64.iso",
-    "memory": "1024",
-    "mirror": "http://cdimage.ubuntu.com",
-    "mirror_directory": "ubuntu/releases/18.04.1/release",
-    "name": "kubash-1.13.3-18.04",
+    "iso_name": "ubuntu-16.04.6-server-amd64.iso",
+    "memory": "2048",
+    "mirror": "http://releases.ubuntu.com",
+    "mirror_directory": "16.04.6",
+    "name": "ubuntu1.13.4-16.04",
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "preseed.cfg",
-    "template": "beaver1.13.3-18.04-amd64",
+    "template": "ubuntu1.13.4-16.04-amd64",
     "version": "TIMESTAMP"
   }
 }
