@@ -114,6 +114,18 @@ $(KUBASH_BIN)/crictl:
 	go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
 	cp ${GOPATH}/bin/crictl $(KUBASH_BIN)/
 
+kompose: $(KUBASH_BIN)
+	@scripts/kubashnstaller kompose
+
+$(KUBASH_BIN)/kompose: SHELL:=/bin/bash
+$(KUBASH_BIN)/kompose:
+	$(eval TMP := $(shell mktemp -d --suffix=MINIKUBETMP))
+	cd $(TMP) \
+	&& curl -L https://github.com/kubernetes/kompose/releases/download/v1.18.0/kompose-linux-amd64 -o kompose
+	install -m755 ${TMP}/kompose $(KUBASH_BIN)/
+	rm ${TMP}/kompose
+	rmdir ${TMP}
+
 # force this to install as centos has another packer from the cracklib-dicts package
 packer: $(KUBASH_BIN) $(KUBASH_BIN)/packer
 
@@ -137,6 +149,7 @@ go-build-docker:
 	cd $(TMP) \
 	go get github.com/hashicorp/packer
 	rmdir $(TMP)
+
 
 all-examples:
 	make example

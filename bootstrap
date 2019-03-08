@@ -141,6 +141,7 @@ main () {
   make coreos_key
   make ct
   make kubectl
+  make kompose
   check_install crictl
   check_install onessl
   pip install --user --upgrade netaddr
