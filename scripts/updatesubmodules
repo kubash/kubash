@@ -1,11 +1,10 @@
 #!/bin/sh
+set -eux
 this_pwd=$(pwd)
+submodules='istio kubeadm2ha kubespray openshift-ansible rook'
 
-cd $this_pwd/submodules/kubeadm2ha
-git pull
-cd $this_pwd/submodules/kubespray
-git pull
-cd $this_pwd/submodules/openshift-ansible
-git pull
-cd $this_pwd/submodules/openebs
-git pull
+upmodule () {
+  cd $this_pwd/submodules/$1
+  git pull
+}
+for i in $submodules; do upmodule $i; done

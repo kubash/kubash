@@ -171,6 +171,27 @@
         network: bridge=br1
         mac: '52:54:00:e2:9f:20'
         ip: dhcp
+    extetcd-storage1:
+      hostname: extetcdstorage1
+      role: storage
+      cpuCount: 2
+      Memory: 2222
+      provisioner:
+        Host: '10.0.23.12'
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: $REPLACEME_OS_TPL
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br1
+        mac: '52:54:00:e2:9f:21'
+        ip: dhcp
+      iscsi:
+        target: 10.0.23.30
+        chap_username: chap_user
+        chap_password: chap_password
   ca:
     cert:
       CERT_COMMON_NAME: etcd

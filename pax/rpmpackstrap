@@ -3,11 +3,9 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
 : ${DOCKER_PKG:='17.12.1.ce'}
-: ${DOCKER_COMPOSE_PKG:='1.18.0'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
-: ${DOCKER_COMPOSE_PKG_NAME:="docker-compose-${DOCKER_PKG}"}
 : ${KUBEPKG_VERSION:="1.13.1"}
 : ${ETCD_VERSION:="3.2.22"}
 : ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
@@ -47,6 +45,18 @@ echo ip_vs_rr >> /etc/modules
 echo ip_vs_wrr >> /etc/modules
 echo ip_vs_sh >> /etc/modules
 
+# This is for rook efficiency
+# https://rook.io/docs/rook/v0.9/edgefs-quickstart.html
+cat <<EOF >  /etc/sysctl.d/rook.conf
+net.core.rmem_default = 80331648
+net.core.rmem_max = 80331648
+net.core.wmem_default = 33554432
+net.core.wmem_max = 50331648
+vm.dirty_ratio = 10
+vm.dirty_background_ratio = 5
+vm.swappiness = 15
+EOF
+
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
@@ -84,10 +94,10 @@ setenforce 0
 install_default_docker () {
   yum install -y docker
   systemctl enable docker && systemctl start docker
-  
+
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
-  
+
   pip install --upgrade pip
   pip install --upgrade jinja2-cli jinja2
   pip install --upgrade 'docker<3.0'
@@ -106,11 +116,12 @@ install_spec_docker () {
   # sudo yum-config-manager --enable docker-ce-test
   #curl -fsSL https://get.docker.com/ | sh
   #yum install docker-ce
-  yum install -y $DOCKER_PKG_NAME $DOCKER_COMPOSE_PKG_NAME $KUBECTL_PKG $KUBEADM_PKG $KUBELET_PKG $ETCD_PKG
+  yum install -y $DOCKER_PKG_NAME $KUBECTL_PKG $KUBEADM_PKG $KUBELET_PKG $ETCD_PKG
   #yum install -y kubelet kubeadm kubectl
   echo 'Environment="KUBELET_CGROUP_ARGS=--cgroup-driver=cgroupfs"' \
     >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
   #######
+  install_docker_compose
 
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
@@ -118,6 +129,12 @@ install_spec_docker () {
   pip install --upgrade pip
   pip install --upgrade jinja2-cli jinja2
   pip install --upgrade 'docker<3.0'
+}
+
+install_docker_compose () {
+  sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  sudo chmod +x /usr/local/bin/docker-compose
+  sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 }
 
 echo "kubeadm install is $KUBEADM_INSTALL"
