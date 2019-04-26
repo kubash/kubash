@@ -80,11 +80,25 @@ kubectl: $(KUBASH_BIN)
 $(KUBASH_BIN)/kubectl:
 	@echo 'Installing kubectl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
+	$(eval KUBECTL_STABLE := $(shell curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt))
 	cd $(TMP) \
-	&& curl -sLO https://storage.googleapis.com/kubernetes-release/release/$(MY_KUBE_VERSION)/bin/linux/amd64/kubectl \
+	&& curl -sLO https://storage.googleapis.com/kubernetes-release/release/$(KUBECTL_STABLE)/bin/linux/amd64/kubectl \
 	&& chmod +x kubectl \
 	&& sudo mv -v kubectl $(KUBASH_BIN)/
 	rmdir $(TMP)
+
+kubedb: $(KUBASH_BIN)
+	@scripts/kubashnstaller kubedb
+
+$(KUBASH_BIN)/kubedb:
+	@echo 'Installing kubedb'
+	$(eval TMP := $(shell mktemp -d --suffix=kubedbTMP))
+	cd $(TMP) \
+	&& wget -O kubedb https://github.com/kubedb/cli/releases/download/0.11.0/kubedb-linux-amd64 \
+	&& chmod +x kubedb \
+	&& sudo mv -v kubedb $(KUBASH_BIN)/
+	rmdir $(TMP)
+
 
 $(KUBASH_BIN):
 	mkdir -p $(KUBASH_BIN)

@@ -81,6 +81,27 @@ setup () {
   result="$(cut -f18 -d, clusters/$MY_TMP/provision.csv|head -n1)"
   [ "$result" = 'qemu' ]
 }
+
+@test "yaml2cluster iscsi target" {
+  result="$(cut -f33 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
+  [ "$result" = 'iqn.2005-10.org.freenas.ctl:exampletarg01' ]
+}
+
+@test "yaml2cluster iscsi chapusername" {
+  result="$(cut -f34 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
+  [ "$result" = 'chap_user' ]
+}
+
+@test "yaml2cluster iscsi chappassword" {
+  result="$(cut -f35 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
+  [ "$result" = 'chap_password' ]
+}
+
+@test "yaml2cluster iscsi host" {
+  result="$(cut -f36 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
+  [ "$result" = '10.0.0.103:3260' ]
+}
+
 @test "rm cluster test dir" {
   run rm -Rf clusters/$MY_TMP
   [ "$status" -eq 0 ]
