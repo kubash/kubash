@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eux
+: ${KUBASH_DIR:=$HOME/.kubash}
+
+cd $KUBASH_DIR/bin
+for i in $(cat .gitignore); do echo rm -Rf $i;done
+cd $KUBASH_DIR
+bash bootstrap

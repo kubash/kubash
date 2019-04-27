@@ -143,6 +143,7 @@ main () {
   make kubectl
   make kubedb
   make kompose
+  make istioctl
   check_install crictl
   check_install onessl
   pip install --user --upgrade netaddr

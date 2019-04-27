@@ -1,4 +1,10 @@
 # Reactionetes Makefile
+
+# define various versions
+$(eval ISTIO_VERSION := 1.1.4)
+$(eval PACKER_VERSION:=1.4.0)
+$(eval ONESSL_VERSION := 0.10.0)
+
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
 $(eval KUBASH_BIN := $(KUBASH_DIR)/bin)
@@ -74,6 +80,18 @@ $(KUBASH_BIN)/helm:
 	rm $(TMP)/helmget
 	rmdir $(TMP)
 
+istioctl: $(KUBASH_BIN)
+	@scripts/kubashnstaller istioctl
+
+$(KUBASH_BIN)/istioctl:
+	@echo 'Installing istioctl'
+	$(eval TMP := $(shell mktemp -d --suffix=istioctlTMP))
+	cd $(TMP) && \
+	curl -sL https://git.io/getLatestIstio | ISTIO_VERSION=${ISTIO_VERSION} sh -
+	install -m755 ${TMP}/istio-${ISTIO_VERSION}/bin/istioctl $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+
 kubectl: $(KUBASH_BIN)
 	@scripts/kubashnstaller kubectl
 
@@ -146,7 +164,6 @@ packer: $(KUBASH_BIN) $(KUBASH_BIN)/packer
 $(KUBASH_BIN)/packer: SHELL:=/bin/bash
 $(KUBASH_BIN)/packer:
 	@echo 'Installing packer'
-	$(eval PACKER_VERSION:=1.1.3)
 	$(eval TMP := $(shell mktemp -d --suffix=GOTMP))
 	cd $(TMP) \
 	&& wget -c \
@@ -376,7 +393,6 @@ $(KUBASH_BIN)/ct:
 onessl: $(KUBASH_BIN)/onessl
 
 $(KUBASH_BIN)/onessl:
-	$(eval ONESSL_VERSION := 0.9.0)
 	$(eval TMP := $(shell mktemp -d --suffix=ONESSLTMP))
 	curl -fsSL -o $(TMP)/onessl https://github.com/kubepack/onessl/releases/download/${ONESSL_VERSION}/onessl-linux-amd64
 	chmod +x $(TMP)/onessl
