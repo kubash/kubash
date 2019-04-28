@@ -7,7 +7,7 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 RELEASE_VER=$1
-./scripts/mkstretch $RELEASE_VER
-./scripts/mkcentos7 $RELEASE_VER
-./scripts/mkbeaver $RELEASE_VER
-./scripts/mknewubuntupax.sh $RELEASE_VER
+./scripts/stretch $RELEASE_VER
+./scripts/centos7 $RELEASE_VER
+./scripts/beaver $RELEASE_VER
+./scripts/ubuntu $RELEASE_VER

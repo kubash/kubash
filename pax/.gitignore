@@ -1,2 +1,6 @@
 builds
 */packer_cache
+ubuntu*
+centos7*
+beaver*
+stretch*
