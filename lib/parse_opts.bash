@@ -695,30 +695,32 @@ parse_opts () {
       build_usage
       croak 3  'support removed request repair :('
     elif [[ "$target_os" =~ 'centos7' ]]; then
-      croak 3  'support removed request repair :('
-    elif [[ "$target_os" =~ 'centos7' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/centos7//')
         target_build=centos7$build_num
+        packer_create_pax_dir 'centos7' $build_num
       fi
     elif [[ "$target_os" =~ 'stretch' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/stretch//')
         target_build=stretch$build_num
+        packer_create_pax_dir 'stretch' $build_num
       fi
     elif [[ "$target_os" =~ 'beaver' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/beaver//')
         target_build=beaver$build_num-18.04-amd64
+        packer_create_pax_dir 'beaver' $build_num
       fi
     elif [[ "$target_os" =~ 'ubuntu' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/ubuntu//')
         target_build=ubuntu$build_num-16.04-amd64
+        packer_create_pax_dir 'ubuntu' $build_num
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+
+packer_create_pax_dir () {
+  pax_target_os=$1
+  target_version=$2
+  if [[ -d "$KUBASH_DIR/pax/${target_os}${target_version}" ]]; then
+    squawk 5 "$target_os directory exists leaving untouched"
+  else
+    cd $KUBASH_DIR
+    ./scripts/$pax_target_os $target_version
+  fi
+}
+
 packer_build () {
   build_virt=$1
   target_os=$2
