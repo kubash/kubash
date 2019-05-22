@@ -38,13 +38,19 @@ do_istio () {
     helm install \
       --name=istio \
       --namespace=istio-system \
-      --set gateways.istio-ingressgateway.sds.enabled=true \
       $LOAD_BALANCER_IP_SET \
-      --set global.k8sIngress.enabled=true \
-      --set global.k8sIngress.enableHttps=true \
-      --set global.k8sIngress.gatewayName=ingressgateway \
+      --set kiali.enabled=true \
+      --set grafana.enabled=true \
+      --set tracing.enabled=true \
+      --set prometheus.enabled=true \
       --set certmanager.enabled=true \
       --set certmanager.email=$LETSENCRYPT_EMAIL \
+      --set global.k8sIngress.enabled=true \
+      --set global.k8sIngress.enableHttps=true \
+      --set gateways.istio-ingressgateway.sds.enabled=true \
+      --set global.k8sIngress.gatewayName=ingressgateway \
+      --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+      --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
       istio
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled

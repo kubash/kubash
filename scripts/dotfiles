@@ -41,6 +41,14 @@ dotfiles_install () {
   echo 'Adjusting dotfiles'
   touch $HOME/.zshrc
   touch $HOME/.bashrc
+  if [[ -d "$HOME/.local/bin" ]]; then
+    LOCAL_BIN=$HOME/.local/bin
+    LINE_TO_ADD="$(printf "export PATH=%s:\$PATH" $LOCAL_BIN)"
+    TARGET_FILE_FOR_ADD=$HOME/.bashrc
+    check_if_line_exists || add_line_to
+    TARGET_FILE_FOR_ADD=$HOME/.zshrc
+    check_if_line_exists || add_line_to
+  fi
   # here we'll make a bin dir in $HOME and add it to path
   chkdir $KUBASH_BIN
   LINE_TO_ADD="$(printf "export PATH=%s:\$PATH" $KUBASH_BIN)"

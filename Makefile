@@ -1,7 +1,7 @@
 # Reactionetes Makefile
 
 # define various versions
-$(eval ISTIO_VERSION := 1.1.4)
+$(eval ISTIO_VERSION := 1.1.5)
 $(eval PACKER_VERSION:=1.4.0)
 $(eval ONESSL_VERSION := 0.10.0)
 
