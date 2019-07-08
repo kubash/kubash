@@ -25,7 +25,7 @@ do_istio () {
     sleep 1
     ISTIO_CRD_COUNT=0
     countzero=0
-    while [[ $ISTIO_CRD_COUNT -lt 58 ]]
+    while [[ $ISTIO_CRD_COUNT -lt 28 ]]
     do
       ISTIO_CRD_COUNT=$(kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l)
       if [[ $countzero > 15 ]]; then
@@ -47,6 +47,8 @@ do_istio () {
       --set certmanager.email=$LETSENCRYPT_EMAIL \
       --set global.k8sIngress.enabled=true \
       --set global.k8sIngress.enableHttps=true \
+      --set gateways.istio-ingressgateway.nodeSelector.ingress='"true"' \
+      --set gateways.istio-ingressgateway.type=$ISTIO_GATEWAY_TYPE \
       --set gateways.istio-ingressgateway.sds.enabled=true \
       --set global.k8sIngress.gatewayName=ingressgateway \
       --set "kiali.dashboard.grafanaURL=http://grafana:3000" \

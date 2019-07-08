@@ -1,7 +1,7 @@
 # Reactionetes Makefile
 
 # define various versions
-$(eval ISTIO_VERSION := 1.1.5)
+$(eval ISTIO_VERSION := 1.2.2)
 $(eval PACKER_VERSION:=1.4.0)
 $(eval ONESSL_VERSION := 0.10.0)
 
@@ -412,7 +412,7 @@ cfssl:
 
 jinja2:
 	#pip install --user jinja2 jinja2-cli
-	pip install --user jinja2 jinja2
+	pip install --user jinja2-cli
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh

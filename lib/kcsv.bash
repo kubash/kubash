@@ -4,7 +4,9 @@ user_csv_columns="user_email user_role"
 uniq_hosts_list_columns="K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt"
 
 test_kubash_csv_ver () {
-  if [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
+  if [ "$KUBASH_CSV_VER" = '4.0.0' ]; then
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
+  elif [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
     uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
   elif [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
     uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18|sort|uniq)"
@@ -23,7 +25,9 @@ set_csv_columns () {
   else
     KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
   fi
-  if [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
+  if [ "$KUBASH_CSV_VER" = '4.0.0' ]; then
+    csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_routingprefix1 K8S_subnetmask1 K8S_broadcast1 K8S_gateway1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_routingprefix2 K8S_subnetmask2 K8S_broadcast2 K8S_gateway2 K8S_network3 K8S_mac3 K8S_ip3 K8S_routingprefix3 K8S_subnetmask3 K8S_broadcast3 K8S_gateway3 K8S_iscsitarget K8S_iscsichapusername K8S_iscsichappassword K8S_iscsihost K8S_storagePath K8S_storageType K8S_storageSize"
+  elif [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
     csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_routingprefix1 K8S_subnetmask1 K8S_broadcast1 K8S_gateway1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_routingprefix2 K8S_subnetmask2 K8S_broadcast2 K8S_gateway2 K8S_network3 K8S_mac3 K8S_ip3 K8S_routingprefix3 K8S_subnetmask3 K8S_broadcast3 K8S_gateway3 K8S_iscsitarget K8S_iscsichapusername K8S_iscsichappassword K8S_iscsihost"
   elif [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
     csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_routingprefix1 K8S_subnetmask1 K8S_broadcast1 K8S_gateway1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_routingprefix2 K8S_subnetmask2 K8S_broadcast2 K8S_gateway2 K8S_network3 K8S_mac3 K8S_ip3 K8S_routingprefix3 K8S_subnetmask3 K8S_broadcast3 K8S_gateway3"

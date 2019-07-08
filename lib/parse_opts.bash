@@ -470,6 +470,13 @@ parse_opts () {
       exit 1
     fi
     taint_all_ingress $@
+  elif [[ $RAISON == "mark_ingress" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    mark_all_ingress $@
   elif [[ $RAISON == "dashboard" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule

@@ -8,7 +8,7 @@ mount_all_iscsi_targets () {
     if [[ "$K8S_role" = "storage" ]]; then
       squawk 3 "initializing storage node $@"
       squawk 33 "${K8S_iscsihost} ${K8S_iscsitarget} $K8S_iscsichapusername"
-      if [[ ! -z "$K8S_iscsitarget" ]]; then
+      if [[ "$K8S_iscsitarget" != "null" ]]; then
         squawk 3 "K8S_iscsitarget=$K8S_iscsitarget"
         command2run="iscsiadm --mode discovery --type sendtargets --portal ${K8S_iscsihost}"
         sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
