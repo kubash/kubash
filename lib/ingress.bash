@@ -51,6 +51,46 @@ taint_all_ingress () {
   fi
 }
 
+mark_ingress () {
+  squawk 1 " mark_ingress $@"
+  count_ingress=0
+  for ingress_node in "$@"
+  do
+    squawk 5 "kubectl --kubeconfig=$KUBECONFIG label --overwrite node $ingress_node ingress=true"
+    kubectl --kubeconfig=$KUBECONFIG label --overwrite node $ingress_node ingress=true
+    ((++count_ingress))
+  done
+  if [[ $count_ingress -eq 0 ]]; then
+    croak 3  'No ingress nodes found!'
+  fi
+}
+
+mark_all_ingress () {
+  squawk 1 " mark_all_ingress $@"
+  count_all_ingress=0
+  nodes_to_mark=' '
+  while IFS="," read -r $csv_columns
+  do
+    squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
+    if [[ "$K8S_role" = "ingress" ]]; then
+      squawk 5 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
+      squawk 121 "nodes_to_mark $K8S_node $nodes_to_mark"
+      new_nodes_to_mark="$K8S_node $nodes_to_mark"
+      nodes_to_mark="$new_nodes_to_mark"
+      ((++count_all_ingress))
+    fi
+  done <<< "$kubash_hosts_csv_slurped"
+  echo "count_all_ingress $count_all_ingress"
+  if [[ $count_all_ingress -eq 0 ]]; then
+    squawk 150 "slurpy -----> $(echo $kubash_hosts_csv_slurped)"
+    croak 3  'No ingress nodes found!!!'
+  else
+    squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
+    squawk 101 "mark these nodes_to_mark=$K8S_node $nodes_to_mark"
+    mark_ingress $nodes_to_mark
+  fi
+}
+
 do_voyager () {
   squawk 1 " do_voyager"
   taint_all_ingress
