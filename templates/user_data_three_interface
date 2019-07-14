@@ -4,6 +4,9 @@ passwd:
   - name: $K8S_provisionerUser
     groups: [ sudo, docker ]
 $SSH_AUTHORIZED_KEYS
+  - name: $K8S_SU_USER
+    groups: [ sudo, docker ]
+$SSH_AUTHORIZED_KEYS
 
 storage:
   files:
@@ -32,7 +35,7 @@ networkd:
   - name: 20-dhcp.network
     contents: |
       [Match]
-      name=en*
+      name=e*
 
       [Network]
       DHCP=yes

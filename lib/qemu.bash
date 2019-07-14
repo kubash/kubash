@@ -3,25 +3,25 @@
 qemu-provisioner () {
   squawk 1 "qemu-provisioner $@"
 
-  K8S_node=$1
-  K8S_role=$2
-  K8S_cpuCount=$3
-  K8S_Memory=$4
-  K8S_network1=$5
-  K8S_mac1=$6
-  K8S_ip1=$7
-  K8S_provisionerHost=$8
-  K8S_provisionerUser=$9
-  K8S_provisionerPort=${10}
-  K8S_provisionerBasePath=${11}
-  K8S_os=${12}
-  K8S_virt=${13}
-  K8S_network2=${14}
-  K8S_mac2=${15}
-  K8S_ip2=${16}
-  K8S_network3=${17}
-  K8S_mac3=${18}
-  K8S_ip3=${19}
+  export K8S_node=$1
+  export K8S_role=$2
+  export K8S_cpuCount=$3
+  export K8S_Memory=$4
+  export K8S_network1=$5
+  export K8S_mac1=$6
+  export K8S_ip1=$7
+  export K8S_provisionerHost=$8
+  export K8S_provisionerUser=$9
+  export K8S_provisionerPort=${10}
+  export K8S_provisionerBasePath=${11}
+  export K8S_os=${12}
+  export K8S_virt=${13}
+  export K8S_network2=${14}
+  export K8S_mac2=${15}
+  export K8S_ip2=${16}
+  export K8S_network3=${17}
+  export K8S_mac3=${18}
+  export K8S_ip3=${19}
   if [[ "$K8S_mac1" == 'null' ]]; then
     K8S_mac1=$(VERBOSITY=0 kubash --verbosity=1 genmac)
   fi
@@ -61,6 +61,9 @@ qemu-provisioner () {
 
   # Create VM for node
   qemunodeimg="$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node.qcow2"
+  if [[ "$K8S_os" == "coreos" ]]; then
+    KVM_BASE_IMG=kubash.img
+  fi
   qemucmd2run="$PSEUDO qemu-img create -f qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
 
   if [[ "$K8S_os" == "coreos" ]]; then
@@ -114,7 +117,7 @@ qemu-provisioner () {
        > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign
 
     virshcmd2run="$PSEUDO virt-install --connect qemu:///system \
-  --import \
+    --import \
     --autostart \
     --name $K8S_node \
     --ram $K8S_Memory \
@@ -128,12 +131,12 @@ qemu-provisioner () {
     --network=$K8S_network1,mac=$K8S_mac1,model=virtio \
     $SECOND_NIC \
     $THIRD_NIC \
-  --print-xml
-  " >&3 2>&3
+    --print-xml
+    " >&3 2>&3
   else
     # not coreOS
     virshcmd2run="$PSEUDO virt-install --connect qemu:///system \
-  --import \
+    --import \
     --autostart \
     --name $K8S_node \
     --ram $K8S_Memory \
@@ -154,6 +157,11 @@ qemu-provisioner () {
     $qemucmd2run
     if [[ "$K8S_os" == "coreos" ]]; then
       squawk 5 "create domain.xml $virshcmd2run"
+      chmod 775 $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
+      chmod 775 $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
+      #ls -lh $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
+      #rm -f $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
+      squawk 5 "$virshcmd2run$virshcmd2run"
       $virshcmd2run > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i 's|type=\"kvm\"|type=\"kvm\" xmlns:qemu=\"http://libvirt.org/schemas/domain/qemu/1.0\"|' $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       sed -i "/<\/devices>/a <qemu:commandline>\n  <qemu:arg value='-fw_cfg'/>\n  <qemu:arg value='name=opt/com.coreos/config,file=$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign'/>\n</qemu:commandline>" $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
@@ -163,6 +171,9 @@ qemu-provisioner () {
       rsync -az $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME $K8S_provisionerBasePath/
 
       $PSEUDO virsh define $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
+      sudo chown root. $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
+      sudo chown root. $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign
+      $PSEUDO virsh start $K8S_node
       if [[ $K8S_storageType == 'raw' ]]; then
 	if [[ -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-vdb.raw ]]; then
 	  squawk 33 "File already exists using it"
@@ -184,7 +195,6 @@ qemu-provisioner () {
 	fi
         $PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-vdb.qcow2 --target vdb --persistent --config --live
       fi
-      $PSEUDO virsh start $K8S_node
     else
       # not coreOS
       squawk 5 "$PSEUDO $virshcmd2run"

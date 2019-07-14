@@ -1,0 +1,33 @@
+stages:
+  - build
+  - test 
+  - deploy 
+
+build_job:
+  stage: build
+  script:
+    - echo 'build'
+
+rspec:
+  stage: test
+  script:
+    - echo 'rspec'
+
+rubocop:
+  stage: test
+  script:
+    - echo 'rubocop'
+
+fulltest:
+  stage: test
+  tags:
+    - fulltest
+  only:
+    - fulltest
+  script:
+    - echo 'fulltest1'
+
+deploy_job:
+  stage: deploy
+  script:
+    - echo 'deploy'

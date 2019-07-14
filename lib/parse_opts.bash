@@ -744,7 +744,7 @@ parse_opts () {
     if [[ -z "$target_build" ]]; then
       target_build=ubuntu-16.04-amd64
     fi
-    build_usage
+    #build_usage
     if [[ -z "$build_virt" ]]; then
       build_virt=qemu
     fi

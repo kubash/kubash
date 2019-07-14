@@ -39,6 +39,9 @@ copy_image_to_all_provisioning_hosts () {
   while IFS="," read -r $uniq_hosts_list_columns
   do
     squawk 9 " $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt"
+    if [[ "$K8S_os" == "coreos" ]]; then
+      KVM_BASE_IMG=kubash.img
+    fi
     if [[ "$KVM_builderHost" == 'localhost' ]]; then
       if [[ "$K8S_provisionerHost" == 'localhost' ]]; then
         copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"

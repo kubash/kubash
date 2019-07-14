@@ -19,3 +19,16 @@ k9s
 kompose
 kubedb
 istioctl
+bridge
+dhcp
+flannel
+host-device
+host-local
+ipvlan
+loopback
+macvlan
+portmap
+ptp
+sample
+tuning
+vlan
