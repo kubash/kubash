@@ -87,16 +87,17 @@ increase_verbosity () {
 set_name () {
   squawk 9 "set_name $1"
   squawk 8 "Kubash will now work with the $1 cluster"
-  KUBASH_CLUSTER_NAME="$1"
-  KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
-  KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
+  export KUBASH_CLUSTER_NAME="$1"
+  export KUBASH_CLUSTER_DIR=$KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME
+  export KUBASH_CLUSTER_CONFIG=$KUBASH_CLUSTER_DIR/config
   export KUBECONFIG=$KUBASH_CLUSTER_CONFIG
-  KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
-  KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
-  KUBASH_KUBESPRAY_HOSTS=$KUBASH_CLUSTER_DIR/inventory/hosts.ini
-  KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
-  KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
-  KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
+  export KUBASH_HOSTS_CSV=$KUBASH_CLUSTER_DIR/hosts.csv
+  export KUBASH_ANSIBLE_HOSTS=$KUBASH_CLUSTER_DIR/hosts
+  export KUBASH_KUBESPRAY_HOSTS=$KUBASH_CLUSTER_DIR/inventory/hosts.ini
+  export KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
+  export KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
+  export KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
+  export KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version)
   net_set
   if [[ -e $KUBASH_CLUSTER_DIR/csv_version ]]; then
     set_csv_columns
@@ -338,8 +339,8 @@ do_command_in_parallel () {
   do
     ((++countzero_do_nodes))
     squawk 219 " count $countzero_do_nodes"
-    squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
-    echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+    squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""
+    echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""\
         >> $do_command_tmp_para/hopper
   done <<< "$kubash_hosts_csv_slurped"
 
@@ -364,11 +365,11 @@ do_command () {
   do_command_host=$3
   command2run=$4
   if [[ "$do_command_host" == "localhost" ]]; then
-    squawk 105 "bash -c '$command2run'"
-    bash -c "$command2run"
+    squawk 105 "bash -l -c '$command2run'"
+    bash -l -c "$command2run"
   else
-    squawk 105 "ssh -n -p $do_command_port $do_command_user@$do_command_host \"bash -c '$command2run'\""
-    ssh -n -p $do_command_port $do_command_user@$do_command_host "bash -c '$command2run'"
+    squawk 105 "ssh -n -p $do_command_port $do_command_user@$do_command_host \"bash -l -c '$command2run'\""
+    ssh -n -p $do_command_port $do_command_user@$do_command_host "bash -l -c '$command2run'"
   fi
 }
 
@@ -382,8 +383,8 @@ sudo_command () {
   sudo_command_host=$3
   command2run=$4
   if [[ "$sudo_command_host" == "localhost" ]]; then
-    squawk 105 "sudo bash -c '$command2run'"
-    sudo bash -c "$command2run"
+    squawk 105 "$PSEUDO bash -l -c '$command2run'"
+    $PSEUDO bash -l -c "$command2run"
   else
     squawk 105 "ssh -n -p $sudo_command_port $sudo_command_user@$sudo_command_host \"$PSEUDO bash -l -c '$command2run'\""
     ssh -n -p $sudo_command_port $sudo_command_user@$sudo_command_host "$PSEUDO bash -l -c '$command2run'"
@@ -505,8 +506,8 @@ do_command_in_parallel_on_role () {
   do
     if [[ "$K8S_role" == "$role2runiton" ]]; then
       squawk 219 " count $countzero_do_nodes"
-      squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
-      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+      squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""
+      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""\
         >> $do_command_on_role_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -536,8 +537,8 @@ do_command_in_parallel_on_os () {
   do
     if [[ "$K8S_os" == "$os2runiton" ]]; then
       squawk 219 " count $countzero_do_nodes"
-      squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""
-      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -c '$command2run'\""\
+      squawk 205 "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""
+      echo "ssh -n -p $K8S_sshPort $K8S_SU_USER@$K8S_ip1 \"sudo bash -l -c '$command2run'\""\
         >> $do_command_on_os_tmp_para/hopper
     fi
   done <<< "$kubash_hosts_csv_slurped"

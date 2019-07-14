@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-KUBASH_VERSION='v1.14.1'
+KUBASH_VERSION='v1.14.3'
 : ${KUBASH_DIR:=$HOME/.kubash}
 # import our includes
 . $KUBASH_DIR/lib/kinc.bash

@@ -2,7 +2,7 @@
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
-: ${KUBE_VERSION:='v1.14.0'}
+: ${KUBERNETES_VERSION:='v1.14.3'}
 : ${KUBE_MAJOR_VER:=1}
 : ${KUBE_MINOR_VER:=14}
 : ${KUBASH_CLUSTER_NAME=default}
@@ -39,7 +39,7 @@
 : ${K8S_SU_USER:=coopadmin}
 : ${K8S_NET:=calico}
 : ${K8S_provisionerPort:=22}
-: ${K8S_SU_PATH:='/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'}
+: ${K8S_SU_PATH:='/opt/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin'}
 : ${my_DOMAIN:=example.com}
 : ${GOPATH:=~/.go}
 : ${KUTIME:="/usr/bin/time -v"}

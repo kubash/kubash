@@ -4,6 +4,8 @@
 $(eval ISTIO_VERSION := 1.2.2)
 $(eval PACKER_VERSION:=1.4.0)
 $(eval ONESSL_VERSION := 0.10.0)
+$(eval CRICTL_VERSION := "v1.12.0")
+$(eval CNI_VERSION := "v0.7.5")
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
@@ -142,9 +144,15 @@ crictl: $(KUBASH_BIN)
 $(KUBASH_BIN)/crictl: SHELL:=/bin/bash
 $(KUBASH_BIN)/crictl:
 	@echo 'Installing cri-tools'
-	GOPATH=${GOPATH} \
-	go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
-	cp ${GOPATH}/bin/crictl $(KUBASH_BIN)/
+	curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C $(KUBASH_BIN) -xz
+
+cni: $(KUBASH_BIN)
+	@scripts/kubashnstaller cni
+
+$(KUBASH_BIN)/cni: SHELL:=/bin/bash
+$(KUBASH_BIN)/cni:
+	@echo 'Installing cni'
+	curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C $(KUBASH_BIN) -xz
 
 kompose: $(KUBASH_BIN)
 	@scripts/kubashnstaller kompose

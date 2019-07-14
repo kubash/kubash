@@ -27,6 +27,9 @@ remove_all_base_images_kvm () {
   copy_image_tmp_para=$(mktemp -d)
   while IFS="," read -r $uniq_hosts_list_columns
   do
+    if [[ "$K8S_os" == "coreos" ]]; then
+      KVM_BASE_IMG=kubash.img
+    fi
     command2run="rm $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
     sudo_command $K8S_provisionerPort $K8S_provisionerUser $K8S_provisionerHost "$command2run"
   done <<< "$uniq_hosts"

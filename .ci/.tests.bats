@@ -74,7 +74,7 @@ setup () {
 
 @test "yaml2cluster kubeadm" {
   result="$(cut -f17 -d, clusters/$MY_TMP/provision.csv|head -n1)"
-  [ "$result" = 'kubeadm' ]
+  [ "$result" = 'coreos' ]
 }
 
 @test "yaml2cluster qemu" {

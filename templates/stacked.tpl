@@ -1,5 +1,5 @@
 ---
-  csv_version: '2.0.0'
+  csv_version: '4.0.0'
   hosts:
     stacked-master1:
       hostname: stackedmaster1
@@ -137,10 +137,6 @@
         network: bridge=br1
         mac: '52:54:00:e2:9e:21'
         ip: dhcp
-      iscsi:
-        target: 10.0.23.30
-        chap_username: chap_user
-        chap_password: chap_password
   ca:
     cert:
       CERT_COMMON_NAME: etcd

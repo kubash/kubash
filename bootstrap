@@ -100,17 +100,18 @@ main () {
   . /etc/os-release
 
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
-    DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system'
+    DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
     if type "apt-get" &> /dev/null; then
       sudo apt-get install $DEB_PKG_GET
     fi
   elif [[ "$NAME" = 'CentOS Linux' ]]; then
     if type "yum" &> /dev/null; then
-      sudo yum install jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap
+      YUM_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools'
+      sudo yum install $YUM_PKG_GET
     fi
   elif [[ "$NAME" = 'Arch Linux' ]]; then
     if type "powerpill" &> /dev/null; then
-      ARCH_PKG_GET='jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap'
+      ARCH_PKG_GET='jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap net-tools'
       sudo pacman -Sy
       sudo powerpill -S $ARCH_PKG_GET
     elif type "pacman" &> /dev/null; then
@@ -152,13 +153,14 @@ main () {
   make jinja2
   make yaml2json
   check_install ct
+  #make ct
   check_install helm
   check_install oc
   # These need to exist in .kubash/bin/
   make cfssl
   make packer
   make coreos_key
-  make ct
+  make cni
   make kubectl
   check_install crictl
   check_install onessl
