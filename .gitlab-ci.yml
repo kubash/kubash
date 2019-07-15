@@ -8,6 +8,17 @@ build_job:
   script:
     - echo 'build'
 
+fulltest-build:
+  stage: build
+  tags:
+    - fulltest
+  only:
+    - fulltest
+  script:
+    - echo 'fulltest1build'
+    - ls
+    - pwd
+
 rspec:
   stage: test
   script:
@@ -18,7 +29,7 @@ rubocop:
   script:
     - echo 'rubocop'
 
-fulltest:
+fulltest-test:
   stage: test
   tags:
     - fulltest
@@ -26,6 +37,18 @@ fulltest:
     - fulltest
   script:
     - echo 'fulltest1'
+    - ls
+
+fulltest-deploy:
+  stage: deploy
+  tags:
+    - fulltest
+  only:
+    - fulltest
+  script:
+    - echo 'fulltest1deploy'
+    - ls
+    - pwd
 
 deploy_job:
   stage: deploy
