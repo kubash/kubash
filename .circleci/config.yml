@@ -1,0 +1,61 @@
+# Javascript Node CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+#
+version: 2.1
+orbs:
+      minikube: ccpgames/minikube@0.0.1
+jobs:
+  build:
+    machine: true
+    # docker:
+      # specify the version you desire here
+      #  - image: circleci/node:7.10
+      #- image: docker:stable-dind
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/mongo:3.4.4
+
+    working_directory: ~/.kubash
+
+    steps:
+      - checkout
+        #- minikube/minikube-install
+      - minikube/initialize
+        #- setup_remote_docker:   # (2)
+        #  docker_layer_caching: true # (3)
+
+        # minikube now installed with https://circleci.com/orbs/registry/orb/ccpgames/minikube
+        #- MINIKUBE_VERSION=v1.3.1
+        #      - run: 
+        #  name: "Setup custom environment variables"
+        #  command: |
+        #    echo 'export MINIKUBE_VERSION="v1.3.1"' >> $BASH_ENV
+
+        #- run: THIS_CWD=$(pwd) cd $HOME;ln -s $THIS_PWD .kubash; cd $THIS_CWD 
+      - run: git branch -a; git branch --set-upstream-to=origin/$CIRCLE_BRANCH circleci
+      - run: echo 'export PATH="/home/circleci/.nvm/versions/node/v10.16.0/bin:/home/circleci/.local/bin:/home/circleci/.kubash/bin:$PATH"' >> /home/circleci/.bashrc
+      - run: echo 'export PATH="/home/circleci/.nvm/versions/node/v10.16.0/bin:/home/circleci/.local/bin:/home/circleci/.kubash/bin:$PATH"' >> /home/circleci/.bash_profile
+      - run: sudo apt-get update -qq; sudo apt-get install -yqq sudo
+      - run: cat ./bootstrap
+      - run: make bats
+      - run: ./bootstrap -y
+# Download minikube.
+#- run: curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+#      - run: sudo minikube start --vm-driver=none --kubernetes-version=$KUBE_VERSION
+      - run: bash scripts/chkdirs
+      - run: sudo chown $USER /var/lib
+      - run: /bin/bash -l -c "/usr/bin/time -v make -e ci"
+      - run: /bin/bash -l -c "/usr/bin/time -v make -e chown"
+      - run: mkdir -p clusters/default
+# Fix the kubectl context, as it's often stale.
+      - run: minikube update-context
+      - run: cp $HOME/.kube/config clusters/default/
+      - run: echo '4.0.0' > clusters/default/csv_version
+      - run: echo 'extetcdmaster1,primary_master,22,2800,22,bridge=br1,52:54:00:e2:9f:11,127.0.0.1,null,null,null,null,127.0.0.1,root,22,/var/lib/libvirt/images,ubuntu1.12.2,qemu,null,null,null,null,null,null,null,null,null,null,null,null,null,null' > clusters/default/hosts.csv
+      - run: which bats
+
+      # run tests!
+      - run: echo 'test'

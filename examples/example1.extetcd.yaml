@@ -1,0 +1,190 @@
+---
+  csv_version: '4.0.0'
+  kubernetes_version: 'v1.15.0'
+  hosts:
+    example1-master1:
+      hostname: example1-master01
+      role: primary_master
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        ip: dhcp
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:11'
+    example1-master2:
+      hostname: example1-master02
+      role: master
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:12'
+        ip: dhcp
+    example1-master3:
+      hostname: example1-master03
+      role: master
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:13'
+        ip: dhcp
+    example1-etcd1:
+      hostname: example1-etcd01
+      role: primary_etcd
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        ip: dhcp
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:21'
+    example1-etcd2:
+      hostname: example1-etcd02
+      role: etcd
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:22'
+        ip: dhcp
+    example1-etcd3:
+      hostname: example1-etcd03
+      role: etcd
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:23'
+        ip: dhcp
+    example1-node1:
+      hostname: example1-node01
+      role: node
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:31'
+        ip: dhcp
+    example1-node2:
+      hostname: example1-node02
+      role: node
+      cpuCount: 2
+      Memory: 1100
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:32'
+        ip: dhcp
+    example1-node3:
+      hostname: example1-node03
+      role: node
+      cpuCount: 2
+      Memory: 2200
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      sshPort: 22
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:33'
+        ip: dhcp
+    example1-storage1:
+      hostname: example1-storage1
+      role: storage
+      cpuCount: 2
+      Memory: 2222
+      sshPort: 22
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: ubuntu1.15.0
+      virt: qemu
+      network1:
+        network: bridge=br0
+        mac: '52:54:00:e2:8a:41'
+        ip: dhcp
+  ca:
+    cert:
+      CERT_COMMON_NAME: etcd
+      CERT_COUNTRY: US
+      CERT_LOCALITY: Austin
+      CERT_ORGANISATION: Example inc.
+      CERT_STATE: Texas
+      CERT_ORG_UNIT: Deployment
+  net_set: flannel
+  users:
+    admin:
+      role: admin
+    bob:
+      role: provisioner
+    logger:
+      role: log

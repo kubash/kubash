@@ -715,12 +715,19 @@ parse_opts () {
         target_build=stretch$build_num
         packer_create_pax_dir 'stretch' $build_num
       fi
-    elif [[ "$target_os" =~ 'beaver' ]]; then
+    elif [[ "$target_os" =~ 'bionic' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/beaver//')
-        target_build=beaver$build_num-18.04-amd64
-        packer_create_pax_dir 'beaver' $build_num
+        build_num=$(echo $target_os | sed 's/bionic//')
+        target_build=bionic$build_num-18.04-amd64
+        packer_create_pax_dir 'bionic' $build_num
+      fi
+    elif [[ "$target_os" =~ 'buster' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/buster//')
+        target_build=buster$build_num
+        packer_create_pax_dir 'buster' $build_num
       fi
     elif [[ "$target_os" =~ 'ubuntu' ]]; then
       if [[ -z "$target_build" ]]; then
@@ -728,6 +735,13 @@ parse_opts () {
         build_num=$(echo $target_os | sed 's/ubuntu//')
         target_build=ubuntu$build_num-16.04-amd64
         packer_create_pax_dir 'ubuntu' $build_num
+      fi
+    elif [[ "$target_os" =~ 'xenial' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/xenial//')
+        target_build=xenial$build_num-16.04-amd64
+        packer_create_pax_dir 'xenial' $build_num
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

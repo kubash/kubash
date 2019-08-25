@@ -248,7 +248,7 @@
     }
   ],
   "variables": {
-    "box_basename": "kubash-debian-9.6",
+    "box_basename": "kubash-debian-9.9",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
@@ -266,16 +266,16 @@
     "headless": "true",
     "http_proxy": "{{env `http_proxy`}}",
     "https_proxy": "{{env `https_proxy`}}",
-    "iso_checksum": "c51d84019c3637ae9d12aa6658ea8c613860c776bd84c6a71eaaf765a0dd60fe",
+    "iso_checksum": "d4a22c81c76a66558fb92e690ef70a5d67c685a08216701b15746586520f6e8e",
     "iso_checksum_type": "sha256",
-    "iso_name": "debian-9.6.0-amd64-netinst.iso",
+    "iso_name": "debian-9.9.0-amd64-netinst.iso",
     "memory": "2048",
-    "mirror": "http://cdimage.debian.org/cdimage/release",
-    "mirror_directory": "9.6.0/amd64/iso-cd",
-    "name": "kubash-debian-9.6",
+    "mirror": "http://cdimage.debian.org/cdimage/archive",
+    "mirror_directory": "9.9.0/amd64/iso-cd",
+    "name": "kubash-debian-9.9",
     "no_proxy": "{{env `no_proxy`}}",
-    "preseed_path": "debian-8/preseed.cfg",
-    "template": "debian-9.6-amd64",
+    "preseed_path": "debian-9/preseed.cfg",
+    "template": "debian-9.9-amd64",
     "version": "TIMESTAMP"
   }
 }

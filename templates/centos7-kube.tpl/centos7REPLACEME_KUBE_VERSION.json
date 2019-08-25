@@ -147,12 +147,23 @@
       "ssh_username": "vagrant",
       "ssh_wait_timeout": "10000s",
       "type": "qemu",
-      "vm_name": "{{ user `template` }}"
+      "vm_name": "{{ user `template` }}",
+      "qemuargs": [
+        [
+          "-m",
+          "{{ user `memory` }}M"
+        ],
+        [
+          "-smp",
+          "{{ user `cpus` }}"
+        ]
+      ]
     }
   ],
   "post-processors": [
     {
       "output": "../builds/{{user `box_basename`}}.{{.Provider}}.box",
+      "except": ["qemu"],
       "type": "vagrant"
     }
   ],
@@ -237,7 +248,7 @@
     "mirror_directory": "7.6.1810/isos/x86_64",
     "name": "kubash-centos-7.5",
     "no_proxy": "{{env `no_proxy`}}",
-    "template": "centos-7.6-x86_64",
+    "template": "centos7REPLACEME_KUBE_VERSION",
     "version": "TIMESTAMP"
   }
 }

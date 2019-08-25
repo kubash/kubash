@@ -1,0 +1,14 @@
+#!/bin/bash
+THIS_BRANCH=$(git branch --show-current)
+THIS_STATUS=$(git status -s)
+if [[ $THIS_STATUS ]]; then
+  printf "git status is dirty!\n'%s'\nPlease commit your changes first!\n" \
+    "$THIS_STATUS"
+else
+  git checkout fulltest
+  git merge $THIS_BRANCH
+  git push
+  git checkout $THIS_BRANCH
+  git branch --show-current
+  git status
+fi

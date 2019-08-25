@@ -45,7 +45,7 @@ taint_storage () {
     ((++count_storage))
   done
   if [[ $count_storage -eq 0 ]]; then
-    croak 3  'No storage nodes found!'
+    squawk 3 'No storage nodes found, moving on without them'
   fi
 }
 
@@ -67,7 +67,7 @@ taint_all_storage () {
   echo "count_all_storage $count_all_storage"
   if [[ $count_all_storage -eq 0 ]]; then
     squawk 150 "slurpy -----> $(echo $kubash_hosts_csv_slurped)"
-    croak 3 'No storage nodes found!!!'
+    squawk 3 'No storage nodes found, moving on without them'
   else
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
     squawk 101 "taint these nodes_to_taint=$K8S_node $nodes_to_taint"

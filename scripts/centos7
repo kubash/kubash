@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 if [ $# -ne 1 ]; then
   # Print usage
   echo 'Error! wrong number of arguments'
@@ -8,7 +9,16 @@ if [ $# -ne 1 ]; then
 fi
 THIS_OS=centos7
 KUBE_VERSION=$1
+if [[ -e pax/${THIS_OS}${KUBE_VERSION} ]]; then
+  echo 'directory already exists! exiting softly'
+  exit 0
+fi
 cp -av templates/${THIS_OS}-kube.tpl pax/${THIS_OS}${KUBE_VERSION}
 cd pax/${THIS_OS}${KUBE_VERSION}
+if [[ -e $KUBASH_DIR/.packer_cache_path ]]; then
+	PACKER_CACHE_PATH=$(cat $KUBASH_DIR/.packer_cache_path)
+	ln -s $PACKER_CACHE_PATH ./packer_cache
+fi
 mv ${THIS_OS}REPLACEME_KUBE_VERSION.json ${THIS_OS}${KUBE_VERSION}.json
 sed -i "s/REPLACEME_KUBE_VERSION/${KUBE_VERSION}/g" ${THIS_OS}${KUBE_VERSION}.json
+

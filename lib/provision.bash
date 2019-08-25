@@ -44,21 +44,21 @@ copy_image_to_all_provisioning_hosts () {
     fi
     if [[ "$KVM_builderHost" == 'localhost' ]]; then
       if [[ "$K8S_provisionerHost" == 'localhost' ]]; then
-        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
-        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG;ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\""
+        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG;ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\""
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi
     else
       if [[ "$K8S_provisionerHost" == "$KVM_builderHost" ]]; then
-        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       else
-        copyimagecommand2run="ssh -n -p $KVM_builderPort $K8S_builderUser@$K8S_builderHost 'rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provsionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG; ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\"'"
+        copyimagecommand2run="ssh -n -p $KVM_builderPort $K8S_builderUser@$K8S_builderHost 'rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provsionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG; ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\"'"
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
       fi

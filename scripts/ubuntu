@@ -6,8 +6,13 @@ if [ $# -ne 1 ]; then
   echo "$0 kube_version"
   exit 1
 fi
+set -eux
 KUBE_VERSION=$1
 cp -av templates/ubuntu-kube.tpl pax/ubuntu${KUBE_VERSION}
 cd pax/ubuntu${KUBE_VERSION}
+if [[ -e $KUBASH_DIR/.packer_cache_path ]]; then
+	PACKER_CACHE_PATH=$(cat $KUBASH_DIR/.packer_cache_path)
+	ln -s $PACKER_CACHE_PATH ./packer_cache
+fi
 mv ubuntuREPLACEME_KUBE_VERSION-16.04-amd64.json ubuntu${KUBE_VERSION}-16.04-amd64.json
 sed -i "s/REPLACEME_KUBE_VERSION/${KUBE_VERSION}/g" ubuntu${KUBE_VERSION}-16.04-amd64.json

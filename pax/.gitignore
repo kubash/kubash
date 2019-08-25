@@ -3,4 +3,7 @@ builds
 ubuntu*
 centos7*
 beaver*
+bionic*
+buster*
+xenial*
 stretch*

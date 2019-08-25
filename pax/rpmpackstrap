@@ -3,10 +3,10 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
-: ${DOCKER_PKG:='17.12.1.ce'}
+: ${INSTALL_PKGS:='ceph-common zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
+: ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
-: ${KUBEPKG_VERSION:="1.13.1"}
+: ${KUBEPKG_VERSION:="1.15.1"}
 : ${ETCD_VERSION:="3.2.22"}
 : ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
 : ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION"}
@@ -101,7 +101,7 @@ install_default_docker () {
   systemctl enable kubelet && systemctl start kubelet
 
   pip install --upgrade pip
-  pip install --upgrade jinja2-cli jinja2
+  pip install --upgrade jinja2-cli jinja2 ceph-deploy
   pip install --upgrade 'docker<3.0'
 
   #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
@@ -169,7 +169,33 @@ EOF
   
   # Restart Docker
   systemctl daemon-reload
+  systemctl enable --now docker
   systemctl restart docker
+}
+
+install_kube_tools () {
+  cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+  
+  # Set SELinux in permissive mode (effectively disabling it)
+  setenforce 0
+  sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+  
+  yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+  
+  systemctl enable --now kubelet
+
+  kubeadm config images pull
+  kubeadm init
+  yes y|kubeadm reset
+  rm -Rf /etc/kubernetes/*
 }
 
 install_docker_compose () {
@@ -199,16 +225,16 @@ elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
   #install_spec_docker
   install_kubernetes_docker
-  #systemctl restart docker
+  install_kube_tools
   #kubeadm config images pull
-  kubeadm init
-  yes y|kubeadm reset
-  rm -Rf /etc/kubernetes/*
+  #kubeadm init
+  #yes y|kubeadm reset
+  #rm -Rf /etc/kubernetes/*
 else
   # Defaults to nothing barebones
   echo 'barebone'
-  #install_default_docker
-  install_kubernetes_docker
+  install_default_docker
+  #install_kubernetes_docker
 fi
 
 export GOPATH=$HOME/.go
