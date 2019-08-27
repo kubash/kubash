@@ -55,7 +55,7 @@ all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nv
 
 reqs: linuxreqs
 
-linuxreqs: kubectl helm minikube jinja2 submodules/openebs yaml2json ct
+linuxreqs: kubectl helm minikube jinja2-cli submodules/openebs yaml2json ct
 
 helm: $(KUBASH_BIN)
 	@scripts/kubashnstaller helm
@@ -78,7 +78,7 @@ $(KUBASH_BIN)/helm:
 	$(eval TMP := $(shell mktemp -d --suffix=HELMTMP))
 	curl -sLo $(TMP)/helmget --silent https://raw.githubusercontent.com/helm/helm/master/scripts/get
 	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
-	sudo -E bash -l $(TMP)/helmget
+	sudo bash $(TMP)/helmget
 	rm $(TMP)/helmget
 	rmdir $(TMP)
 
@@ -418,9 +418,8 @@ cfssl:
 	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
 	sudo chmod +x $(KUBASH_BIN)/cfssl*
 
-jinja2:
-	#pip install --user jinja2 jinja2-cli
-	pip install --user jinja2-cli
+jinja2-cli:
+	pip install --user --upgrade jinja2-cli
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh

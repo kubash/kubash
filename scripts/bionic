@@ -6,9 +6,14 @@ if [ $# -ne 1 ]; then
   echo "$0 kube_version"
   exit 1
 fi
-THIS_OS=beaver
+set -eux
+THIS_OS=bionic
 KUBE_VERSION=$1
 cp -av templates/${THIS_OS}-kube.tpl pax/${THIS_OS}${KUBE_VERSION}
 cd pax/${THIS_OS}${KUBE_VERSION}
+if [[ -e $KUBASH_DIR/.packer_cache_path ]]; then
+	PACKER_CACHE_PATH=$(cat $KUBASH_DIR/.packer_cache_path)
+	ln -s $PACKER_CACHE_PATH ./packer_cache
+fi
 mv ${THIS_OS}REPLACEME_KUBE_VERSION-18.04-amd64.json ${THIS_OS}${KUBE_VERSION}-18.04-amd64.json
 sed -i "s/REPLACEME_KUBE_VERSION/${KUBE_VERSION}/g" ${THIS_OS}${KUBE_VERSION}-18.04-amd64.json

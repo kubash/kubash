@@ -1,5 +1,6 @@
 ---
   csv_version: '4.0.0'
+  kubernetes_version: '$REPLACEME_KUBE_VER'
   hosts:
     stacked-master1:
       hostname: stackedmaster1
@@ -7,7 +8,7 @@
       cpuCount: 4
       Memory: 2800
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -15,7 +16,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:11'
         ip: dhcp
     stacked-master2:
@@ -24,7 +25,7 @@
       cpuCount: 4
       Memory: 2500
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -32,7 +33,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:12'
         ip: dhcp
     stacked-master3:
@@ -41,7 +42,7 @@
       cpuCount: 4
       Memory: 2500
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -49,7 +50,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:13'
         ip: dhcp
     stacked-node1:
@@ -58,7 +59,7 @@
       cpuCount: 4
       Memory: 4096
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -66,7 +67,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:17'
         ip: dhcp
     stacked-node2:
@@ -75,7 +76,7 @@
       cpuCount: 3
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -83,7 +84,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:18'
         ip: dhcp
     stacked-node3:
@@ -92,7 +93,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -100,7 +101,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:19'
         ip: dhcp
     stacked-ingress1:
@@ -109,7 +110,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -117,7 +118,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:20'
         ip: dhcp
     stacked-storage1:
@@ -126,7 +127,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -134,7 +135,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9e:21'
         ip: dhcp
   ca:

@@ -1,7 +1,7 @@
 #!/bin/sh -eux
 TMP=$(mktemp -d)
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
-: ${DEB_PACKAGES_TO_INSTALL:='sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+: ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
 
 #: ${DOCKER_PKG:='17.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
@@ -65,7 +65,7 @@ echo ip_vs_rr >> /etc/modules
 
 install_pips () {
   sudo -H pip install --upgrade pip
-  sudo -H pip install --upgrade jinja2-cli jinja2
+  sudo -H pip install --upgrade jinja2-cli jinja2 ceph-deploy
   sudo -H pip install --upgrade 'docker<3.0'
 }
 
@@ -211,6 +211,12 @@ elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
 elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
   #install_spec_docker
   install_kubernetes_docker
+  #kubeadm config images pull
+  kubeadm init
+  yes y|kubeadm reset
+  rm -Rf /etc/kubernetes/*
+elif [ "$KUBEADM_INSTALL" = "spec" ]; then
+  install_spec_docker
   #kubeadm config images pull
   kubeadm init
   yes y|kubeadm reset

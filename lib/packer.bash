@@ -7,6 +7,7 @@ packer_create_pax_dir () {
     squawk 5 "$target_os directory exists leaving untouched"
   else
     cd $KUBASH_DIR
+    export KUBASH_DIR=$KUBASH_DIR
     ./scripts/$pax_target_os $target_version
   fi
 }
@@ -25,7 +26,7 @@ packer_build () {
     LN_CMD='ln -fs'
   fi
 
-  command2run="cd $KUBASH_DIR/pax;if [ ! -e "$KUBASH_DIR/pax/build" ]; then $LN_CMD $KVM_builderDir $KUBASH_DIR/pax/builds; fi"
+  command2run="cd $KUBASH_DIR/pax;if [ ! -e "$KUBASH_DIR/pax/build" ]; then $LN_CMD $KVM_builderDir $KUBASH_DIR/pax/builds || cp --reflink=auto $KVM_builderDir $KUBASH_DIR/pax/builds; fi"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
   cd $KUBASH_DIR/pax/$target_os
@@ -38,10 +39,13 @@ packer_build () {
     debug_flag=''
     PACKER_LOG=0
   fi
+  squawk 33 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $KVM_builderPort' $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer"
+  rsync $KUBASH_RSYNC_OPTS "ssh -p $KVM_builderPort" $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer
   squawk 2 "TMPDIR=$KVM_builderTMP packer build -only=$build_virt $debug_flag $target_build.json"
+  packer_build_env="KUBASH_SET_ROOT_PW='$KUBASH_SET_ROOT_PW' KUBASH_SET_SU_PW='$KUBASH_SET_SU_PW' KEYS_TO_ADD='$KEYS_TO_ADD' KEYS_URL='$KEYS_URL' PACKER_LOG=$PACKER_LOG TMPDIR=$KVM_builderTMP"
   packer_build_cmd="packer build -only=$build_virt $debug_flag $target_build.json"
-  command2run="cd $KUBASH_DIR/pax/$target_os; PACKER_LOG=$PACKER_LOG TMPDIR=$KVM_builderTMP $packer_build_cmd"
-  do_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
+  command2run="cd $KUBASH_DIR/pax/$target_os; $packer_build_env $packer_build_cmd"
+  sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
   TARGET_FILE=$KVM_builderDir/packer-$target_build-$build_virt/$target_build
   DESTINATION_FILE=$KVM_builderBasePath/$target_os-$KVM_BASE_IMG

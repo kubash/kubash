@@ -1,5 +1,6 @@
 ---
-  csv_version: '2.0.0'
+  csv_version: '4.0.0'
+  kubernetes_version: '$REPLACEME_KUBE_VER'
   hosts:
     extetcd-master1:
       hostname: extetcdmaster1
@@ -7,7 +8,7 @@
       cpuCount: 22
       Memory: 2800
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -15,7 +16,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:11'
         ip: dhcp
     extetcd-master2:
@@ -24,7 +25,7 @@
       cpuCount: 1
       Memory: 1500
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -32,7 +33,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:12'
         ip: dhcp
     extetcd-master3:
@@ -41,7 +42,7 @@
       cpuCount: 1
       Memory: 1500
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -49,7 +50,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:13'
         ip: dhcp
     extetcd-etcd1:
@@ -58,7 +59,7 @@
       cpuCount: 1
       Memory: 1496
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -66,7 +67,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:14'
         ip: dhcp
     extetcd-etcd2:
@@ -75,7 +76,7 @@
       cpuCount: 1
       Memory: 1222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -83,7 +84,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:15'
         ip: dhcp
     extetcd-etcd3:
@@ -92,7 +93,7 @@
       cpuCount: 1
       Memory: 1122
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -100,7 +101,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:16'
         ip: dhcp
     extetcd-node1:
@@ -109,7 +110,7 @@
       cpuCount: 4
       Memory: 4096
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -117,7 +118,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:17'
         ip: dhcp
     extetcd-node2:
@@ -126,7 +127,7 @@
       cpuCount: 3
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -134,7 +135,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:18'
         ip: dhcp
     extetcd-node3:
@@ -143,7 +144,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -151,7 +152,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:19'
         ip: dhcp
     extetcd-ingress1:
@@ -160,7 +161,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -168,7 +169,7 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:20'
         ip: dhcp
     extetcd-storage1:
@@ -177,7 +178,7 @@
       cpuCount: 2
       Memory: 2222
       provisioner:
-        Host: '10.0.23.12'
+        Host: 'localhost'
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
@@ -185,13 +186,9 @@
       virt: qemu
       sshPort: 22
       network1:
-        network: bridge=br1
+        network: network=default
         mac: '52:54:00:e2:9f:21'
         ip: dhcp
-      iscsi:
-        target: 10.0.23.30
-        chap_username: chap_user
-        chap_password: chap_password
   ca:
     cert:
       CERT_COMMON_NAME: etcd

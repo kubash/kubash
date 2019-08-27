@@ -1,22 +1,27 @@
 #!/bin/bash
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
   # Print usage
   echo 'Error! wrong number of arguments'
   echo 'usage:'
   echo "$0 cluster_name cluster_version"
   echo 'e.g.'
-  echo "$0 stacked ubuntu1.12.3"
+  echo "$0 stacked ubuntu1.14.4 v1.14.4"
   exit 1
 fi
 TMP=$(mktemp -d)
 this_test=$1
 this_os_ver=$2
+this_kube_ver=$3
+
+. $HOME/.kubash/.ci/header
+printenv
 
 # delete the cluster
 kubash -n $this_test decommission -y
 rm -Rf ~/.kubash/clusters/$this_test
 
 # prep for the cluster
+REPLACEME_KUBE_VER=$this_kube_ver \
 REPLACEME_OS_TPL=$this_os_ver \
 envsubst \
     < ~/.kubash/templates/$this_test.tpl \
@@ -28,6 +33,8 @@ rm $TMP/cluster.yaml
 set -e
 kubash -n $this_test -y provision
 kubash -n $this_test --verbosity=105 init
+kubash -n $this_test --verbosity=105 tiller
+kubash -n $this_test --verbosity=105 rook
 
 #remove temp
 rmdir $TMP

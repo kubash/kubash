@@ -1,8 +1,29 @@
-#!/bin/bash
+#!/bin/bash -l
 : ${KUBASH_DIR:=$HOME/.kubash}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
 : ${GOPATH:=$HOME/.go}
+PIP_INSTALL_PKGS="netaddr ceph-deploy"
+if [[ "$1" == '-y' ]]; then
+  echo YES
+  YES='-y'
+  YES_ARCH='--noconfirm'
+else
+  YES=' '
+  YES_ARCH=' '
+fi
 set -e
+
+check_shell () {
+  THIS_SHELL=$(echo $SHELL| rev | cut -d'/' -f 1 | rev)
+  if [[ "$THIS_SHELL" == "zsh" ]]; then
+    . $HOME/.zshrc
+  elif [[ "$THIS_SHELL" == "bash" ]]; then
+    . $HOME/.bashrc
+  else 
+    echo 'unsupported shell'
+    exit 1
+  fi
+}
 
 squawk () {
   # This function simplifies error reporting and verbosity
@@ -99,24 +120,48 @@ flight_checks () {
 main () {
   . /etc/os-release
 
+  WHOAMI=$(whoami)
+  if [ "$WHOAMI" = "root" ]; then
+    PSEUDO=''
+  else
+    check_cmd sudo
+    PSEUDO='sudo'
+  fi
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
-    DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+    if [[ "$UBUNTU_CODENAME" = "xenial" ]]; then
+      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+    else
+      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+    fi
     if type "apt-get" &> /dev/null; then
-      sudo apt-get install $DEB_PKG_GET
+      check_cmd apt-get
+      $PSEUDO apt-get update
+      $PSEUDO apt-get $YES install $DEB_PKG_GET
     fi
   elif [[ "$NAME" = 'CentOS Linux' ]]; then
+    YUM_PKG_GET='jq git build-essential python-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools'
     if type "yum" &> /dev/null; then
-      YUM_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools'
-      sudo yum install $YUM_PKG_GET
+      check_cmd yum
+      $PSEUDO yum $YES update
+      $PSEUDO yum install $YES epel-release
+      $PSEUDO yum $YES update
+      $PSEUDO yum install $YES $YUM_PKG_GET
     fi
   elif [[ "$NAME" = 'Arch Linux' ]]; then
-    if type "powerpill" &> /dev/null; then
-      ARCH_PKG_GET='jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap net-tools'
-      sudo pacman -Sy
-      sudo powerpill -S $ARCH_PKG_GET
-    elif type "pacman" &> /dev/null; then
-      sudo pacman -Sy $ARCH_PKG_GET
-    fi
+    check_cmd pacman
+    ARCH_PKG_GET='awk nettle gettext jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap net-tools openssh'
+    #echo "$PSEUDO pacman -Sy"
+    #$PSEUDO pacman -Sy
+    #$PSEUDO pacman -Su $YES_ARCH
+    $PSEUDO pacman -Syu $YES_ARCH $ARCH_PKG_GET
+#    if type "powerpill" &> /dev/null; then
+#      check_cmd powerpill
+#      #echo "$PSEUDO powerpill -S $YES_ARCH $ARCH_PKG_GET"
+#      #$PSEUDO powerpill -S $YES_ARCH $ARCH_PKG_GET
+#      $PSEUDO pacman -S $YES_ARCH $ARCH_PKG_GET
+#    elif type "pacman" &> /dev/null; then
+#      echo "$PSEUDO pacman -Sy $YES_ARCH $ARCH_PKG_GET"
+#    fi
   fi
   check_cmd git
   check_cmd ssh
@@ -136,13 +181,33 @@ main () {
   if [ ! -d $KUBASH_DIR ]; then
     git clone https://github.com/kubash/kubash.git $KUBASH_DIR
   else
+    echo "KUBASH_DIR=$KUBASH_DIR found"
+    echo 'attempting to pull in the kubash directory'
     cd $KUBASH_DIR
+    pwd
+    ls -alh
     git pull
+    git log -n1|cat
   fi
   export PATH=$HOME/.kubash/bin:$PATH
+  $KUBASH_DIR/scripts/dotfiles
+  check_shell
   cd $KUBASH_DIR
+  if [[ "$CI_BUILD_REF_SLUG" == "fulltest" ]]; then
+	  THISGITLAB_EXISTS=$(git remote|grep thisgitlab|wc -l)
+	  if [[ "$THISGITLAB_EXISTS" == "0" ]]; then
+	    git remote add -f thisgitlab https://gitlab.com/kubash/kubash.git
+	  else
+	    echo 'no need to add remote'
+	  fi
+	  git fetch --all
+	  git checkout fulltest
+  fi
+  echo 'Updating submodules in the kubash directory'
   git submodule update --init --recursive
+  echo 'ensure openebs is installed'
   make submodules/openebs
+  echo 'ensure nvm is installed'
   make nvm
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -150,23 +215,42 @@ main () {
   nvm install --lts
   nvm alias default
   check_cmd npm
-  make jinja2
+  echo 'ensure jinja2 is installed'
+  cd $KUBASH_DIR
+  make jinja2-cli
+  cat $HOME/.bashrc
+  . $HOME/.bashrc
+  echo $PATH
+  check_install jinja2
+  cd $KUBASH_DIR
   make yaml2json
-  check_install ct
+  #echo 'ensure ct is installed'
+  cd $KUBASH_DIR
+  make ct
+  #check_install ct
   #make ct
   check_install helm
   check_install oc
   # These need to exist in .kubash/bin/
+  cd $KUBASH_DIR
   make cfssl
+  cd $KUBASH_DIR
   make packer
+  cd $KUBASH_DIR
   make coreos_key
+  cd $KUBASH_DIR
   make cni
+  cd $KUBASH_DIR
   make kubectl
+  cd $KUBASH_DIR
   check_install crictl
   check_install onessl
-  pip install --user --upgrade netaddr
-  $KUBASH_BIN/kubash dotfiles
+  pip install --user --upgrade $PIP_INSTALL_PKGS
   echo 'logout and log back in, or source your RC files'
 }
 
-main "$@"
+time main "$@"
+
+echo 'bootstrap complete'
+
+exit 0

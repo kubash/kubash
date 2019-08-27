@@ -12,7 +12,7 @@ matrix:
         - HELM_INSTALL_DIR=$HOME/.local/bin
         - NVM_DIR="$HOME/.nvm"
         - CHANGE_MINIKUBE_NONE_USER=true
-        - MINIKUBE_VERSION=v0.30.0
+        - MINIKUBE_VERSION=v1.3.1
         - KUBE_VERSION=v1.12.2
         - CHANGE_MINIKUBE_NONE_USER=true
       cache: npm
@@ -39,13 +39,13 @@ addons:
       - ansible
       - parallel
       - golang
-      - nmap
       - python-pip
       - rlwrap
 
 
 before_install:
 - ln -s $(pwd) /home/travis/.kubash
+- printf '#!/bin/bash\nexit 0'>/tmp/nmap && chmod +x /tmp/nmap && sudo mv /tmp/nmap /usr/bin/nmap
 
 before_script:
 - make bats
@@ -75,7 +75,7 @@ before_script:
 # Fix the kubectl context, as it's often stale.
 - minikube update-context
 - cp $HOME/.kube/config clusters/default/
-- echo '2.0.0' > clusters/default/csv_version
+- echo '4.0.0' > clusters/default/csv_version
 - echo 'extetcdmaster1,primary_master,22,2800,22,bridge=br1,52:54:00:e2:9f:11,127.0.0.1,null,null,null,null,127.0.0.1,root,22,/var/lib/libvirt/images,ubuntu1.12.2,qemu,null,null,null,null,null,null,null,null,null,null,null,null,null,null' > clusters/default/hosts.csv
 - which bats
 
