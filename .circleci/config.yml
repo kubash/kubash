@@ -1,61 +1,108 @@
-# Javascript Node CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-javascript/ for more details
-#
 version: 2.1
+
 orbs:
-      minikube: ccpgames/minikube@0.0.1
+  helm: banzaicloud/helm@0.0.5
+
 jobs:
-  build:
-    machine: true
-    # docker:
-      # specify the version you desire here
-      #  - image: circleci/node:7.10
-      #- image: docker:stable-dind
+  check:
+    docker:
+      - image: circleci/golang:1.12
+        environment:
+          GOFLAG: -mod=readonly
+      - image: vault:1.1.0
+        environment:
+          SKIP_SETCAP: true
+          VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
-
-    working_directory: ~/.kubash
+    resource_class: small
 
     steps:
       - checkout
-        #- minikube/minikube-install
-      - minikube/initialize
-        #- setup_remote_docker:   # (2)
-        #  docker_layer_caching: true # (3)
+      - run:
+          name: Check dependency licenses
+          command: bash bootstrap
 
-        # minikube now installed with https://circleci.com/orbs/registry/orb/ccpgames/minikube
-        #- MINIKUBE_VERSION=v1.3.1
-        #      - run: 
-        #  name: "Setup custom environment variables"
-        #  command: |
-        #    echo 'export MINIKUBE_VERSION="v1.3.1"' >> $BASH_ENV
+  acceptance-test:
+    machine:
+      image: circleci/classic:201808-01
+      docker_layer_caching: true
 
-        #- run: THIS_CWD=$(pwd) cd $HOME;ln -s $THIS_PWD .kubash; cd $THIS_CWD 
-      - run: git branch -a; git branch --set-upstream-to=origin/$CIRCLE_BRANCH circleci
-      - run: echo 'export PATH="/home/circleci/.nvm/versions/node/v10.16.0/bin:/home/circleci/.local/bin:/home/circleci/.kubash/bin:$PATH"' >> /home/circleci/.bashrc
-      - run: echo 'export PATH="/home/circleci/.nvm/versions/node/v10.16.0/bin:/home/circleci/.local/bin:/home/circleci/.kubash/bin:$PATH"' >> /home/circleci/.bash_profile
-      - run: sudo apt-get update -qq; sudo apt-get install -yqq sudo
-      - run: cat ./bootstrap
-      - run: make bats
-      - run: ./bootstrap -y
-# Download minikube.
-#- run: curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-#      - run: sudo minikube start --vm-driver=none --kubernetes-version=$KUBE_VERSION
-      - run: bash scripts/chkdirs
-      - run: sudo chown $USER /var/lib
-      - run: /bin/bash -l -c "/usr/bin/time -v make -e ci"
-      - run: /bin/bash -l -c "/usr/bin/time -v make -e chown"
-      - run: mkdir -p clusters/default
-# Fix the kubectl context, as it's often stale.
-      - run: minikube update-context
-      - run: cp $HOME/.kube/config clusters/default/
-      - run: echo '4.0.0' > clusters/default/csv_version
-      - run: echo 'extetcdmaster1,primary_master,22,2800,22,bridge=br1,52:54:00:e2:9f:11,127.0.0.1,null,null,null,null,127.0.0.1,root,22,/var/lib/libvirt/images,ubuntu1.12.2,qemu,null,null,null,null,null,null,null,null,null,null,null,null,null,null' > clusters/default/hosts.csv
-      - run: which bats
+    environment:
+      GO_VERSION: "1.12.3"
+      K8S_VERSION: v1.15.2
+      VAULT_VERSION: "1.1.0"
+      KUBECONFIG: /home/circleci/.kube/config
+      MINIKUBE_VERSION: v1.3.1
+      MINIKUBE_WANTUPDATENOTIFICATION: false
+      MINIKUBE_WANTREPORTERRORPROMPT: false
+      MINIKUBE_HOME: /home/circleci
+      CHANGE_MINIKUBE_NONE_USER: true
+      GOPATH: /go
+      DOCKER_LATEST: 1
+      GIN_MODE: release
 
-      # run tests!
-      - run: echo 'test'
+    steps:
+      - run:
+          name: Setup minikube
+          command: |
+            curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+
+      - run:
+          name: Start minikube
+          background: true
+          command: |
+            sudo -E minikube start --vm-driver=none --cpus 2 --memory 4096 --kubernetes-version=${K8S_VERSION}
+
+      - run:
+          name: Setup kubectl
+          command: |
+            curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+            mkdir -p ${HOME}/.kube
+            touch ${HOME}/.kube/config
+
+      - checkout
+
+      - run:
+          name: Create go directory
+          command: |
+            sudo mkdir /go
+            sudo chmod 777 /go
+
+      - run:
+          name: Setup golang
+          command: |
+            sudo rm -rf /usr/local/go
+            curl -Lo go.linux-amd64.tar.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz && rm go.linux-amd64.tar.gz
+
+      - run:
+          name: Wait for minikube
+          command: |
+            timeout 180s bash \<<EOT
+              set -o pipefail
+              function is_ready()
+              {
+                kubectl get nodes -o json \
+                  | jq '.items[].status.conditions[] | select(.type=="Ready" and .status=="True")'
+              }
+
+              until is_ready
+              do
+                sleep 1
+              done
+            EOT
+
+      - run:
+          name: Setup helm
+          command: |
+            curl -L https://git.io/get_helm.sh | bash
+            helm init
+            helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - check
+      - acceptance-test:
+          requires:
+            - check
