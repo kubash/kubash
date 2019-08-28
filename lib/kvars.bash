@@ -2,7 +2,7 @@
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
-: ${KUBERNETES_VERSION:='v1.15.2'}
+: ${KUBERNETES_VERSION:='v1.15.3'}
 : ${KUBE_MAJOR_VER:=1}
 : ${KUBE_MINOR_VER:=15}
 : ${KUBASH_CLUSTER_NAME=default}

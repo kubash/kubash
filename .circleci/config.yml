@@ -3,16 +3,38 @@ version: 2.1
 orbs:
   helm: banzaicloud/helm@0.0.5
 
+templates:
+  machine_job_template: &machine_job_template
+    machine: true
+    working_directory: /home/circleci/kubash
+    environment:
+      DEBIAN_FRONTEND: "noninteractive"
+
 jobs:
+  pupernetes:
+    <<: *machine_job_template
+    steps:
+      - checkout
+      - run:
+          name: download
+          command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.10.0/pupernetes -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
+      - run:
+          name: apt
+          command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
+      - run:
+          name: run
+          command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config --dns-check
+      - run:
+          name: kubectl
+          command: kubectl get all
+      - run:
+          name: something
+          command: echo "let's go ..."
   check:
     docker:
       - image: circleci/golang:1.12
         environment:
           GOFLAG: -mod=readonly
-      - image: vault:1.1.0
-        environment:
-          SKIP_SETCAP: true
-          VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
 
     resource_class: small
 
@@ -29,8 +51,7 @@ jobs:
 
     environment:
       GO_VERSION: "1.12.3"
-      K8S_VERSION: v1.15.2
-      VAULT_VERSION: "1.1.0"
+      K8S_VERSION: v1.15.3
       KUBECONFIG: /home/circleci/.kube/config
       MINIKUBE_VERSION: v1.3.1
       MINIKUBE_WANTUPDATENOTIFICATION: false
@@ -102,6 +123,7 @@ workflows:
   version: 2
   ci:
     jobs:
+      - pupernetes
       - check
       - acceptance-test:
           requires:

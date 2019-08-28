@@ -1,11 +1,11 @@
 # Reactionetes Makefile
 
 # define various versions
-$(eval ISTIO_VERSION := 1.2.2)
-$(eval PACKER_VERSION:=1.4.0)
-$(eval ONESSL_VERSION := 0.10.0)
-$(eval CRICTL_VERSION := "v1.12.0")
-$(eval CNI_VERSION := "v0.7.5")
+$(eval ISTIO_VERSION :=1.2.2)
+$(eval PACKER_VERSION:=1.4.3)
+$(eval ONESSL_VERSION :=0.12.0)
+$(eval CRICTL_VERSION :=v1.15.0)
+$(eval VELERO_VERSION :=v1.1.0)
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
@@ -146,14 +146,6 @@ $(KUBASH_BIN)/crictl:
 	@echo 'Installing cri-tools'
 	curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C $(KUBASH_BIN) -xz
 
-cni: $(KUBASH_BIN)
-	@scripts/kubashnstaller cni
-
-$(KUBASH_BIN)/cni: SHELL:=/bin/bash
-$(KUBASH_BIN)/cni:
-	@echo 'Installing cni'
-	curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C $(KUBASH_BIN) -xz
-
 kompose: $(KUBASH_BIN)
 	@scripts/kubashnstaller kompose
 
@@ -265,7 +257,19 @@ $(KUBASH_BIN)/oc:
 	&& curl -sL https://github.com/openshift/origin/releases/download/v3.9.0-alpha.3/openshift-origin-client-tools-v3.9.0-alpha.3-78ddc10-linux-64bit.tar.gz | tar zxvf -
 	mv -v $(TMP)/openshift-origin-client-tools*/oc $(KUBASH_BIN)/
 	rm -Rf $(TMP)
-	
+
+velero: $(KUBASH_BIN)
+	@scripts/kubashnstaller velero
+
+$(KUBASH_BIN)/velero:
+	$(eval TMP := $(shell mktemp -d --suffix=veleroTMP))
+	cd $(TMP) \
+	&& wget -c https://github.com/heptio/velero/releases/download/${VELERO_VERSION}/velero-${VELERO_VERSION}-linux-amd64.tar.gz \
+	&& tar zxvf velero-${VELERO_VERSION}-linux-amd64.tar.gz
+	ls -lh $(TMP)/velero-${VELERO_VERSION}-linux-amd64/velero
+	chmod +x $(TMP)/velero-${VELERO_VERSION}-linux-amd64/velero
+	mv -v $(TMP)/velero-${VELERO_VERSION}-linux-amd64/velero $(KUBASH_BIN)/
+	rm -Rf $(TMP)
 
 bats: $(KUBASH_BIN)
 	@scripts/kubashnstaller bats

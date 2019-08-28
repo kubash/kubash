@@ -13,3 +13,6 @@
 [submodule "submodules/istio"]
 	path = submodules/istio
 	url = https://github.com/istio/istio.git
+[submodule "submodules/pupernetes"]
+	path = submodules/pupernetes
+	url = https://github.com/DataDog/pupernetes.git

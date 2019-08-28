@@ -239,8 +239,6 @@ main () {
   cd $KUBASH_DIR
   make coreos_key
   cd $KUBASH_DIR
-  make cni
-  cd $KUBASH_DIR
   make kubectl
   cd $KUBASH_DIR
   check_install crictl
