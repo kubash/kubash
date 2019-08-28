@@ -1,4 +1,5 @@
 hosts
+velero
 hosts.csv
 masters.list
 nodes.list
