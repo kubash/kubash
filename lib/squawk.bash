@@ -7,33 +7,31 @@ squawk () {
   # if the current verbosity level is greater than or equal to
   # the number given then this function will echo out your message
   # and pad it with # to let you now how verbose that message was
-  squawk_lvl=$1
+  squawk_lvl="$1"
   shift
-  squawk=$1
-  shift
-  squawk_opt=$@
+  squawk="$@"
 
   if [[ "$VERBOSITY" -ge "$squawk_lvl" ]] ; then
     if [[ "$squawk_lvl" -le 20 ]] ; then
       count_squawk=0
       while [[ "$count_squawk" -lt "$squawk_lvl" ]]; do
-        echo -n "#"
-        count_squawk=`expr $count_squawk + 1`
+        printf '#'
+        ((++count_squawk))
       done
-      echo " $squawk"
+      printf '%s\n' "$squawk"
     else
-      echo -n '#{ '
-      echo -n "$squawk_lvl"
-      echo -n " }#############"
+      printf '#{ '
+      printf '%s\n' "$squawk_lvl"
+      printf ' }#############'
       count_squawk=0
       while [[ "$count_squawk" -lt "$squawk_lvl" ]]; do
-        echo -n "#"
-        count_squawk=`expr $count_squawk + 5`
+        printf '#'
+        let count_squawk=count_squawk+5
       done
-      echo -n '#{ '
-      echo -n "$squawk_lvl"
-      echo -n ' }### '
-      echo " $squawk"
+      printf '#{ '
+      printf '%s\n' "$squawk_lvl"
+      printf ' }### '
+      printf '%s\n' "$squawk"
     fi
   fi
 }

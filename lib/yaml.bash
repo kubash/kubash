@@ -40,29 +40,22 @@ json2cluster () {
 
   KUBASH_CSV_VER=$(cat $json2cluster_tmp/csv_version)
   squawk 11 "CSV_VER=$KUBASH_CSV_VER"
-  if [ "$KUBASH_CSV_VER" = '4.0.0' ]; then
-    # provision.csv
-    jq -r \
-	    '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.network1.routingprefix),\(.network1.subnetmask),\(.network1.broadcast),\(.network1.gateway),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network2.routingprefix),\(.network2.subnetmask),\(.network2.broadcast),\(.network2.gateway),\(.network3.network),\(.network3.mac),\(.network3.ip),\(.network3.routingprefix),\(.network3.subnetmask),\(.network3.broadcast),\(.network3.gateway),\(.iscsi.target),\(.iscsi.chap_username),\(.iscsi.chap_password),\(.iscsi.host),\(.storage.path),\(.storage.type),\(.storage.size)"' \
-      $this_json >  $json2cluster_tmp/tmp.csv
-  elif [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
-    # provision.csv
-    jq -r \
-        '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.network1.routingprefix),\(.network1.subnetmask),\(.network1.broadcast),\(.network1.gateway),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network2.routingprefix),\(.network2.subnetmask),\(.network2.broadcast),\(.network2.gateway),\(.network3.network),\(.network3.mac),\(.network3.ip),\(.network3.routingprefix),\(.network3.subnetmask),\(.network3.broadcast),\(.network3.gateway),\(.iscsi.target),\(.iscsi.chap_username),\(.iscsi.chap_password),\(.iscsi.host)"' \
-      $this_json >  $json2cluster_tmp/tmp.csv
-  elif [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
-    # provision.csv
-    jq -r \
-      '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.network1.routingprefix),\(.network1.subnetmask),\(.network1.broadcast),\(.network1.gateway),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network2.routingprefix),\(.network2.subnetmask),\(.network2.broadcast),\(.network2.gateway),\(.network3.network),\(.network3.mac),\(.network3.ip),\(.network3.routingprefix),\(.network3.subnetmask),\(.network3.broadcast),\(.network3.gateway)"' \
-      $this_json >  $json2cluster_tmp/tmp.csv
-  elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
-    # provision.csv
-    jq -r \
-      '.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \
-      $this_json >  $json2cluster_tmp/tmp.csv
+  if   [[ "$KUBASH_CSV_VER" == '1.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_1_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '2.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_2_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '3.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_3_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '4.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_4_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '5.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_5_0_0"
   else
-    croak 3  'CSV columns cannot be set CSV Version not recognized'
+    croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
   fi
+  jq -r \
+    "$JQ_INTERPRETER" \
+    "$this_json" >  $json2cluster_tmp/tmp.csv
 
   set_csv_columns $KUBASH_CSV_VER
   while IFS="," read -r $csv_columns
@@ -80,24 +73,22 @@ json2cluster () {
         K8S_mac3=$(VERBOSITY=0 kubash --verbosity=1 genmac)
       fi
     fi
-    if [ "$KUBASH_CSV_VER" = '4.0.0' ]; then
-      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize"
-      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize" \
-        >>  $json2cluster_tmp/provision.csv
-    elif [ "$KUBASH_CSV_VER" = '3.0.0' ]; then
-      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost"
-      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost" \
-        >>  $json2cluster_tmp/provision.csv
-    elif [ "$KUBASH_CSV_VER" = '2.0.0' ]; then
-      squawk 6 "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3"
-      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3" \
-        >>  $json2cluster_tmp/provision.csv
-    elif [ "$KUBASH_CSV_VER" = '1.0.0' ]; then
-      echo "$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3" \
-        >>  $json2cluster_tmp/provision.csv
+    if   [[ "$KUBASH_CSV_VER" == '1.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_network3,$K8S_mac3,$K8S_ip3"
+    elif [[ "$KUBASH_CSV_VER" == '2.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3"
+    elif [[ "$KUBASH_CSV_VER" == '3.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost"
+    elif [[ "$KUBASH_CSV_VER" == '4.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize"
+    elif [[ "$KUBASH_CSV_VER" == '5.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_kvm_os_variant,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize,$K8S_storageTarget,$K8S_storageMountPath,$K8S_storageUUID"
     else
-      croak 3  'CSV columns cannot be set CSV Version not recognized'
+      croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
     fi
+    squawk 6 $CSV_BUILDER
+    echo $CSV_BUILDER \
+      >>  $json2cluster_tmp/provision.csv
   done < "$json2cluster_tmp/tmp.csv"
 
   rm $json2cluster_tmp/tmp.csv
@@ -442,7 +433,6 @@ write_kubeadmcfg_yaml () {
         squawk 25 "scp -P $my_master_port $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml $my_master_user@$my_master_ip:/tmp/${K8S_ip1}/kubeadmcfg.yaml"
         scp -P $my_master_port $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml $my_master_user@$my_master_ip:/tmp/${K8S_ip1}/kubeadmcfg.yaml
         scp -P $my_master_port $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml $my_master_user@$my_master_ip:/tmp/${K8S_ip1}/kubeadmcfg-external.yaml
-        #csv_columns="K8S_node K8S_role K8S_cpuCount K8S_Memory K8S_sshPort K8S_network1 K8S_mac1 K8S_ip1 K8S_routingprefix1 K8S_subnetmask1 K8S_broadcast1 K8S_gateway1 K8S_provisionerHost K8S_provisionerUser K8S_provisionerPort K8S_provisionerBasePath K8S_os K8S_virt K8S_network2 K8S_mac2 K8S_ip2 K8S_routingprefix2 K8S_subnetmask2 K8S_broadcast2 K8S_gateway2 K8S_network3 K8S_mac3 K8S_ip3 K8S_routingprefix3 K8S_subnetmask3 K8S_broadcast3 K8S_gateway3"
         squawk 25 "scp -P $K8S_sshPort $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml $K8S_user@${K8S_ip1}:/etc/kubernetes/kubeadmcfg.yaml"
         scp -P $K8S_sshPort $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml $K8S_user@${K8S_ip1}:/etc/kubernetes/kubeadmcfg.yaml
         scp -P $K8S_sshPort $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml $K8S_user@${K8S_ip1}:/etc/kubernetes/kubeadmcfg-external.yaml

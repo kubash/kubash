@@ -1,130 +1,99 @@
-version: 2.1
-
-orbs:
-  helm: banzaicloud/helm@0.0.5
-
-templates:
-  machine_job_template: &machine_job_template
-    machine: true
-    working_directory: /home/circleci/kubash
-    environment:
-      DEBIAN_FRONTEND: "noninteractive"
-
+# Orb 'banzaicloud/helm@0.0.5' resolved to 'banzaicloud/helm@0.0.5'
+version: 2
 jobs:
-  pupernetes:
-    <<: *machine_job_template
-    steps:
-      - checkout
-      - run:
-          name: download
-          command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.10.0/pupernetes -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
-      - run:
-          name: apt
-          command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
-      - run:
-          name: run
-          command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config --dns-check
-      - run:
-          name: kubectl
-          command: kubectl get all
-      - run:
-          name: something
-          command: echo "let's go ..."
   check:
     docker:
-      - image: circleci/golang:1.12
-        environment:
-          GOFLAG: -mod=readonly
+    - image: circleci/golang:1.12
+      environment:
+        GOFLAG: -mod=readonly
+    - image: vault:1.1.0
+      environment:
+        SKIP_SETCAP: true
+        KUBERNETES_VERSION: v1.15.3
+        VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
+        TERM: dumb
+        GOPATH: /home/circleci/.go
 
     resource_class: small
-
+    working_directory: /home/circleci/.kubash
     steps:
-      - checkout
-      - run:
-          name: Check dependency licenses
-          command: bash bootstrap
-
+    - checkout
+    - run:
+        name: Check dependency licenses
+        command: bash bootstrap
   acceptance-test:
-    machine:
-      image: circleci/classic:201808-01
-      docker_layer_caching: true
-
+    machine: true
+    working_directory: /home/circleci/.kubash
     environment:
-      GO_VERSION: "1.12.3"
-      K8S_VERSION: v1.15.3
-      KUBECONFIG: /home/circleci/.kube/config
-      MINIKUBE_VERSION: v1.3.1
-      MINIKUBE_WANTUPDATENOTIFICATION: false
-      MINIKUBE_WANTREPORTERRORPROMPT: false
-      MINIKUBE_HOME: /home/circleci
-      CHANGE_MINIKUBE_NONE_USER: true
-      GOPATH: /go
-      DOCKER_LATEST: 1
-      GIN_MODE: release
-
+    - DEBIAN_FRONTEND: noninteractive
+    - TERM: dumb
     steps:
-      - run:
-          name: Setup minikube
-          command: |
-            curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-
-      - run:
-          name: Start minikube
-          background: true
-          command: |
-            sudo -E minikube start --vm-driver=none --cpus 2 --memory 4096 --kubernetes-version=${K8S_VERSION}
-
-      - run:
-          name: Setup kubectl
-          command: |
-            curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-            mkdir -p ${HOME}/.kube
-            touch ${HOME}/.kube/config
-
-      - checkout
-
-      - run:
-          name: Create go directory
-          command: |
-            sudo mkdir /go
-            sudo chmod 777 /go
-
-      - run:
-          name: Setup golang
-          command: |
-            sudo rm -rf /usr/local/go
-            curl -Lo go.linux-amd64.tar.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz && rm go.linux-amd64.tar.gz
-
-      - run:
-          name: Wait for minikube
-          command: |
-            timeout 180s bash \<<EOT
-              set -o pipefail
-              function is_ready()
-              {
-                kubectl get nodes -o json \
-                  | jq '.items[].status.conditions[] | select(.type=="Ready" and .status=="True")'
-              }
-
-              until is_ready
-              do
-                sleep 1
-              done
-            EOT
-
-      - run:
-          name: Setup helm
-          command: |
-            curl -L https://git.io/get_helm.sh | bash
-            helm init
-            helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
-
+    - checkout
+    - run:
+        name: download
+        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.10.0/pupernetes
+          -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
+    - run:
+        name: apt
+        command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
+    - run:
+        name: run
+        command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
+          --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config
+          --dns-check
+    - run:
+        name: kubectl
+        command: kubectl get all
+    - run:
+        name: Setup helm
+        command: |
+          curl -L https://git.io/get_helm.sh | bash
+          helm init
+          helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+    - run:
+        name: Boostrap Kubash
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          bash bootstrap
+    - run:
+        name: Test Kubash yaml2cluster
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          export TERM=dumb
+          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
+          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
+    - run:
+        name: Test Kubectl get nodes
+        command: |
+          kubectl get nodes
+    - run:
+        name: Test Kubash tiller
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
+          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
+          cp $HOME/.kube/config $HOME/.kubash/clusters/$RAND_TMP/
+          echo $KUBERNETES_VERSION > $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
+          echo $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
+          cat $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
+          kubash -n $RAND_TMP tiller
+    - run:
+        name: Install Bash Automated Testing Suite
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          export TERM=dumb
+          make bats
+    - run:
+        name: Run Bash Automated Testing Suite
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          export TERM=dumb
+          bats .ci/.tests.bats
 workflows:
   version: 2
   ci:
     jobs:
-      - pupernetes
-      - check
-      - acceptance-test:
-          requires:
-            - check
+    - check
+    - acceptance-test:
+        requires:
+        - check

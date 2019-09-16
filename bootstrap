@@ -121,14 +121,16 @@ main () {
   . /etc/os-release
 
   WHOAMI=$(whoami)
-  if [ "$WHOAMI" = "root" ]; then
+  if [[ "$WHOAMI" = "root" ]]; then
     PSEUDO=''
   else
     check_cmd sudo
     PSEUDO='sudo'
   fi
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
-    if [[ "$UBUNTU_CODENAME" = "xenial" ]]; then
+    if [[ "$CIRCLE_STAGE" == "acceptance-test" ]]; then
+      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm net-tools dnsutils'
+    elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
       DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
     else
       DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
@@ -178,7 +180,9 @@ main () {
 
   flight_checks
 
-  if [ ! -d $KUBASH_DIR ]; then
+  if [[ "$CIRCLECI" == true ]]; then
+    echo 'in CircleCI skipping git clone'
+  elif [ ! -d $KUBASH_DIR ]; then
     git clone https://github.com/kubash/kubash.git $KUBASH_DIR
   else
     echo "KUBASH_DIR=$KUBASH_DIR found"
@@ -207,13 +211,18 @@ main () {
   git submodule update --init --recursive
   echo 'ensure openebs is installed'
   make submodules/openebs
-  echo 'ensure nvm is installed'
-  make nvm
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-  nvm install --lts
-  nvm alias default
+  if [[ "$CIRCLE_STAGE" == "acceptance-test" ]]; then
+    echo 'circleci acceptance-test so nvm is installed!'
+  else
+    echo 'ensure nvm is installed'
+    make nvm
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+    nvm install --lts
+    nvm use --default --lts
+    nvm alias default node
+  fi
   check_cmd npm
   echo 'ensure jinja2 is installed'
   cd $KUBASH_DIR

@@ -97,7 +97,9 @@ set_name () {
   export KUBASH_PROVISION_CSV=$KUBASH_CLUSTER_DIR/provision.csv
   export KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
   export KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
-  export KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version)
+  if [[ -f "$KUBASH_CLUSTER_DIR/kubernetes_version" ]]; then
+    export KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version)
+  fi
   net_set
   if [[ -e $KUBASH_CLUSTER_DIR/csv_version ]]; then
     set_csv_columns
@@ -145,7 +147,6 @@ checks () {
   check_cmd yaml2json
   check_cmd jq
   check_cmd rlwrap
-  check_cmd expr
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     check_cmd parallel
   fi
@@ -375,7 +376,9 @@ do_command () {
 
 sudo_command () {
   if [[ ! $# -eq 4 ]]; then
-    croak 3  "sudo_command $@ <--- arguments does not equal 4!!!"
+    echo "sudo_command $@"
+    printf '%s arguments does not equal 4!!!\nexample usage:\nsudo_command PORT USER HOST COMMAND\ne.g.\nsudo_command 22 root 10.0.0.10 "echo test"' $#
+    exit 1
   fi
   squawk 3 " sudo_command '$1' '$2' '$3 '$4'"
   sudo_command_port=$1

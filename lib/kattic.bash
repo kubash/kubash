@@ -561,7 +561,7 @@ do_metallb () {
         helm install --name metallb stable/metallb
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f \
-        https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml
+        https://raw.githubusercontent.com/google/metallb/${METALLB_VERSION}/manifests/metallb.yaml
     fi
 }
 

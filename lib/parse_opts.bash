@@ -9,6 +9,7 @@ parse_opts () {
 
   squawk 5 'parse opts'
 
+  ORIGINAL_OPTS=$@
   # Execute getopt on the arguments passed to this program, identified by the special character $@
   short_opts="c:hvyn:"
   long_opts="version,oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug,provisioner:"
@@ -29,7 +30,7 @@ parse_opts () {
   opt_loop_count=1
   while true; do
     squawk 5 "$opt_loop_count $@"
-    opt_loop_count=`expr $opt_loop_count + 1`
+    ((++opt_loop_count))
     case "$1" in
       -h|--help)
         print_help=true
@@ -236,7 +237,7 @@ parse_opts () {
       usage
       exit 1
     fi
-        do_openebs
+    do_openebs
   elif [[ $RAISON == "genmac" ]]; then
     genmac
   elif [[ $RAISON == "dry" ]]; then
@@ -245,16 +246,16 @@ parse_opts () {
       usage
       exit 1
     fi
-        VERBOSITY=`expr $VERBOSITY + 1`
-        do_test
+    ((++VERBOSITY))
+    do_test
   elif [[ $RAISON == "test_provision" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-        VERBOSITY=`expr $VERBOSITY + 1`
-        do_provision_test
+    ((++VERBOSITY))
+    do_provision_test
   elif [[ $RAISON == "mount_iscsi" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -285,15 +286,23 @@ parse_opts () {
       usage
       exit 1
     fi
-    VERBOSITY=`expr $VERBOSITY + 10`
+    let VERBOSITY=VERBOSITY+10
     read_csv
+  elif [[ $RAISON == "read_provision_csv" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    let VERBOSITY=VERBOSITY+10
+    read_provision_csv
   elif [[ $RAISON == "test" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    VERBOSITY=`expr $VERBOSITY + 10`
+    let VERBOSITY=VERBOSITY+10
     do_test
   elif [[ $RAISON == "ping" ]]; then
     if [[ $print_help == "true" ]]; then
