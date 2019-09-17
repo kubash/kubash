@@ -1,18 +1,19 @@
 ---
-  csv_version: '4.0.0'
+  csv_version: '5.0.0'
   kubernetes_version: 'v1.15.3'
   hosts:
     my-master1:
       hostname: master01
       role: primary_master
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -22,14 +23,15 @@
     my-master2:
       hostname: master02
       role: master
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -39,14 +41,15 @@
     my-master3:
       hostname: master03
       role: master
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -56,14 +59,15 @@
     my-node1:
       hostname: node01
       role: node
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -73,14 +77,15 @@
     my-node2:
       hostname: node02
       role: node
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -90,14 +95,15 @@
     my-node3:
       hostname: node03
       role: node
-      cpuCount: 1
-      Memory: 1100
+      cpuCount: 2
+      Memory: 2048
       provisioner:
         Host: localhost
         User: root
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -107,7 +113,7 @@
       network2:
         network: network=default
         mac: '52:54:00:e2:8a:17'
-        ip: '10.0.0.33'
+        ip: '10.0.0.32'
         routingprefix: '10.0.0.0'
         subnetmask: '255.255.255.0'
       network3:
@@ -118,7 +124,7 @@
       hostname: extetcdstorage1
       role: storage
       cpuCount: 2
-      Memory: 2222
+      Memory: 2048
       sshPort: 22
       provisioner:
         Host: localhost
@@ -126,6 +132,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: coreos
+      kvm_os_variant: virtio26
       virt: qemu
       network1:
         network: bridge=br0
@@ -135,22 +142,51 @@
         gateway: '10.0.0.1'
         routingprefix: '10.0.0.0'
         subnetmask: '255.255.255.0'
-      network2:
-        network: network=default
+      storage:
+        path: '/var/lib/rook'
+        size: '11G'
+        type: 'raw'
+        target: 'vdb'
+        uuid: '05617ec5-96e9-48b6-ab4e-e70fa1339cdd'
+        targetpath: '/var/lib/rook'
+    my-storage2:
+      hostname: extetcdstorage2
+      role: storage
+      cpuCount: 2
+      Memory: 2048
+      sshPort: 22
+      provisioner:
+        Host: localhost
+        User: root
+        Port: 22
+        BasePath: '/var/lib/libvirt/images'
+      os: coreos
+      kvm_os_variant: virtio26
+      virt: qemu
+      network1:
+        network: bridge=br0
         mac: '52:54:00:e2:8a:20'
         ip: '10.0.0.34'
         broadcast: '10.0.0.255'
         gateway: '10.0.0.1'
         routingprefix: '10.0.0.0'
         subnetmask: '255.255.255.0'
-      network3:
+      network2:
         network: network=default
         mac: '52:54:00:e2:8a:21'
-        ip: '10.0.0.34'
-        broadcast: '10.0.0.255'
-        gateway: '10.0.0.1'
-        routingprefix: '10.0.0.0'
-        subnetmask: '255.255.255.0'
+        ip: '10.2.2.35'
+        broadcast: '10.2.2.255'
+        gateway: '10.2.2.1'
+        routingprefix: '10.2.2.0'
+        subnetmask: '255.255.0.0'
+      network3:
+        network: network=default
+        mac: '52:54:00:e2:8a:22'
+        ip: '10.3.3.36'
+        broadcast: '10.3.3.255'
+        gateway: '10.3.3.1'
+        routingprefix: '10.3.3.0'
+        subnetmask: '255.0.0.0'
       iscsi:
         target: 'iqn.2005-10.org.freenas.ctl:exampletarg01'
         host: '10.0.0.103:3260'

@@ -5,29 +5,74 @@ mount_all_iscsi_targets () {
   while IFS="," read -r $csv_columns
   do
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
-    if [[ "$K8S_role" = "storage" ]]; then
-      squawk 3 "initializing storage node $@"
-      squawk 33 "${K8S_iscsihost} ${K8S_iscsitarget} $K8S_iscsichapusername"
-      if [[ "$K8S_iscsitarget" != "null" ]]; then
-        squawk 3 "K8S_iscsitarget=$K8S_iscsitarget"
-        command2run="iscsiadm --mode discovery --type sendtargets --portal ${K8S_iscsihost}"
+    squawk 3 "initializing storage node $@"
+    squawk 33 "${K8S_iscsihost} ${K8S_iscsitarget} $K8S_iscsichapusername"
+    if [[ "$K8S_iscsitarget" != "null" ]]; then
+      squawk 3 "K8S_iscsitarget=$K8S_iscsitarget"
+      command2run="iscsiadm --mode discovery --type sendtargets --portal ${K8S_iscsihost}"
+      sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
+      if [[ ! -z "$K8S_iscsichapusername" ]]; then
+        squawk 3 "K8S_iscsichapusername=$K8S_iscsichapusername"
+        command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.authmethod --value=CHAP"
+        command2run="$command2run && iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.username --value=$K8S_iscsichapusername"
         sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
-        if [[ ! -z "$K8S_iscsichapusername" ]]; then
-          squawk 3 "K8S_iscsichapusername=$K8S_iscsichapusername"
-          command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.authmethod --value=CHAP"
-          command2run="$command2run && iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.username --value=$K8S_iscsichapusername"
+        if [[ ! -z "$K8S_iscsichappassword" ]]; then
+          squawk 3 "K8S_iscsichappassword=$K8S_iscsichappassword"
+          squawk 33 'iscichappassword'
+          command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.password --value=$K8S_iscsichappassword"
           sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
-          if [[ ! -z "$K8S_iscsichappassword" ]]; then
-            squawk 3 "K8S_iscsichappassword=$K8S_iscsichappassword"
-            squawk 33 'iscichappassword'
-            command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --op=update --name node.session.auth.password --value=$K8S_iscsichappassword"
-            sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
-          else
-            croak 3 'chapusername supplied without a chappassword!!!'
-          fi
+        else
+          croak 3 'chapusername supplied without a chappassword!!!'
         fi
-        command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --login"
-        sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
+      fi
+      command2run="iscsiadm --mode node --portal ${K8S_iscsihost} --targetname ${K8S_iscsitarget} --login"
+      sudo_command $K8S_sshPort $K8S_user $K8S_ip1 "$command2run"
+    fi
+  done <<< "$kubash_hosts_csv_slurped"
+}
+
+mount_all_other_targets () {
+  squawk 1 "mount all other targets $@"
+  while IFS="," read -r $csv_columns
+  do
+    squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
+    squawk 3 "initializing storage node $@"
+    squawk 3 "$K8S_storagePath $K8S_storageType $K8S_storageSize $K8S_storageTarget $K8S_storageMountPath $K8S_storageUUID"
+    if [[ "$K8S_storagePath" != "null" ]]; then
+      squawk 3 "K8S_storagePath=$K8S_storagePath"
+      if [[ "$K8S_storageMountPath" != "null" ]]; then
+        if [[ "$K8S_storageTarget"  != "null" ]]; then
+          if [[ "$K8S_storageTarget"  == "vda" || "$K8S_storageTarget"  == "sda" || "$K8S_storageTarget"  == "hda" ]]; then
+            croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
+          fi
+          command2run="mkdir -p $K8S_storageMountPath"
+          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+          if [[ "$K8S_storageUUID" != "null" ]]; then
+            command2run="fsck.ext4 -p /dev/$K8S_storageTarget"
+            K8S_storageMKFS_UUID_OPT="-U $K8S_storageUUID"
+          else
+            command2run="fsck.ext4 -p UUID=$K8S_storageUUID"
+            K8S_storageUUID=$(uuidgen -r)
+            K8S_storageMKFS_UUID_OPT="-U $K8S_storageUUID"
+          fi
+          # This might fail in which case we'll format
+          set +e
+          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+          if [[ $? == 0 ]]; then
+            squawk 3 'fsck successful!'
+          else
+            set -e
+            squawk 3 'fsck failed we will attempt to format the device!'
+            command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/$K8S_storageTarget"
+            sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+          fi
+          set -e
+          fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${K8S_storageUUID} ${K8S_storageMountPath})"
+          command2run="echo $fstab_line_to_append >> /etc/fstab"
+          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+          command2run="mount ${K8S_storageMountPath}"
+          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+        fi
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -74,4 +119,5 @@ taint_all_storage () {
     taint_storage $nodes_to_taint
   fi
   mount_all_iscsi_targets
+  mount_all_other_targets
 }

@@ -1,5 +1,5 @@
 ---
-  csv_version: '4.0.0'
+  csv_version: '5.0.0'
   kubernetes_version: '$REPLACEME_KUBE_VER'
   hosts:
     stacked-master1:
@@ -13,6 +13,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -30,6 +31,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -47,6 +49,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -64,6 +67,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -81,6 +85,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -98,6 +103,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -115,6 +121,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:
@@ -132,6 +139,7 @@
         Port: 22
         BasePath: '/var/lib/libvirt/images'
       os: $REPLACEME_OS_TPL
+      kvm_os_variant: virtio26
       virt: qemu
       sshPort: 22
       network1:

@@ -5,17 +5,15 @@ croak () {
   # call it by preceding your error message with a verbosity level
   # e.g. `croak 3 "This is a croak"`
   # if the current verbosity level is greater than or equal to
-  # the number given then this function will echo out your message
+  # the number given then this function will print out your message
   # and pad it with # to let you now how verbose that message was
-  croak_lvl=$1
+  croak_lvl="$1"
   shift
-  croak=$1
-  shift
-  croak_opt=$@
+  croak="$@"
 
   if [[ -z $error_report_log ]]; then
     horizontal_rule
-    echo "Error report log $error_report_log"
+    printf 'Error report log - %s\n' $error_report_log
   fi
 
   horizontal_rule
@@ -23,26 +21,26 @@ croak () {
     if [[ "$croak_lvl" -le 20 ]] ; then
       count_croak=0
       while [[ "$count_croak" -lt "$croak_lvl" ]]; do
-        echo -n "#"
-        count_croak=`expr $count_croak + 1`
+        printf '#'
+        ((++count_croak))
       done
-      echo " $croak"
+      printf '%s\n'  "$croak"
     else
-      echo -n '#{ '
-      echo -n "$croak_lvl"
-      echo -n " }#############"
+      printf '#{ '
+      printf '%s\n' "$croak_lvl"
+      printf ' }#############'
       count_croak=0
       while [[ "$count_croak" -lt "$croak_lvl" ]]; do
-        echo -n "#"
-        count_croak=`expr $count_croak + 5`
+        printf '#'
+        let count_croak=count_croak+5
       done
-      echo -n '#{ '
-      echo -n "$croak_lvl"
-      echo -n ' }### '
-      echo " $croak"
+      printf '#{ '
+      printf '%s\n' "$croak_lvl"
+      printf ' }### '
+      printf '%s\n'  "$croak"
     fi
   else
-    echo " $croak"
+    printf '%s\n'  "$croak"
   fi
   horizontal_rule
   exit 1

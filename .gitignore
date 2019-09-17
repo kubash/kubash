@@ -19,3 +19,4 @@ submodules/openebs
 .kubash_history
 .tmpax
 *.packer_cache_path
+*.orig

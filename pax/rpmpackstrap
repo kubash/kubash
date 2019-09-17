@@ -4,6 +4,7 @@
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
 : ${INSTALL_PKGS:='ceph-common zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
+: ${ADDITIONAL_INSTALL_PKGS:=' '}
 : ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
 : ${KUBEPKG_VERSION:="1.15.3"}
@@ -75,7 +76,7 @@ yum update -y
 yum repolist enabled
 
 yum install -y $PRE_INSTALL_PKGS
-yum install -y $INSTALL_PKGS
+yum install -y $INSTALL_PKGS $ADDITIONAL_INSTALL_PKGS
 
 systemctl enable sysstat.service
 

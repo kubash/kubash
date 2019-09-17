@@ -1,0 +1,13 @@
+#!/bin/sh -eux
+TMP=$(mktemp -d)
+# this one is for customization
+: ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
+
+if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
+  echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+  date -I >> /root/.additional_packages_isntalled
+  echo "apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL" >> /root/.additional_packages_isntalled
+  apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL
+else
+  echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+fi
