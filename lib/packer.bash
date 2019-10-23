@@ -30,7 +30,7 @@ packer_build () {
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
 
   cd $KUBASH_DIR/pax/$target_os
-  squawk 2 " Executing packer build..."
+  squawk 2 " Executing packer build... "
 
   if [[ "$debug" == "true" ]]; then
     debug_flag='-debug -on-error=ask'

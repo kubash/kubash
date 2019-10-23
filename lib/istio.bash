@@ -34,6 +34,7 @@ do_istio () {
       sleep 1
       ((++countzero))
     done
+    helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.1.7/charts/
     KUBECONFIG=$KUBECONFIG \
     helm install \
       --name=istio \
@@ -47,7 +48,7 @@ do_istio () {
       --set certmanager.email=$LETSENCRYPT_EMAIL \
       --set global.k8sIngress.enabled=true \
       --set global.k8sIngress.enableHttps=true \
-      --set gateways.istio-ingressgateway.nodeSelector.ingress='"true"' \
+      --set gateways.istio-ingressgateway.nodeSelector.ingress=true \
       --set gateways.istio-ingressgateway.type=$ISTIO_GATEWAY_TYPE \
       --set gateways.istio-ingressgateway.sds.enabled=true \
       --set global.k8sIngress.gatewayName=ingressgateway \

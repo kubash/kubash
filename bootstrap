@@ -141,7 +141,7 @@ main () {
       $PSEUDO apt-get $YES install $DEB_PKG_GET
     fi
   elif [[ "$NAME" = 'CentOS Linux' ]]; then
-    YUM_PKG_GET='jq git build-essential python-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools'
+    YUM_PKG_GET='jq git build-essential python-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils qemu-system-x86'
     if type "yum" &> /dev/null; then
       check_cmd yum
       $PSEUDO yum $YES update
