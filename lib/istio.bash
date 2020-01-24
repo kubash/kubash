@@ -21,7 +21,7 @@ do_istio () {
       --set global.k8sIngress.enabled=true \
       --set certmanager.enabled=true \
       --set certmanager.email=$LETSENCRYPT_EMAIL \
-      istio-init
+      istio.io/istio-init
     sleep 1
     ISTIO_CRD_COUNT=0
     countzero=0
@@ -34,7 +34,7 @@ do_istio () {
       sleep 1
       ((++countzero))
     done
-    helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.1.7/charts/
+    helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
     KUBECONFIG=$KUBECONFIG \
     helm install \
       --name=istio \
@@ -54,7 +54,7 @@ do_istio () {
       --set global.k8sIngress.gatewayName=ingressgateway \
       --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
       --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
-      istio
+      istio.io/istio
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
 }
