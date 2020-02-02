@@ -2,7 +2,6 @@
 # define various versions
 $(eval CT_VERSION := "v0.9.0")
 $(eval CNI_VERSION := "v0.7.5")
-$(eval ISTIO_VERSION := "1.3.1")
 $(eval NVM_VERSION := "v0.34.0")
 $(eval PACKER_VERSION := "1.4.0")
 $(eval ONESSL_VERSION := "0.10.0")
@@ -88,11 +87,12 @@ istioctl: $(KUBASH_BIN)
 
 $(KUBASH_BIN)/istioctl:
 	@echo 'Installing istioctl'
-	$(eval TMP := $(shell mktemp -d --suffix=istioctlTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -sL https://git.io/getLatestIstio | ISTIO_VERSION=${ISTIO_VERSION} sh -
-	install -m755 ${TMP}/istio-${ISTIO_VERSION}/bin/istioctl $(KUBASH_BIN)/
-	rm -Rf $(TMP)
+	curl -L https://istio.io/downloadIstio | sh -
+	mv $(TMP)/istio-1.4.3/bin/istioctl $(KUBASH_DIR)/bin/
+	rm -Rf $(TMP)/istio-1.4.3
+	rmdir $(TMP)
 
 
 kubectl: $(KUBASH_BIN)
