@@ -15,10 +15,9 @@ do_istio () {
     KUBECONFIG=$KUBECONFIG \
     helm repo add jetstack https://charts.jetstack.io
     #helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
-    KUBECONFIG=$KUBECONFIG \
     helm repo update
-    KUBECONFIG=$KUBECONFIG \
     helm install \
+      --kubeconfig $KUBECONFIG \
       --name cert-manager \
       --namespace cert-manager \
       --version v0.13.0 \
