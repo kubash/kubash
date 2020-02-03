@@ -26,6 +26,7 @@ do_istio () {
     kubectl get pods --namespace cert-manager
     KUBECONFIG=$KUBECONFIG \
     istioctl manifest apply \
+      --wait \
       --set profile=sds \
       --set values.kiali.enabled=true \
       --set values.grafana.enabled=true \
