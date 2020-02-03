@@ -33,6 +33,10 @@ do_istio () {
       --set values.tracing.enabled=true \
       --set values.prometheus.enabled=true \
       --set values.certmanager.enabled=true \
+			--set values.gateways.istio-ingressgateway.sds.enabled=true \
+			--set values.global.k8sIngress.enabled=true \
+			--set values.global.k8sIngress.enableHttps=true \
+			--set values.global.k8sIngress.gatewayName=ingressgateway \
       --set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
       --set "values.kiali.dashboard.grafanaURL=http://grafana:3000"
     KUBECONFIG=$KUBECONFIG \
