@@ -9,7 +9,7 @@ do_istio () {
     if [ -z $LOAD_BALANCER_IP ]; then
       LOAD_BALANCER_IP_SET=""
     else
-      LOAD_BALANCER_IP_SET="--set gateways.istio-ingressgateway.loadBalancerIP=$LOAD_BALANCER_IP"
+      LOAD_BALANCER_IP_SET="--set values.gateways.istio-ingressgateway.loadBalancerIP=$LOAD_BALANCER_IP"
     fi
     KUBECONFIG=$KUBECONFIG \
     helm repo add jetstack https://charts.jetstack.io
@@ -33,10 +33,11 @@ do_istio () {
       --set values.tracing.enabled=true \
       --set values.prometheus.enabled=true \
       --set values.certmanager.enabled=true \
-			--set values.gateways.istio-ingressgateway.sds.enabled=true \
-			--set values.global.k8sIngress.enabled=true \
-			--set values.global.k8sIngress.enableHttps=true \
-			--set values.global.k8sIngress.gatewayName=ingressgateway \
+      --set values.gateways.istio-ingressgateway.sds.enabled=true \
+      --set values.global.k8sIngress.enabled=true \
+      --set values.global.k8sIngress.enableHttps=true \
+      --set values.global.k8sIngress.gatewayName=ingressgateway \
+      $LOAD_BALANCER_IP_SET \
       --set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
       --set "values.kiali.dashboard.grafanaURL=http://grafana:3000"
     KUBECONFIG=$KUBECONFIG \
