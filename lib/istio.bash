@@ -12,14 +12,18 @@ do_istio () {
       #LOAD_BALANCER_IP_SET="--set gateways.istio-ilbgateway.loadBalancerIP=$LOAD_BALANCER_IP"
       LOAD_BALANCER_IP_SET="--set gateways.istio-ingressgateway.loadBalancerIP=$LOAD_BALANCER_IP"
     fi
+    KUBECONFIG=$KUBECONFIG \
     helm repo add jetstack https://charts.jetstack.io
     #helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
+    KUBECONFIG=$KUBECONFIG \
     helm repo update
+    KUBECONFIG=$KUBECONFIG \
     helm install \
       --name cert-manager \
       --namespace cert-manager \
       --version v0.13.0 \
       jetstack/cert-manager
+    KUBECONFIG=$KUBECONFIG \
     kubectl get pods --namespace cert-manager
     KUBECONFIG=$KUBECONFIG \
     istioctl manifest apply \
