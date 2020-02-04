@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 do_istio () {
+    KUBECONFIG=$KUBECONFIG \
+    kubectl apply -f $KUBASH_DIR/templates/trustworthy-jwt.yaml
     # Install istio with certmanager
     # https://istio.io/docs/examples/advanced-gateways/ingress-certmgr/
     if [ -z $LETSENCRYPT_EMAIL ]; then
