@@ -253,6 +253,15 @@ main () {
   check_install crictl
   check_install onessl
   pip install --user --upgrade $PIP_INSTALL_PKGS
+  if [ -w /usr/local/bin ] ; then
+    touch /usr/local/bin/test_file_01
+    rm /usr/local/bin/test_file_01
+    echo '/usr/local/bin is writeable by the currect user'
+  else
+    echo '/usr/local/bin is not writeable by the currect user'
+    echo 'Please ensure the current user can write to /usr/local/bin'
+    exit 1
+  fi
   echo 'logout and log back in, or source your RC files'
 }
 
