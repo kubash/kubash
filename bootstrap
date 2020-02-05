@@ -19,7 +19,7 @@ check_shell () {
     . $HOME/.zshrc
   elif [[ "$THIS_SHELL" == "bash" ]]; then
     . $HOME/.bashrc
-  else 
+  else
     echo 'unsupported shell'
     exit 1
   fi
@@ -227,10 +227,10 @@ main () {
   echo 'ensure jinja2 is installed'
   cd $KUBASH_DIR
   make jinja2-cli
-  cat $HOME/.bashrc
+  #cat $HOME/.bashrc
   . $HOME/.bashrc
-  echo $PATH
-  check_install jinja2
+  #echo $PATH
+  #check_install jinja2
   cd $KUBASH_DIR
   make yaml2json
   #echo 'ensure ct is installed'

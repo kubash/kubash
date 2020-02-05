@@ -1,11 +1,11 @@
 # Reactionetes Makefile
 # define various versions
 $(eval CT_VERSION := "v0.9.0")
-$(eval CNI_VERSION := "v0.7.5")
-$(eval NVM_VERSION := "v0.34.0")
-$(eval PACKER_VERSION := "1.4.0")
-$(eval ONESSL_VERSION := "0.10.0")
-$(eval CRICTL_VERSION := "v1.12.0")
+$(eval CNI_VERSION := "v0.8.5")
+$(eval NVM_VERSION := "v0.35.2")
+$(eval PACKER_VERSION := "1.5.0")
+$(eval ONESSL_VERSION := "0.14.0")
+$(eval CRICTL_VERSION := "v1.17.0")
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
