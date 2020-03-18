@@ -4,7 +4,6 @@ $(eval CT_VERSION := "v0.9.0")
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.2")
 $(eval PACKER_VERSION := "1.5.0")
-$(eval ONESSL_VERSION := 0.14.0)
 $(eval CRICTL_VERSION := "v1.17.0")
 
 # Install location
@@ -396,15 +395,6 @@ $(KUBASH_BIN)/ct:
 	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
 	&& chmod +x ct \
 	&& mv ct $(KUBASH_BIN)/
-	rm -Rf $(TMP)
-
-onessl: $(KUBASH_BIN)/onessl
-
-$(KUBASH_BIN)/onessl:
-	$(eval TMP := $(shell mktemp -d --suffix=ONESSLTMP))
-	curl -fsSL -o $(TMP)/onessl https://github.com/kubepack/onessl/releases/download/${ONESSL_VERSION}/onessl-linux-amd64
-	chmod +x $(TMP)/onessl
-	mv $(TMP)/onessl $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 gcloud:

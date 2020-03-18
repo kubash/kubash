@@ -251,7 +251,8 @@ main () {
   make kubectl
   cd $KUBASH_DIR
   check_install crictl
-  check_install onessl
+  # onessl is deprecated and is being removed
+  #check_install onessl
   pip install --user --upgrade $PIP_INSTALL_PKGS
   if [ -w /usr/local/bin ] ; then
     touch /usr/local/bin/test_file_01
