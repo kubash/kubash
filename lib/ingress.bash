@@ -98,7 +98,6 @@ do_voyager () {
   KUBECONFIG=$KUBECONFIG \
   helm install stable/voyager --name voyager \
     --set cloudProvider=$VOYAGER_PROVIDER \
-    --set apiserver.ca="$(onessl get kube-ca)" \
     $VOYAGER_ADMISSIONWEBHOOK
   elif [ "$VOYAGER_BY_HELM" = "appscode" ]; then
   KUBECONFIG=$KUBECONFIG \
@@ -109,7 +108,6 @@ do_voyager () {
     --version $VOYAGER_VERSION \
     --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
-    --set apiserver.ca="$(onessl get kube-ca)" \
     $VOYAGER_ADMISSIONWEBHOOK
   else
     KUBECONFIG=$KUBECONFIG \
