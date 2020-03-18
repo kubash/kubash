@@ -89,8 +89,8 @@ $(KUBASH_BIN)/istioctl:
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
 	curl -L https://istio.io/downloadIstio | sh -
-	mv $(TMP)/istio-1.4.3/bin/istioctl $(KUBASH_DIR)/bin/
-	rm -Rf $(TMP)/istio-1.4.3
+	mv $(TMP)/istio-1.5.0/bin/istioctl $(KUBASH_DIR)/bin/
+	rm -Rf $(TMP)/istio-1.5.0
 	rmdir $(TMP)
 
 

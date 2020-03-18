@@ -26,22 +26,12 @@ do_istio () {
     KUBECONFIG=$KUBECONFIG \
     kubectl get pods --namespace cert-manager
     # Install Istio
+    KUBASH_ISTIO_PROFILE = $KUBASH_CLUSTER_DIR/istio_profile.yml
+    if [[ ! -f $KUBASH_ISTIO_PROFILE ]]; then
+     istioctl profile dump demo > $KUBASH_ISTIO_PROFILE
+    fi
     KUBECONFIG=$KUBECONFIG \
-    istioctl manifest apply \
-      --wait \
-      --set profile=sds \
-      --set values.kiali.enabled=true \
-      --set values.grafana.enabled=true \
-      --set values.tracing.enabled=true \
-      --set values.prometheus.enabled=true \
-      --set values.certmanager.enabled=true \
-      --set values.gateways.istio-ingressgateway.sds.enabled=true \
-      --set values.global.k8sIngress.enabled=true \
-      --set values.global.k8sIngress.enableHttps=true \
-      --set values.global.k8sIngress.gatewayName=ingressgateway \
-      $LOAD_BALANCER_IP_SET \
-      --set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
-      --set "values.kiali.dashboard.grafanaURL=http://grafana:3000"
+    istioctl manifest apply -f $KUBASH_ISTIO_PROFILE
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
 }
