@@ -557,6 +557,8 @@ do_decom () {
 
 do_metallb () {
     if [[ METALLB_INSTALLATION_METHOD = 'helm' ]]; then
+      echo "This method is deprecated by upstream"
+      exit 1
       KUBECONFIG=$KUBECONFIG \
         helm install --name metallb stable/metallb
     else

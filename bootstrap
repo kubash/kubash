@@ -19,7 +19,7 @@ check_shell () {
     . $HOME/.zshrc
   elif [[ "$THIS_SHELL" == "bash" ]]; then
     . $HOME/.bashrc
-  else 
+  else
     echo 'unsupported shell'
     exit 1
   fi
@@ -227,10 +227,10 @@ main () {
   echo 'ensure jinja2 is installed'
   cd $KUBASH_DIR
   make jinja2-cli
-  cat $HOME/.bashrc
+  #cat $HOME/.bashrc
   . $HOME/.bashrc
-  echo $PATH
-  check_install jinja2
+  #echo $PATH
+  #check_install jinja2
   cd $KUBASH_DIR
   make yaml2json
   #echo 'ensure ct is installed'
@@ -251,8 +251,18 @@ main () {
   make kubectl
   cd $KUBASH_DIR
   check_install crictl
-  check_install onessl
+  # onessl is deprecated and is being removed
+  #check_install onessl
   pip install --user --upgrade $PIP_INSTALL_PKGS
+  if [ -w /usr/local/bin ] ; then
+    touch /usr/local/bin/test_file_01
+    rm /usr/local/bin/test_file_01
+    echo '/usr/local/bin is writeable by the current user'
+  else
+    echo '/usr/local/bin is not writeable by the current user'
+    echo 'Please ensure the current user can write to /usr/local/bin'
+    #exit 1
+  fi
   echo 'logout and log back in, or source your RC files'
 }
 

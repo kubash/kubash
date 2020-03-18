@@ -64,7 +64,7 @@
 : ${VOYAGER_PROVIDER:='metallb'}
 : ${VOYAGER_BY_HELM:= "false"}
 : ${VOYAGER_VERSION:='9.0.0'}
-: ${METALLB_VERSION:='v0.8.1'}
+: ${METALLB_VERSION:='v0.8.3'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}

@@ -1,12 +1,10 @@
 # Reactionetes Makefile
 # define various versions
 $(eval CT_VERSION := "v0.9.0")
-$(eval CNI_VERSION := "v0.7.5")
-$(eval ISTIO_VERSION := "1.3.1")
-$(eval NVM_VERSION := "v0.34.0")
-$(eval PACKER_VERSION := "1.4.0")
-$(eval ONESSL_VERSION := "0.10.0")
-$(eval CRICTL_VERSION := "v1.12.0")
+$(eval CNI_VERSION := "v0.8.5")
+$(eval NVM_VERSION := "v0.35.2")
+$(eval PACKER_VERSION := "1.5.0")
+$(eval CRICTL_VERSION := "v1.17.0")
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
@@ -88,11 +86,12 @@ istioctl: $(KUBASH_BIN)
 
 $(KUBASH_BIN)/istioctl:
 	@echo 'Installing istioctl'
-	$(eval TMP := $(shell mktemp -d --suffix=istioctlTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -sL https://git.io/getLatestIstio | ISTIO_VERSION=${ISTIO_VERSION} sh -
-	install -m755 ${TMP}/istio-${ISTIO_VERSION}/bin/istioctl $(KUBASH_BIN)/
-	rm -Rf $(TMP)
+	curl -L https://istio.io/downloadIstio | sh -
+	mv $(TMP)/istio-1.4.3/bin/istioctl $(KUBASH_DIR)/bin/
+	rm -Rf $(TMP)/istio-1.4.3
+	rmdir $(TMP)
 
 
 kubectl: $(KUBASH_BIN)
@@ -396,15 +395,6 @@ $(KUBASH_BIN)/ct:
 	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
 	&& chmod +x ct \
 	&& mv ct $(KUBASH_BIN)/
-	rm -Rf $(TMP)
-
-onessl: $(KUBASH_BIN)/onessl
-
-$(KUBASH_BIN)/onessl:
-	$(eval TMP := $(shell mktemp -d --suffix=ONESSLTMP))
-	curl -fsSL -o $(TMP)/onessl https://github.com/kubepack/onessl/releases/download/${ONESSL_VERSION}/onessl-linux-amd64
-	chmod +x $(TMP)/onessl
-	mv $(TMP)/onessl $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 gcloud:
