@@ -114,7 +114,9 @@ master_init_join () {
       my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/etc/kubernetes/kubeadmcfg.yaml"
       squawk 5 "$my_KUBE_INIT"
       #run_join=$(ssh -n $my_master_user@$my_master_ip "$my_KUBE_INIT" | tee $TMP/rawresults.k8s | grep -- "$my_grep")
-      run_join=$(ssh -n $my_master_user@$my_master_ip "$GET_JOIN_CMD")
+      run_join=$(ssh -n $my_master_user@$my_master_ip "$GET_JOIN_CMD" \
+        | grep -P -- "$my_grep" \
+      )
       if [[ -z "$run_join" ]]; then
         horizontal_rule
         croak 3  'kubeadm init failed!'
@@ -188,7 +190,9 @@ node_join () {
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "hostname; uname -a")
     squawk 3 "hostname and uname is $result"
     squawk 3 "Kubeadmn join"
-    run_join=$(cat $KUBASH_CLUSTER_DIR/join.sh)
+    run_join=$(cat $KUBASH_CLUSTER_DIR/join.sh \
+        | grep -P -- "$my_grep" \
+    )
     #result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     squawk 3 "run_join result is $result"
@@ -1234,7 +1238,9 @@ EOF
       sudo_command ${MASTERPORTS[$i]} ${INIT_USER} ${HOST} "$my_KUBE_INIT"
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
         | sed 's/\(.*\)--token\ \(\S*\)\ --discovery-token-ca-cert-hash\ .*/\2/')
@@ -1684,7 +1690,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_test_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2117,7 +2125,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_test_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2313,7 +2323,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2445,7 +2457,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
