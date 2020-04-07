@@ -584,14 +584,6 @@ do_rook () {
     kubectl --kubeconfig=$KUBECONFIG create -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml
 
-    # minio
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/operator.yaml
-    KUBECONFIG=$KUBECONFIG \
-        $KUBASH_DIR/w8s/generic.w8 rook-minio-operator rook-minio-system
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/object-store.yaml
-
     # cassandra
     kubectl --kubeconfig=$KUBECONFIG create -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
