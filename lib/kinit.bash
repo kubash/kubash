@@ -1245,7 +1245,11 @@ EOF
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
         #sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $KUBASH_CLUSTER_DIR/join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -1691,7 +1695,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -2120,7 +2128,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -2444,7 +2456,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${STACKED_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_stacked_method ${STACKED_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
