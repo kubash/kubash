@@ -10,12 +10,13 @@ ping_in_parallel () {
     #MY_ECHO="this_hostname=\"$(hostname| tr -d '\n')\" this_date=\"$(date| tr -d '\n')\" echo '$K8S_ip1 $K8S_provisionerUser pong $this_hostname $this_date'" 
     #MY_ECHO="echo -e -n "PONG\t";hostname|tr -d  '\n';echo -e -n "\t";date +%s|tr -d '\n';echo -e -n '$K8S_ip1';echo -e -n "\t";uname -a" 
     #MY_PING=$(ping -c1 $K8S_ip1|tail -n1|cut -f4 -d' '|cut -d'/' -f1|tr -d '\n')
-    MY_ECHO="date +%s|tr -d '\n';echo -n ' $K8S_ip1';echo -n ' PONG ';hostname|tr -d  '\n';echo -n ' ';echo -e -n ' ';uname -a"
+    #MY_ECHO="date +%s|tr -d '\n';echo -n ' $K8S_ip1';echo -n ' PONG ';hostname|tr -d  '\n';echo -n ' ';echo -e -n ' ';uname -a"
+    MY_ECHO="get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort"
     squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""
-    #get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
     get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
-    squawk 25 "Minor= $KUBE_MINOR_VER"
-    sleep 2
+    #get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
+    squawk 5 "Minor= $KUBE_MINOR_VER"
+    #sleep 2
     echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_ECHO\""\
         >> $ping_tmp_para/hopper
   done < $KUBASH_HOSTS_CSV
