@@ -785,6 +785,10 @@ determine_api_version () {
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       kubeadm_cfg_kind=ClusterConfiguration
+    elif [[ $KUBE_MINOR_VER -ge 16 ]]; then
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
+      kubeadm_cfg_kind=ClusterConfiguration
     else
       croak 3  "$KUBE_MINOR_VER not supported yet"
     fi
