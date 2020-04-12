@@ -786,7 +786,7 @@ determine_api_version () {
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       kubeadm_cfg_kind=ClusterConfiguration
-    elif [[ $KUBE_MINOR_VER -ge 14 ]]; then
+    elif [[ $KUBE_MINOR_VER -eq 14 ]]; then
       squawk 20 'Minor Version 14'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
