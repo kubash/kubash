@@ -26,8 +26,11 @@ packer_build () {
     LN_CMD='ln -fs'
   fi
 
+  set +e
+  echo 'If the first cp fails, ignore the error, we will attempt without the hardlink'
   command2run="cd $KUBASH_DIR/pax;if [ ! -e "$KUBASH_DIR/pax/build" ]; then $LN_CMD $KVM_builderDir $KUBASH_DIR/pax/builds || cp --reflink=auto $KVM_builderDir $KUBASH_DIR/pax/builds; fi"
   sudo_command $KVM_builderPort $KVM_builderUser $KVM_builderHost "$command2run"
+  set -e
 
   cd $KUBASH_DIR/pax/$target_os
   squawk 2 " Executing packer build... "
