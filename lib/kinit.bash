@@ -758,34 +758,41 @@ determine_api_version () {
     if [[ $KUBE_MINOR_VER -lt 9 ]]; then
       croak 3  "$KUBE_MINOR_VER is too old may not ever be supported"
     elif [[ $KUBE_MINOR_VER -eq 9 ]]; then
+      squawk 20 'Minor Version 9'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 10 ]]; then
+      squawk 20 'Minor Version 10'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 11 ]]; then
+      squawk 20 'Minor Version 11'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 12 ]]; then
+      squawk 20 'Minor Version 12'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 13 ]]; then
+      squawk 20 'Minor Version 13'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       kubeadm_cfg_kind=ClusterConfiguration
     elif [[ $KUBE_MINOR_VER -ge 14 ]]; then
+      squawk 20 'Minor Version 14'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       kubeadm_cfg_kind=ClusterConfiguration
     elif [[ $KUBE_MINOR_VER -ge 16 ]]; then
+      squawk 20 'Minor Version 16'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
       kubeadm_cfg_kind=ClusterConfiguration
