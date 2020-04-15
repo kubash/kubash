@@ -791,6 +791,11 @@ determine_api_version () {
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       kubeadm_cfg_kind=ClusterConfiguration
+    elif [[ $KUBE_MINOR_VER -eq 15 ]]; then
+      squawk 20 'Minor Version 14'
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
+      kubeadm_cfg_kind=ClusterConfiguration
     elif [[ $KUBE_MINOR_VER -ge 16 ]]; then
       squawk 20 "Minor version = $KUBE_MINOR_VER,  Version greater than or equal 16"
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
@@ -2707,7 +2712,7 @@ kubeadm2ha_initialize () {
     -f $PARALLEL_JOBS \
     -i $KUBASH_ANSIBLE_HOSTS \
     $KUBASH_DIR/submodules/kubeadm2ha/ansible/cluster-dashboard.yaml
-  ansible-playbook \
+ git@gitlab.com:monitaur/bin.git ansible-playbook \
     -f $PARALLEL_JOBS \
     -i $KUBASH_ANSIBLE_HOSTS \
     $KUBASH_DIR/submodules/kubeadm2ha/ansible/cluster-load-balanced.yaml
