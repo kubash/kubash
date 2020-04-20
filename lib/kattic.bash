@@ -556,7 +556,11 @@ do_metallb () {
         helm install --name metallb stable/metallb
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f \
-        https://raw.githubusercontent.com/google/metallb/${METALLB_VERSION}/manifests/metallb.yaml
+	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/namespace.yaml
+      kubectl --kubeconfig=$KUBECONFIG apply -f \
+	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/metallb.yaml
+	# On first install only
+      kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
     fi
 }
 
