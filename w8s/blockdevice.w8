@@ -3,11 +3,11 @@ if [ $# -ne 1 ]; then
   # Print usage
   echo 'Error! wrong number of arguments'
   echo 'usage:'
-  echo "$0 what-string-in-disk-to-wait-for"
+  echo "$0 what-string-in-blockdevice-to-wait-for"
   exit 1
 fi
 
-echo -n "wait on $1 in disks to become available"
+echo -n "wait on $1 in blockdevices to become available"
 sleep 1
 
 # while loop
@@ -16,7 +16,7 @@ countone=1
 while [ $countone -lt 151 ]
 do
   echo -n '.'
-  RESULT=$(kubectl get disks | grep $1)
+  RESULT=$(kubectl get blockdevice | grep $1)
   if [ "$RESULT" ]; then
       echo '.'
       echo "$RESULT"
