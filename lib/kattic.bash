@@ -588,12 +588,14 @@ do_rook () {
 
 do_openebs () {
     if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
+    helm repo add openebs https://openebs.github.io/charts
+    helm repo update
     kubash_context
     KUBECONFIG=$KUBECONFIG \
     helm install \
       --namespace openebs \
       --name $KUBASH_OPENEBS_NAME \
-      stable/openebs
+      openebs/openebs
     else
       kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
     fi
