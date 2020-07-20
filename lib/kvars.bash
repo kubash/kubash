@@ -62,7 +62,7 @@
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}
-: ${VOYAGER_VERSION:='v12.0.0-rc.1'}
+: ${VOYAGER_VERSION:='v12.0.0'}
 : ${METALLB_VERSION:='v0.9.3'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
