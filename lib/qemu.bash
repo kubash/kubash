@@ -64,7 +64,7 @@ qemu-provisioner () {
   if [[ "$K8S_os" == "coreos" ]]; then
     KVM_BASE_IMG=kubash.img
   fi
-  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
+  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -F qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
 
   if [[ "$K8S_os" == "coreos" ]]; then
     squawk 5 "Keyer"
