@@ -3,6 +3,7 @@ TMP=$(mktemp -d)
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
 : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
 # this one is for customization
+: ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 
 #: ${DOCKER_PKG:='17.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
@@ -268,3 +269,12 @@ chmod +x /etc/network/if-up.d/show-ip-address
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
 docker version
+
+if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
+  echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+  date -I >> /root/.additional_packages_isntalled
+  echo "apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL" >> /root/.additional_packages_isntalled
+  apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL
+else
+  echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+fi

@@ -322,7 +322,6 @@
       "scripts": [
         "../keyer",
         "../kubashgrouper",
-        "../debaddition",
         "../removeswap"
       ],
       "type": "shell"
