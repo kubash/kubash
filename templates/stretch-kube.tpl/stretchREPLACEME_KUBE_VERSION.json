@@ -195,7 +195,7 @@
         "{{template_dir}}/../_common/vagrant.sh",
         "{{template_dir}}/scripts/systemd.sh",
         "{{template_dir}}/../_common/virtualbox.sh",
-        "{{template_dir}}/../scripts/vmware.sh",
+        "{{template_dir}}/scripts/vmware.sh",
         "{{template_dir}}/../_common/parallels.sh",
         "{{template_dir}}/../packstrap",
         "{{template_dir}}/../keyer",
