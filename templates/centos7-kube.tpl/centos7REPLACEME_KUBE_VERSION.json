@@ -127,12 +127,18 @@
   "post-processors": [
     {
       "output": "{{ user `build_directory` }}/{{user `box_basename`}}.{{.Provider}}.box",
+      "except": ["qemu"],
       "type": "vagrant"
     }
   ],
   "provisioners": [
     {
       "environment_vars": [
+        "KUBEADM_INSTALL={{ user `kubeadm_install`}}",
+        "DOCKER_PKG={{ user `DOCKER_PKG`}}",
+        "DOCKER_COMPOSE_PKG={{ user `DOCKER_COMPOSE_PKG`}}",
+        "KUBEPKG_VERSION={{ user `KUBEPKG_VERSION`}}",
+        "ETCD_VERSION={{ user `ETCD_VERSION`}}",
         "KEYS_TO_ADD={{user `keys_to_add`}}",
         "KEYS_URL={{user `keys_url`}}",
         "KUBASH_SET_ROOT_PW={{user `root_password_to_set`}}",
@@ -154,6 +160,7 @@
         "{{template_dir}}/../_common/virtualbox.sh",
         "{{template_dir}}/../_common/vmware.sh",
         "{{template_dir}}/../_common/parallels.sh",
+        "{{template_dir}}/../rpmpackstrap",
         "{{template_dir}}/../keyer",
         "{{template_dir}}/../kubashgrouper",
         "{{template_dir}}/../removeswap",
