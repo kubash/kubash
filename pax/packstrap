@@ -176,7 +176,7 @@ mkshowipaddress () {
     /sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
     echo -n 'SSH is on port: '
     grep Port /etc/ssh/sshd_config
-    EOF
+EOF
   else
     cat << EOF > /usr/local/bin/get-ip-address
     #!/bin/bash
@@ -184,7 +184,7 @@ mkshowipaddress () {
     /sbin/ifconfig | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
     echo -n 'SSH is on port: '
     grep Port /etc/ssh/sshd_config
-    EOF
+EOF
   fi
 
   chmod +x /usr/local/bin/get-ip-address
