@@ -271,7 +271,7 @@
   ],
   "variables": {
     "box_basename": "kubash-bionic-18.04",
-    "build_directory": "../../builds",
+    "build_directory": "../builds",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",

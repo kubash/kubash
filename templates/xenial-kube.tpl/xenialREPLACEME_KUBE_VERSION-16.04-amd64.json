@@ -287,7 +287,7 @@
     "KUBEPKG_VERSION": "REPLACEME_KUBE_VERSION",
     "ETCD_VERSION": "3.2.17",
     "box_basename": "kubash-xenial-16.04",
-    "build_directory": "../../builds",
+    "build_directory": "../builds",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "cpus": "4",
     "disk_size": "65536",
