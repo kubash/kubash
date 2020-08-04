@@ -1,8 +1,10 @@
 #!/bin/sh -eux
 TMP=$(mktemp -d)
+. /etc/os-release
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
 : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
 # this one is for customization
+: ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 
 #: ${DOCKER_PKG:='17.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
@@ -115,19 +117,23 @@ install_kubernetes_docker () {
   # Install Docker CE
   ## Set up the repository:
   ### Install packages to allow apt to use a repository over HTTPS
-  apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-  
+  apt-get update && apt-get install -y \
+      apt-transport-https ca-certificates curl software-properties-common gnupg2
+
   ### Add Docker’s official GPG key
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-  
+
   ### Add Docker apt repository.
   add-apt-repository \
     "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) \
     stable"
-  
-  ## Install Docker CE.
-  apt-get update && apt-get install -y docker-ce=18.06.2~ce~3-0~ubuntu
+
+  # Install Docker CE
+  apt-get update && apt-get install -y \
+      containerd.io=1.2.13-2 \
+      docker-ce=5:19.03.11~3-0~ubuntu-$(lsb_release -cs) \
+      docker-ce-cli=5:19.03.11~3-0~ubuntu-$(lsb_release -cs)
 
   # going with above temporarily
   #docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
@@ -161,106 +167,133 @@ EOF
   systemctl enable kubelet && systemctl restart kubelet
 }
 
-apt-get update
-apt-get install -yqq \
-$DEB_PRE_PACKAGES_TO_INSTALL
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository \
-   "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
-   $(lsb_release -cs) \
-   stable"
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb http://apt.kubernetes.io/ kubernetes-xenial main
+mkshowipaddress () {
+  ## Show IP address in /etc/issue
+  if [[ $UBUNTU_CODENAME == 'xenial' ]]; then
+  cat << EOF > /usr/local/bin/get-ip-address
+    #!/bin/bash
+    echo -n 'IP address = '
+    /sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
+    echo -n 'SSH is on port: '
+    grep Port /etc/ssh/sshd_config
 EOF
-apt-get update
-apt-get install -yqq \
-$DEB_PACKAGES_TO_INSTALL
+  else
+    cat << EOF > /usr/local/bin/get-ip-address
+    #!/bin/bash
+    echo -n 'IP address = '
+    /sbin/ifconfig | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
+    echo -n 'SSH is on port: '
+    grep Port /etc/ssh/sshd_config
+EOF
+  fi
 
-sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat
+  chmod +x /usr/local/bin/get-ip-address
 
-# test snap
-if ! test_cmd_loc="$(type -p "snap")" || [ -z "$test_cmd_loc" ]; then
-  echo "snap was not found in your path! skipping"
-  apt-get install -yqq golang
-else
-  snap install --classic go
-fi
-export GOPATH=$HOME/.go
-#go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
-#mv $HOME/go/bin/crictl /usr/local/bin/
-swapoff --all
-sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+  cat << EOF > /etc/network/if-up.d/show-ip-address
+  #!/bin/sh
+  if [ "\$METHOD" = loopback ]; then
+      exit 0
+  fi
 
-if [ "$KUBEADM_INSTALL" = "openshift" ]; then
-  # leaving clean for now, let ansible initialize
-  #yum install -y centos-release-openshift-origin origin-clients
-  echo 'Sticking to defaults for openshift'
-  #install_default_docker
-  install_kubernetes_docker
-elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
-  # leaving clean for now, let ansible initialize
-  echo 'Sticking to defaults for kubespray'
-  #install_default_docker
-elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
-  #install_spec_docker
-  install_kubernetes_docker
-  cd $TMP
-  git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
-  cd kubeadm2ha/ansible
-  ansible-playbook -i $TMP/inventory cluster-images.yaml
-elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
-  #install_spec_docker
-  install_kubernetes_docker
-  #kubeadm config images pull
-  kubeadm init
-  yes y|kubeadm reset
-  rm -Rf /etc/kubernetes/*
-elif [ "$KUBEADM_INSTALL" = "spec" ]; then
-  install_spec_docker
-  #kubeadm config images pull
-  kubeadm init
-  yes y|kubeadm reset
-  rm -Rf /etc/kubernetes/*
-else
-  echo 'Sticking to defaults'
-  # install_default_docker
-  install_kubernetes_docker
-fi
+  # Only run from ifup.
+  if [ "\$MODE" != start ]; then
+      exit 0
+  fi
 
-apt-mark hold docker-ce
-service open-iscsi restart
-systemctl restart docker
-
-## Show IP address in /etc/issue
-cat << EOF > /usr/local/bin/get-ip-address
-#!/bin/bash
-echo -n 'IP address = '
-/sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
-echo -n 'SSH is on port: '
-grep Port /etc/ssh/sshd_config
+  cp /etc/issue-standard /etc/issue
+  /usr/local/bin/get-ip-address >> /etc/issue
+  echo "" >> /etc/issue
 EOF
 
-chmod +x /usr/local/bin/get-ip-address
+  chmod +x /etc/network/if-up.d/show-ip-address
+}
 
-cat << EOF > /etc/network/if-up.d/show-ip-address
-#!/bin/sh
-if [ "\$METHOD" = loopback ]; then
-    exit 0
-fi
-
-# Only run from ifup.
-if [ "\$MODE" != start ]; then
-    exit 0
-fi
-
-cp /etc/issue-standard /etc/issue
-/usr/local/bin/get-ip-address >> /etc/issue
-echo "" >> /etc/issue
+main () {
+  apt-get update
+  apt-get install -yqq \
+  $DEB_PRE_PACKAGES_TO_INSTALL
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+  add-apt-repository \
+     "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
+     $(lsb_release -cs) \
+     stable"
+  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+  cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+  deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF
+  apt-get update
+  apt-get install -yqq \
+  $DEB_PACKAGES_TO_INSTALL
 
-chmod +x /etc/network/if-up.d/show-ip-address
+  sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat
 
-echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
-echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
-docker version
+  # test snap
+  if ! test_cmd_loc="$(type -p "snap")" || [ -z "$test_cmd_loc" ]; then
+    echo "snap was not found in your path! skipping"
+    apt-get install -yqq golang
+  else
+    snap install --classic go
+  fi
+  export GOPATH=$HOME/.go
+  #go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
+  #mv $HOME/go/bin/crictl /usr/local/bin/
+  swapoff --all
+  sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+
+  if [ "$KUBEADM_INSTALL" = "openshift" ]; then
+    # leaving clean for now, let ansible initialize
+    #yum install -y centos-release-openshift-origin origin-clients
+    echo 'Sticking to defaults for openshift'
+    #install_default_docker
+    install_kubernetes_docker
+  elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
+    # leaving clean for now, let ansible initialize
+    echo 'Sticking to defaults for kubespray'
+    #install_default_docker
+  elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
+    #install_spec_docker
+    install_kubernetes_docker
+    cd $TMP
+    git clone --depth=1 https://github.com/joshuacox/kubeadm2ha.git
+    cd kubeadm2ha/ansible
+    ansible-playbook -i $TMP/inventory cluster-images.yaml
+  elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
+    #install_spec_docker
+    install_kubernetes_docker
+    #kubeadm config images pull
+    kubeadm init
+    yes y|kubeadm reset
+    rm -Rf /etc/kubernetes/*
+  elif [ "$KUBEADM_INSTALL" = "spec" ]; then
+    install_spec_docker
+    #kubeadm config images pull
+    kubeadm init
+    yes y|kubeadm reset
+    rm -Rf /etc/kubernetes/*
+  else
+    echo 'Sticking to defaults'
+    # install_default_docker
+    install_kubernetes_docker
+  fi
+
+  apt-mark hold docker-ce
+  service open-iscsi restart
+  systemctl restart docker
+
+  mkshowipaddress
+
+  echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
+  echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
+  docker version
+
+  if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
+    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+    date -I >> /root/.additional_packages_isntalled
+    echo "apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL" >> /root/.additional_packages_isntalled
+    apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL
+  else
+    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+  fi
+}
+
+main $@

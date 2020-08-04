@@ -349,16 +349,9 @@ do_masters_in_parallel () {
       if [[ $KUBE_MINOR_VER -lt 9 ]]; then
         squawk 9 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too old may not ever be supported"
         exit 1
-      elif [[ $KUBE_MINOR_VER -eq 11 ]]; then
-        squawk 11 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
-        kubeadmin_config_tmp=$(mktemp)
-        my_master_ip=$my_master_ip \
-        KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-        load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
-        my_KUBE_CIDR=$my_KUBE_CIDR \
-        ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
-        envsubst  < $KUBASH_DIR/templates/kubeadm-config-1.11.yaml \
-          > $kubeadmin_config_tmp
+      elif [[ $KUBE_MINOR_VER -gt 18 ]]; then
+        squawk 9 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too new and is not supported yet"
+        exit 1
       elif [[ $KUBE_MINOR_VER -eq 12 ]]; then
         squawk 12 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
         kubeadmin_config_tmp=$(mktemp)
@@ -369,15 +362,15 @@ do_masters_in_parallel () {
         ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
         envsubst  < $KUBASH_DIR/templates/kubeadm-config-1.12.yaml \
           > $kubeadmin_config_tmp
-      else
-        squawk 10 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
+      elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+        squawk 12 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
         kubeadmin_config_tmp=$(mktemp)
         my_master_ip=$my_master_ip \
         KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
         load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
         my_KUBE_CIDR=$my_KUBE_CIDR \
         ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
-        envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
+        envsubst  < $KUBASH_DIR/templates/kubeadm-config-1.16.yaml \
           > $kubeadmin_config_tmp
       fi
     elif [[ $MAJOR_VER -eq 0 ]]; then
@@ -563,7 +556,11 @@ do_metallb () {
         helm install --name metallb stable/metallb
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f \
-        https://raw.githubusercontent.com/google/metallb/${METALLB_VERSION}/manifests/metallb.yaml
+	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/namespace.yaml
+      kubectl --kubeconfig=$KUBECONFIG apply -f \
+	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/metallb.yaml
+	# On first install only
+      kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
     fi
 }
 
@@ -584,14 +581,6 @@ do_rook () {
     kubectl --kubeconfig=$KUBECONFIG create -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml
 
-    # minio
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/operator.yaml
-    KUBECONFIG=$KUBECONFIG \
-        $KUBASH_DIR/w8s/generic.w8 rook-minio-operator rook-minio-system
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/minio/object-store.yaml
-
     # cassandra
     kubectl --kubeconfig=$KUBECONFIG create -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
@@ -599,12 +588,14 @@ do_rook () {
 
 do_openebs () {
     if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
+    helm repo add openebs https://openebs.github.io/charts
+    helm repo update
     kubash_context
     KUBECONFIG=$KUBECONFIG \
     helm install \
       --namespace openebs \
       --name $KUBASH_OPENEBS_NAME \
-      stable/openebs
+      openebs/openebs
     else
       kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
     fi

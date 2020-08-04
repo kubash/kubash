@@ -391,6 +391,8 @@ write_kubeadmcfg_yaml () {
           squawk 20 'Major Version 1'
           if [[ $KUBE_MINOR_VER -lt 9 ]]; then
             croak 3  "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too old may not ever be supported"
+          elif [[ $KUBE_MINOR_VER -gt 18 ]]; then
+            croak 3  "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too new and is not supported"
           elif [[ $KUBE_MINOR_VER -eq 11 ]]; then
             kubeadmin_config_tmp=$(mktemp)
             my_master_ip=$( cat $KUBASH_CLUSTER_DIR/kube_primary) \
@@ -409,15 +411,14 @@ write_kubeadmcfg_yaml () {
             ENDPOINTS_LINES=$( cat $do_etcd_tmp_para/${K8S_node}endpoints.line) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-1.12.yaml \
               > $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml
-          else
-            squawk 10 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
+          elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
             kubeadmin_config_tmp=$(mktemp)
-            my_master_ip=$my_master_ip \
+            my_master_ip=$( cat $KUBASH_CLUSTER_DIR/kube_primary) \
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
             load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
-            ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/endpoints.line) \
-            envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
+            ENDPOINTS_LINES=$( cat $do_etcd_tmp_para/${K8S_node}endpoints.line) \
+            envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-1.16.yaml \
               > $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml
           fi
         elif [[ $MAJOR_VER -eq 0 ]]; then

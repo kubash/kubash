@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 do_istio () {
+    KUBECONFIG=$KUBECONFIG \
+    istioctl install --set profile=$ISTIO_PROFILE
+
+    KUBECONFIG=$KUBECONFIG \
+    kubectl label namespace default --overwrite istio-injection=enabled
+    echo 'https://istio.io/latest/docs/setup/getting-started/'
+}
+
+do_istio_legacy_with_cert_manager () {
+  ### Deprecated
     #KUBECONFIG=$KUBECONFIG \
     #kubectl apply -f $KUBASH_DIR/templates/trustworthy-jwt.yaml
     # Install istio with certmanager
@@ -18,30 +28,46 @@ do_istio () {
     helm repo update
     # Install Cert-manager
     helm install \
-      --kubeconfig $KUBECONFIG \
-      --name cert-manager \
-      --namespace cert-manager \
-      --version v0.13.0 \
-      jetstack/cert-manager
+      --name=istio-init \
+      --namespace=istio-system \
+      --set gateways.istio-ingressgateway.sds.enabled=true \
+      --set global.k8sIngress.enabled=true \
+      --set certmanager.enabled=true \
+      --set certmanager.email=$LETSENCRYPT_EMAIL \
+      istio.io/istio-init
+    sleep 1
+    ISTIO_CRD_COUNT=0
+    countzero=0
+    while [[ $ISTIO_CRD_COUNT -lt 28 ]]
+    do
+      ISTIO_CRD_COUNT=$(kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l)
+      if [[ $countzero > 15 ]]; then
+        echo "ISTIO_CRD_COUNT=$ISTIO_CRD_COUNT"
+      fi
+      sleep 1
+      ((++countzero))
+    done
+    helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
     KUBECONFIG=$KUBECONFIG \
-    kubectl get pods --namespace cert-manager
-    # Install Istio
-    KUBECONFIG=$KUBECONFIG \
-    istioctl manifest apply \
-      --wait \
-      --set profile=sds \
-      --set values.kiali.enabled=true \
-      --set values.grafana.enabled=true \
-      --set values.tracing.enabled=true \
-      --set values.prometheus.enabled=true \
-      --set values.certmanager.enabled=true \
-      --set values.gateways.istio-ingressgateway.sds.enabled=true \
-      --set values.global.k8sIngress.enabled=true \
-      --set values.global.k8sIngress.enableHttps=true \
-      --set values.global.k8sIngress.gatewayName=ingressgateway \
+    helm install \
+      --name=istio \
+      --namespace=istio-system \
       $LOAD_BALANCER_IP_SET \
-      --set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
-      --set "values.kiali.dashboard.grafanaURL=http://grafana:3000"
+      --set kiali.enabled=true \
+      --set grafana.enabled=true \
+      --set tracing.enabled=true \
+      --set prometheus.enabled=true \
+      --set certmanager.enabled=true \
+      --set certmanager.email=$LETSENCRYPT_EMAIL \
+      --set global.k8sIngress.enabled=true \
+      --set global.k8sIngress.enableHttps=true \
+      --set gateways.istio-ingressgateway.nodeSelector.ingress=true \
+      --set gateways.istio-ingressgateway.type=$ISTIO_GATEWAY_TYPE \
+      --set gateways.istio-ingressgateway.sds.enabled=true \
+      --set global.k8sIngress.gatewayName=ingressgateway \
+      --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+      --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
+      istio.io/istio
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
 }

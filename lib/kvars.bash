@@ -2,9 +2,15 @@
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
-: ${KUBERNETES_VERSION:='v1.15.3'}
-: ${KUBE_MAJOR_VER:=1}
-: ${KUBE_MINOR_VER:=15}
+# i.e. to change the istio profile
+# you would export that variable before
+# executing kubash
+# e.g.
+# export ISTIO_PROFILE=preview && kubash ...
+# it is best to export it as kubash is re-entrant
+#: ${KUBERNETES_VERSION:='v1.15.3'}
+#: ${KUBE_MAJOR_VER:=1}
+#: ${KUBE_MINOR_VER:=15}
 : ${KUBASH_CLUSTER_NAME=default}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
 : ${KUBASH_HISTORY_LIMIT:=5000}
@@ -58,20 +64,23 @@
 : ${CALICO_VER:=v3.3}
 : ${CALICO_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml}
 : ${CALICO_RBAC_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml}
-: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/bc79dd1505b0c8681ece4de4c0d86c5cd2643275/Documentation/kube-flannel.yml}
+: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml}
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}
-: ${VOYAGER_BY_HELM:= "false"}
-: ${VOYAGER_VERSION:='9.0.0'}
-: ${METALLB_VERSION:='v0.8.3'}
-: ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableAdmissionWebhook=true'}
+: ${VOYAGER_VERSION:='v12.0.0'}
+: ${METALLB_VERSION:='v0.9.3'}
+: ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}
+: ${ISTIO_PROFILE=demo}
 : ${TAB_1:='  '}
 : ${TAB_2:='    '}
 : ${TAB_3:='      '}
 : ${TAB_4:='        '}
+# https://www.jamescoyle.net/how-to/2060-qcow2-physical-size-with-different-preallocation-settings
+# can be any of off,metadata,falloc,full
+: ${QEMU_PREALLOCATION:='off'}
 
 # CSV vars
 JQ_INTERPRETER_1_0_0='.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \

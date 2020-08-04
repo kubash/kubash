@@ -94,27 +94,17 @@ mark_all_ingress () {
 do_voyager () {
   squawk 1 " do_voyager"
   taint_all_ingress
-  if [ "$VOYAGER_BY_HELM" = "stable" ]; then
-  KUBECONFIG=$KUBECONFIG \
-  helm install stable/voyager --name voyager \
-    --set cloudProvider=$VOYAGER_PROVIDER \
-    $VOYAGER_ADMISSIONWEBHOOK
-  elif [ "$VOYAGER_BY_HELM" = "appscode" ]; then
   KUBECONFIG=$KUBECONFIG \
   helm repo add appscode https://charts.appscode.com/stable/
+  KUBECONFIG=$KUBECONFIG \
   helm repo update
+  KUBECONFIG=$KUBECONFIG \
   helm install appscode/voyager \
     --name voyager-operator \
     --version $VOYAGER_VERSION \
     --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
     $VOYAGER_ADMISSIONWEBHOOK
-  else
-    KUBECONFIG=$KUBECONFIG \
-    curl -fsSL \
-    https://raw.githubusercontent.com/appscode/voyager/$VOYAGER_VERSION/hack/deploy/voyager.sh \
-        | bash -s -- --provider=$VOYAGER_PROVIDER --rbac
-  fi
 }
 
 do_linkerd () {

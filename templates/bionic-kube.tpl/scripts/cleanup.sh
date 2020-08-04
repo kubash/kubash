@@ -40,7 +40,10 @@ apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6;
 apt-get -y purge ppp pppconfig pppoeconf;
 
 # Delete oddities
-apt-get -y purge popularity-contest installation-report command-not-found command-not-found-data friendly-recovery bash-completion fonts-ubuntu-font-family-console laptop-detect;
+apt-get -y purge popularity-contest installation-report command-not-found friendly-recovery bash-completion fonts-ubuntu-font-family-console laptop-detect;
+
+# 19.10+ don't have this package so fail gracefully
+apt-get -y purge command-not-found-data || true;
 
 # Exlude the files we don't need w/o uninstalling linux-firmware
 echo "==> Setup dpkg excludes for linux-firmware"
@@ -64,8 +67,15 @@ rm -rf /usr/share/doc/*
 # Remove caches
 find /var/cache -type f -exec rm -rf {} \;
 
-# delete any logs that have built up during the install
-find /var/log/ -name *.log -exec rm -f {} \;
+# truncate any logs that have built up during the install
+find /var/log -type f -exec truncate --size=0 {} \;
 
 # Blank netplan machine-id (DUID) so machines get unique ID generated on boot.
 truncate -s 0 /etc/machine-id
+
+# remove the contents of /tmp and /var/tmp
+rm -rf /tmp/* /var/tmp/*
+
+# clear the history so our install isn't there
+export HISTSIZE=0
+rm -f /root/.wget-hsts

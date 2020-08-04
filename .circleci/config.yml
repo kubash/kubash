@@ -3,13 +3,13 @@ version: 2
 jobs:
   check:
     docker:
-    - image: circleci/golang:1.12
+    - image: circleci/golang:1.14
       environment:
         GOFLAG: -mod=readonly
     - image: vault:1.1.0
       environment:
         SKIP_SETCAP: true
-        KUBERNETES_VERSION: v1.15.3
+        KUBERNETES_VERSION: v1.18.6
         VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
         TERM: dumb
         GOPATH: /home/circleci/.go
@@ -31,7 +31,7 @@ jobs:
     - checkout
     - run:
         name: download
-        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.10.0/pupernetes
+        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.11.0/pupernetes
           -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
     - run:
         name: apt
@@ -50,6 +50,10 @@ jobs:
           curl -L https://git.io/get_helm.sh | bash
           helm init
           helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+    - run:
+        name: Upgrade Pip
+        command: |
+          pip install --upgrade pip
     - run:
         name: Boostrap Kubash
         command: |
