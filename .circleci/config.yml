@@ -51,6 +51,10 @@ jobs:
           helm init
           helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
     - run:
+        name: Upgrade Pip
+        command: |
+          pip install --upgrade pip
+    - run:
         name: Boostrap Kubash
         command: |
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
