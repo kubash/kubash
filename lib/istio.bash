@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 do_istio () {
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default-secret
+  annotations:
+    kubernetes.io/service-account.name: default
+type: kubernetes.io/service-account-token
+EOF
+
+
     KUBECONFIG=$KUBECONFIG \
-    istioctl install --set profile=$ISTIO_PROFILE
+    istioctl install \
+      --set profile=$ISTIO_PROFILE \
+			--set values.kiali.enabled=true \
+			--set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
+			--set "values.kiali.dashboard.grafanaURL=http://grafana:3000"
 
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
