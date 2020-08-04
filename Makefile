@@ -50,6 +50,9 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 # Helm settings
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
+# Istio
+$(eval ISTIO_VERSION := "1.6.7")
+
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
 reqs: linuxreqs
@@ -88,9 +91,9 @@ $(KUBASH_BIN)/istioctl:
 	@echo 'Installing istioctl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://istio.io/downloadIstio | sh -
-	mv $(TMP)/istio-1.5.0/bin/istioctl $(KUBASH_DIR)/bin/
-	rm -Rf $(TMP)/istio-1.5.0
+	curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$(ISTIO_VERSION) sh -
+	mv $(TMP)/istio-$(ISTIO_VERSION)/bin/istioctl $(KUBASH_DIR)/bin/
+	rm -Rf $(TMP)/istio-$(ISTIO_VERSION)
 	rmdir $(TMP)
 
 
