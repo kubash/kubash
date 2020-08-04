@@ -34,15 +34,14 @@
       "hard_drive_interface": "sata",
       "headless": "{{ user `headless` }}",
       "http_directory": "http",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
       "output_directory": "../builds/packer-{{user `template`}}-virtualbox",
       "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
       "ssh_password": "vagrant",
       "ssh_port": 22,
+      "ssh_timeout": "10000s",
       "ssh_username": "vagrant",
-      "ssh_wait_timeout": "10000s",
       "type": "virtualbox-iso",
       "vboxmanage": [
         [
@@ -93,15 +92,14 @@
       "guest_os_type": "ubuntu-64",
       "headless": "{{ user `headless` }}",
       "http_directory": "http",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
       "output_directory": "../builds/packer-{{user `template`}}-vmware",
       "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
       "ssh_password": "vagrant",
       "ssh_port": 22,
+      "ssh_timeout": "10000s",
       "ssh_username": "vagrant",
-      "ssh_wait_timeout": "10000s",
       "tools_upload_flavor": "linux",
       "type": "vmware-iso",
       "vm_name": "{{ user `template` }}",
@@ -144,8 +142,7 @@
       "disk_size": "{{user `disk_size`}}",
       "guest_os_type": "ubuntu",
       "http_directory": "http",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
       "output_directory": "../builds/packer-{{user `template`}}-parallels",
       "parallels_tools_flavor": "lin",
@@ -167,12 +164,13 @@
       "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
       "ssh_password": "vagrant",
       "ssh_port": 22,
+      "ssh_timeout": "10000s",
       "ssh_username": "vagrant",
-      "ssh_wait_timeout": "10000s",
       "type": "parallels-iso",
       "vm_name": "{{ user `template` }}"
     },
     {
+      "accelerator": "kvm",
       "boot_command": [
         "<enter><wait><f6><esc><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
         "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
@@ -200,25 +198,15 @@
         "<enter><wait>"
       ],
       "boot_wait": "10s",
-      "disk_size": "{{user `disk_size`}}",
-      "headless": "{{ user `headless` }}",
-      "format": "qcow2",
-      "accelerator": "kvm",
       "disk_interface": "virtio",
+      "disk_size": "{{user `disk_size`}}",
+      "format": "qcow2",
+      "headless": "{{ user `headless` }}",
       "http_directory": "http",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
+      "net_device": "virtio-net",
       "output_directory": "../builds/packer-{{user `template`}}-qemu",
-      "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
-      "ssh_password": "vagrant",
-      "ssh_port": 22,
-      "ssh_username": "vagrant",
-      "net_device": "virtio-net",
-      "ssh_wait_timeout": "10000s",
-      "net_device": "virtio-net",
-      "type": "qemu",
-      "vm_name": "{{ user `template` }}",
       "qemuargs": [
         [
           "-m",
@@ -228,7 +216,14 @@
           "-smp",
           "{{ user `cpus` }}"
         ]
-      ]
+      ],
+      "shutdown_command": "echo 'vagrant'|sudo -S shutdown -P now",
+      "ssh_password": "vagrant",
+      "ssh_port": 22,
+      "ssh_timeout": "10000s",
+      "ssh_username": "vagrant",
+      "type": "qemu",
+      "vm_name": "{{ user `template` }}"
     },
     {
       "boot_command": [
@@ -246,16 +241,15 @@
       ],
       "boot_wait": "10s",
       "communicator": "ssh",
-      "cpu": "{{ user `cpus` }}",
+      "cpus": "{{ user `cpus` }}",
       "disk_size": "{{user `disk_size`}}",
       "enable_secure_boot": false,
       "generation": "{{user `hyperv_generation`}}",
       "http_directory": "http",
-      "iso_checksum": "{{user `iso_checksum`}}",
-      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
+      "memory": "{{user `memory`}}",
       "output_directory": "../builds/packer-{{user `template`}}-hyperv",
-      "ram_size": "{{user `memory`}}",
       "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
       "ssh_password": "vagrant",
       "ssh_port": 22,
@@ -268,8 +262,10 @@
   ],
   "post-processors": [
     {
+      "except": [
+        "qemu"
+      ],
       "output": "../builds/{{user `box_basename`}}.{{.Provider}}.box",
-      "except": ["qemu"],
       "type": "vagrant"
     }
   ],
@@ -322,26 +318,19 @@
       "scripts": [
         "../keyer",
         "../kubashgrouper",
-        "../debaddition",
         "../removeswap"
       ],
       "type": "shell"
     }
   ],
   "variables": {
-    "box_basename": "kubash-xenial-16.04",
-    "build_timestamp": "{{isotime \"20060102150405\"}}",
-    "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
-    "keys_url": "{{ env `KEYS_URL`}}",
-    "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
-    "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
-    "kubeadm_install": "kubeadm",
-    "k8s_su_user": "{{ env `K8S_SU_USER`}}",
-    "DOCKER_PKG": "17.03",
     "ADDITIONAL_DEB_PACKAGES_TO_INSTALL": "linux-image-4.15.0-60-generic linux-headers-4.15.0-60-generic linux-modules-4.15.0-60-generic",
     "DOCKER_COMPOSE_PKG": "1.8.0",
-    "KUBEPKG_VERSION": "REPLACEME_KUBE_VERSION",
+    "DOCKER_PKG": "17.03",
     "ETCD_VERSION": "3.2.17",
+    "KUBEPKG_VERSION": "REPLACEME_KUBE_VERSION",
+    "box_basename": "kubash-xenial-16.04",
+    "build_timestamp": "{{isotime \"20060102150405\"}}",
     "cpus": "4",
     "disk_size": "65536",
     "git_revision": "__unknown_git_revision__",
@@ -353,13 +342,20 @@
     "iso_checksum": "16afb1375372c57471ea5e29803a89a5a6bd1f6aabea2e5e34ac1ab7eb9786ac",
     "iso_checksum_type": "sha256",
     "iso_name": "ubuntu-16.04.6-server-amd64.iso",
+    "k8s_su_user": "{{ env `K8S_SU_USER`}}",
+    "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
+    "keys_url": "{{ env `KEYS_URL`}}",
+    "kubeadm_install": "kubeadm",
     "memory": "2048",
     "mirror": "http://releases.ubuntu.com",
     "mirror_directory": "16.04.6",
     "name": "xenialREPLACEME_KUBE_VERSION-16.04",
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "preseed.cfg",
+    "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
+    "su_password_to_set": "{{ env `KUBASH_SET_SU_PW`}}",
     "template": "xenialREPLACEME_KUBE_VERSION-16.04-amd64",
     "version": "TIMESTAMP"
   }
 }
+

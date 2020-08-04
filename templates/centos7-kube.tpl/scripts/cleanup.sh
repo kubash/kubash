@@ -3,12 +3,28 @@
 # should output one of 'redhat' 'centos' 'oraclelinux'
 distro="`rpm -qf --queryformat '%{NAME}' /etc/redhat-release | cut -f 1 -d '-'`"
 
-# Remove development and kernel source packages
-yum -y remove gcc cpp kernel-devel kernel-headers;
+major_version="`sed 's/^.\+ release \([.0-9]\+\).*/\1/' /etc/redhat-release | awk -F. '{print $1}'`";
 
-if [ "$distro" != 'redhat' ]; then
-  yum -y clean all;
+# make sure we use dnf on EL 8+
+if [ "$major_version" -ge 8 ]; then
+  pkg_cmd="dnf"
+else
+  pkg_cmd="yum"
 fi
+
+# remove previous kernels that yum/dnf preserved for rollback
+if [ "$major_version" -ge 8 ]; then
+  dnf autoremove -y
+  dnf remove -y $(dnf repoquery --installonly --latest-limit=-1 -q)
+elif [ "$major_version" -gt 5 ]; then # yum-utils isn't in RHEL 5 so don't try to run this
+  if ! command -v package-cleanup >/dev/null 2>&1; then
+  yum install -y yum-utils
+  fi
+  package-cleanup --oldkernels --count=1 -y
+fi
+
+# Remove development and kernel source packages
+$pkg_cmd -y remove gcc cpp kernel-devel kernel-headers;
 
 # Clean up network interface persistence
 rm -f /etc/udev/rules.d/70-persistent-net.rules;
@@ -33,7 +49,7 @@ if grep -q -i "release 7" /etc/redhat-release ; then
   done
   rm -rf /var/lib/NetworkManager/*
 
-  echo "==> Setup /etc/rc.d/rc.local for CentOS7"
+  echo "==> Setup /etc/rc.d/rc.local for EL7"
   cat <<_EOF_ | cat >> /etc/rc.d/rc.local
 #BENTO-BEGIN
 LANG=C
@@ -46,7 +62,7 @@ done
 # add gateway interface connection.
 gwdev=\`nmcli dev | grep ethernet | egrep -v 'unmanaged' | head -n 1 | awk '{print \$1}'\`
 if [ "\$gwdev" != "" ]; then
-  nmcli c add type eth ifname \$gwdev con-name \$gwdev
+  nmcli connection add type ethernet ifname \$gwdev con-name \$gwdev
 fi
 sed -i "/^#BENTO-BEGIN/,/^#BENTO-END/d" /etc/rc.d/rc.local
 chmod -x /etc/rc.d/rc.local
@@ -55,19 +71,14 @@ _EOF_
   chmod +x /etc/rc.d/rc.local
 fi
 
-# delete any logs that have built up during the install
-find /var/log/ -name *.log -exec rm -f {} \;
-
-# remove previous kernels that yum preserved for rollback
-# yum-utils isn't in RHEL 5 so don't try to run this
-if ! lsb_release -a | grep -qE '^Release:\s*5'; then
-  yum install -y yum-utils
-  package-cleanup --oldkernels --count=1 -y
-fi
+# truncate any logs that have built up during the install
+find /var/log -type f -exec truncate --size=0 {} \;
 
 # we try to remove these in the ks file, but they're still there
 # in the builds so let's remove them here to be sure :shrug:
-yum remove -y \
+#
+# 12.2019 note: We can probably remove this now, but let's confirm it
+$pkg_cmd remove -y \
   aic94xx-firmware \
   atmel-firmware \
   bfa-firmware \
@@ -87,4 +98,25 @@ yum remove -y \
   ql2xxx-firmware \
   rt61pci-firmware \
   rt73usb-firmware \
-  zd1211-firmware
+  zd1211-firmware \
+  linux-firmware \
+  microcode_ctl
+
+if [ "$distro" != 'redhat' ]; then
+  $pkg_cmd -y clean all;
+fi
+
+# remove the install log
+rm -f /root/anaconda-ks.cfg
+
+# remove the contents of /tmp and /var/tmp
+rm -rf /tmp/* /var/tmp/*
+
+# Blank netplan machine-id (DUID) so machines get unique ID generated on boot.
+if [ "$major_version" -ge 7 ]; then
+  truncate -s 0 /etc/machine-id
+fi
+
+# clear the history so our install isn't there
+export HISTSIZE=0
+rm -f /root/.wget-hsts

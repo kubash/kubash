@@ -114,7 +114,9 @@ master_init_join () {
       my_KUBE_INIT="PATH=$K8S_SU_PATH $PSEUDO kubeadm init $KUBEADMIN_IGNORE_PREFLIGHT_CHECKS --config=/etc/kubernetes/kubeadmcfg.yaml"
       squawk 5 "$my_KUBE_INIT"
       #run_join=$(ssh -n $my_master_user@$my_master_ip "$my_KUBE_INIT" | tee $TMP/rawresults.k8s | grep -- "$my_grep")
-      run_join=$(ssh -n $my_master_user@$my_master_ip "$GET_JOIN_CMD")
+      run_join=$(ssh -n $my_master_user@$my_master_ip "$GET_JOIN_CMD" \
+        | grep -P -- "$my_grep" \
+      )
       if [[ -z "$run_join" ]]; then
         horizontal_rule
         croak 3  'kubeadm init failed!'
@@ -188,7 +190,9 @@ node_join () {
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "hostname; uname -a")
     squawk 3 "hostname and uname is $result"
     squawk 3 "Kubeadmn join"
-    run_join=$(cat $KUBASH_CLUSTER_DIR/join.sh)
+    run_join=$(cat $KUBASH_CLUSTER_DIR/join.sh \
+        | grep -P -- "$my_grep" \
+    )
     #result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     squawk 3 "run_join result is $result"
@@ -754,32 +758,48 @@ determine_api_version () {
     if [[ $KUBE_MINOR_VER -lt 9 ]]; then
       croak 3  "$KUBE_MINOR_VER is too old may not ever be supported"
     elif [[ $KUBE_MINOR_VER -eq 9 ]]; then
+      squawk 20 'Minor Version 9'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 10 ]]; then
+      squawk 20 'Minor Version 10'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha1"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 11 ]]; then
+      squawk 20 'Minor Version 11'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 12 ]]; then
+      squawk 20 'Minor Version 12'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha2"
       kubeadm_cfg_kind=MasterConfiguration
       croak 3 "$KUBE_MINOR_VER is too old and is not supported"
     elif [[ $KUBE_MINOR_VER -eq 13 ]]; then
+      squawk 20 'Minor Version 13'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1alpha3"
       kubeadm_cfg_kind=ClusterConfiguration
-    elif [[ $KUBE_MINOR_VER -ge 14 ]]; then
+    elif [[ $KUBE_MINOR_VER -eq 14 ]]; then
+      squawk 20 'Minor Version 14'
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
+      kubeadm_cfg_kind=ClusterConfiguration
+    elif [[ $KUBE_MINOR_VER -eq 15 ]]; then
+      squawk 20 'Minor Version 14'
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
+      kubeadm_cfg_kind=ClusterConfiguration
+    elif [[ $KUBE_MINOR_VER -ge 16 ]]; then
+      squawk 20 "Minor version = $KUBE_MINOR_VER,  Version greater than or equal 16"
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
       kubeadm_cfg_kind=ClusterConfiguration
     else
       croak 3  "$KUBE_MINOR_VER not supported yet"
@@ -1234,7 +1254,9 @@ EOF
       sudo_command ${MASTERPORTS[$i]} ${INIT_USER} ${HOST} "$my_KUBE_INIT"
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
         | sed 's/\(.*\)--token\ \(\S*\)\ --discovery-token-ca-cert-hash\ .*/\2/')
@@ -1245,7 +1267,11 @@ EOF
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
         #sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $KUBASH_CLUSTER_DIR/join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -1680,7 +1706,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_test_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -1691,7 +1719,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -2109,7 +2141,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_test_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_test_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_test_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2120,7 +2154,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${INIT_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_ext_etcd_sub ${INIT_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -2301,7 +2339,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2433,7 +2473,9 @@ EOF
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$my_KUBE_INIT'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-joinrawresults.k8s
       GET_JOIN_CMD="kubeadm token create --print-join-command"
       ssh -n -p ${MASTERPORTS[$i]} ${STACKED_USER}@${HOST} "bash -l -c '$GET_JOIN_CMD'" 2>&1 | tee $etcd_stacked_tmp/${HOST}-rawresults.k8s
-      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s)
+      run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
+        | grep -P -- "$my_grep" \
+      )
       #run_join=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s | grep -P -- "$my_grep")
       join_token=$(cat $etcd_stacked_tmp/${HOST}-rawresults.k8s \
         | grep -P -- "$my_grep" \
@@ -2444,7 +2486,11 @@ EOF
       else
         echo $run_join > $KUBASH_CLUSTER_DIR/join.sh
         echo $run_join > $KUBASH_CLUSTER_DIR/master_join.sh
-        sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        if [[ $KUBE_MINOR_VER -lt 16 ]]; then
+          sed -i 's/$/ --experimental-control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
+          sed -i 's/$/ --control-plane/' $KUBASH_CLUSTER_DIR/master_join.sh
+        fi
         echo $join_token > $KUBASH_CLUSTER_DIR/join_token
         master_grab_kube_config ${NAME} ${HOST} ${STACKED_USER} ${MASTERPORTS[$i]}
         grab_kube_pki_stacked_method ${STACKED_USER} ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
@@ -2666,7 +2712,7 @@ kubeadm2ha_initialize () {
     -f $PARALLEL_JOBS \
     -i $KUBASH_ANSIBLE_HOSTS \
     $KUBASH_DIR/submodules/kubeadm2ha/ansible/cluster-dashboard.yaml
-  ansible-playbook \
+ git@gitlab.com:monitaur/bin.git ansible-playbook \
     -f $PARALLEL_JOBS \
     -i $KUBASH_ANSIBLE_HOSTS \
     $KUBASH_DIR/submodules/kubeadm2ha/ansible/cluster-load-balanced.yaml
