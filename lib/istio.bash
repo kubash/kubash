@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 do_istio () {
+    KUBECONFIG=$KUBECONFIG \
+    istioctl install --set profile=$ISTIO_PROFILE
+
+    KUBECONFIG=$KUBECONFIG \
+    kubectl label namespace default --overwrite istio-injection=enabled
+    echo 'https://istio.io/latest/docs/setup/getting-started/'
+}
+
+do_istio_legacy_with_cert_manager () {
+  ### Deprecated
     #KUBECONFIG=$KUBECONFIG \
     #kubectl apply -f $KUBASH_DIR/templates/trustworthy-jwt.yaml
     # Install istio with certmanager

@@ -2,6 +2,12 @@
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
+# i.e. to change the istio profile
+# you would export that variable before
+# executing kubash
+# e.g.
+# export ISTIO_PROFILE=preview && kubash ...
+# it is best to export it as kubash is re-entrant
 #: ${KUBERNETES_VERSION:='v1.15.3'}
 #: ${KUBE_MAJOR_VER:=1}
 #: ${KUBE_MINOR_VER:=15}
@@ -67,6 +73,7 @@
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}
+: ${ISTIO_PROFILE=demo}
 : ${TAB_1:='  '}
 : ${TAB_2:='    '}
 : ${TAB_3:='      '}
