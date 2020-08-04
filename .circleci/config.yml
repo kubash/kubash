@@ -3,7 +3,7 @@ version: 2
 jobs:
   check:
     docker:
-    - image: circleci/golang:1.12
+    - image: circleci/golang:1.14
       environment:
         GOFLAG: -mod=readonly
     - image: vault:1.1.0
