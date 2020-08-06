@@ -6,7 +6,7 @@ TMP=$(mktemp -d)
 # this one is for customization
 : ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 
-#: ${DOCKER_PKG:='17.03'}
+#: ${DOCKER_PKG:='19.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
 : ${KUBEPKG_VERSION:="1.9.3"}
 : ${ETCD_VERSION:="3.2.17"}
