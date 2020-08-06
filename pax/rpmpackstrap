@@ -83,6 +83,7 @@ yum update -y
 yum repolist enabled
 
 yum install -y $PRE_INSTALL_PKGS
+yum update -y
 yum install -y $INSTALL_PKGS $ADDITIONAL_INSTALL_PKGS
 
 systemctl enable sysstat.service
