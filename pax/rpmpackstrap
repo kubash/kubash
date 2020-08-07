@@ -136,7 +136,7 @@ gpgcheck=1
 type=rpm-md
 gpgkey=https://download.ceph.com/keys/release.asc
 EOM
-    sudo yum update
+    sudo yum update -y
     sudo yum install -y ceph-common
   elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
     echo 'pass as ceph does not have a release for centos8'
