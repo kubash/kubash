@@ -3,7 +3,6 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
 : ${ADDITIONAL_INSTALL_PKGS:=' '}
 : ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
@@ -17,6 +16,13 @@ TMP=$(mktemp -d)
 : ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
 : ${CEPH_RELEASE:="luminous"}
 . /etc/os-release
+
+if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
+elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+  # https://www.tecmint.com/create-network-bridge-in-rhel-centos-8/
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived chrony rsync ansible socat python2-pip python3-pip wget git net-tools bind-utils iptables-services bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+fi
 
 cd $TMP
 cat <<EOF > $TMP/inventory
