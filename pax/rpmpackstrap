@@ -126,7 +126,7 @@ install_default_docker () {
 
 install_ceph () {
   if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
-    sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    #sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     cat << EOM > /etc/yum.repos.d/ceph.repo
 [ceph-noarch]
 name=Ceph noarch packages
