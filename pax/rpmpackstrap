@@ -178,11 +178,18 @@ install_kubernetes_docker () {
     --add-repo \
     https://download.docker.com/linux/centos/docker-ce.repo
 
-  # Install Docker CE
-  yum update -y && yum install -y \
-  containerd.io-1.2.13 \
-  docker-ce-19.03.11 \
-  docker-ce-cli-19.03.11
+  if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+    # Install Docker CE
+    yum update -y && yum install -y \
+    containerd.io-1.2.13 \
+    docker-ce-19.03.11 \
+    docker-ce-cli-19.03.11
+  elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+    yum update -y && yum install -y \
+    containerd.io \
+    docker-ce \
+    docker-ce-cli
+  fi
 
   ## Create /etc/docker directory.
   mkdir /etc/docker
