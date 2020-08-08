@@ -576,13 +576,17 @@ do_efk () {
 
 do_rook () {
     # Ceph
-    kubectl --kubeconfig=$KUBECONFIG create -f \
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/common.yaml
-    kubectl --kubeconfig=$KUBECONFIG create -f \
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
 
     # cassandra
-    kubectl --kubeconfig=$KUBECONFIG create -f \
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
 }
 
