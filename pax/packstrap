@@ -6,7 +6,7 @@ TMP=$(mktemp -d)
 # this one is for customization
 : ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 
-#: ${DOCKER_PKG:='17.03'}
+#: ${DOCKER_PKG:='19.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
 : ${KUBEPKG_VERSION:="1.9.3"}
 : ${ETCD_VERSION:="3.2.17"}
@@ -110,6 +110,34 @@ install_spec_docker () {
   install_pips
 }
 
+install_kubernetes_crio () {
+  modprobe overlay
+  modprobe br_netfilter
+
+# Set up required sysctl params, these persist across reboots.
+cat > /etc/sysctl.d/99-kubernetes-cri.conf <<EOF
+net.bridge.bridge-nf-call-iptables  = 1
+net.ipv4.ip_forward                 = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+
+  sysctl --system
+
+  # Configure package repository
+  if [[ $NAME == 'Ubuntu' ]]; then
+    sudo sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
+    wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${NAME}_${VERSION_ID}/Release.key -O- | sudo apt-key add -
+  elif [[ $NAME == 'Debian' ]]; then
+    echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+    wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/Debian_10/Release.key -O- | sudo apt-key add -
+  fi
+  sudo apt-get update
+  # Install CRI-O
+  sudo apt-get -y install cri-o-1.17
+
+  systemctl daemon-reload
+  systemctl enable --now crio
+}
 
 install_kubernetes_docker () {
   # Follows the official install guide for ubuntu

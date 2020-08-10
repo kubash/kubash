@@ -576,13 +576,34 @@ do_efk () {
 
 do_rook () {
     # Ceph
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/common.yaml
-    kubectl --kubeconfig=$KUBECONFIG create -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+      #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/common.yaml
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+      #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/operator.yaml
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+      #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/cluster.yaml
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+      #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
+    # Ceph
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/common.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/operator.yaml
+    $KUBASH_DIR/w8s/generic.w8 rook-ceph-operator rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 rook-discover rook-ceph
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/cluster.yaml
+    $KUBASH_DIR/w8s/generic.w8 csi-rbdplugin rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 rook-ceph-mon rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 rook-ceph-crashcollector rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 csi-cephfsplugin-provisioner rook-ceph
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/pool.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/toolbox.yaml
 
     # cassandra
-    kubectl --kubeconfig=$KUBECONFIG create -f \
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
 }
 

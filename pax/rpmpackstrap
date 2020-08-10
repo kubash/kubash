@@ -3,7 +3,6 @@
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)
 : ${PRE_INSTALL_PKGS:='epel-release'}
-: ${INSTALL_PKGS:='ceph-common zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
 : ${ADDITIONAL_INSTALL_PKGS:=' '}
 : ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
@@ -12,9 +11,18 @@ TMP=$(mktemp -d)
 : ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
 : ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION"}
 : ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION"}
-: ${ETCD_PKG="etcd-$ETCD_VERSION"}
+: ${ETCD_PKG:="etcd-$ETCD_VERSION"}
 #: ${DOCKER_CGROUP_DRIVER:='systemd'}
 : ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+: ${CEPH_RELEASE:="luminous"}
+. /etc/os-release
+
+if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
+elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+  # https://www.tecmint.com/create-network-bridge-in-rhel-centos-8/
+: ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived chrony rsync ansible socat python2-pip python3-pip wget git net-tools bind-utils iptables-services bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
+fi
 
 cd $TMP
 cat <<EOF > $TMP/inventory
@@ -68,14 +76,20 @@ sysctl --system
 iptables -F
 iptables-save
 
-wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-yum install -y epel-release-latest-7.noarch.rpm
+if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+  yum install -y epel-release-latest-7.noarch.rpm
+elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+  yum install -y epel-release-latest-8.noarch.rpm
+fi
 
 yum clean all
 yum update -y
 yum repolist enabled
 
 yum install -y $PRE_INSTALL_PKGS
+yum update -y
 yum install -y $INSTALL_PKGS $ADDITIONAL_INSTALL_PKGS
 
 systemctl enable sysstat.service
@@ -110,6 +124,25 @@ install_default_docker () {
    /etc/sysconfig/docker
 }
 
+install_ceph () {
+  if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+    #sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    cat << EOM > /etc/yum.repos.d/ceph.repo
+[ceph-noarch]
+name=Ceph noarch packages
+baseurl=https://download.ceph.com/rpm-$CEPH_RELEASE/el7/noarch
+enabled=1
+gpgcheck=1
+type=rpm-md
+gpgkey=https://download.ceph.com/keys/release.asc
+EOM
+    sudo yum update -y
+    sudo yum install -y ceph-common
+  elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+    echo 'pass as ceph does not have a release for centos8'
+  fi
+}
+
 install_spec_docker () {
   # Install docker
   sudo yum-config-manager \
@@ -139,18 +172,28 @@ install_kubernetes_docker () {
   ## Set up the repository
   ### Install required packages.
   yum install -y yum-utils device-mapper-persistent-data lvm2
-  
+
   ### Add Docker repository.
   yum-config-manager \
     --add-repo \
     https://download.docker.com/linux/centos/docker-ce.repo
-  
-  ## Install Docker CE.
-  yum update -y && yum install -y docker-ce-18.06.2.ce
-  
+
+  if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+    # Install Docker CE
+    yum update -y && yum install -y \
+    containerd.io-1.2.13 \
+    docker-ce-19.03.11 \
+    docker-ce-cli-19.03.11
+  elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+    yum update -y && yum install -y \
+    containerd.io \
+    docker-ce \
+    docker-ce-cli
+  fi
+
   ## Create /etc/docker directory.
   mkdir /etc/docker
-  
+
   # Setup daemon.
   cat > /etc/docker/daemon.json <<EOF
 {
@@ -165,9 +208,9 @@ install_kubernetes_docker () {
   ]
 }
 EOF
-  
+
   mkdir -p /etc/systemd/system/docker.service.d
-  
+
   # Restart Docker
   systemctl daemon-reload
   systemctl enable --now docker
@@ -227,6 +270,7 @@ elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
   #install_spec_docker
   install_kubernetes_docker
   install_kube_tools
+  install_ceph
   #kubeadm config images pull
   #kubeadm init
   #yes y|kubeadm reset

@@ -717,6 +717,13 @@ parse_opts () {
         target_build=centos7$build_num
         packer_create_pax_dir 'centos7' $build_num
       fi
+    elif [[ "$target_os" =~ 'centos8' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/centos8//')
+        target_build=centos8$build_num
+        packer_create_pax_dir 'centos8' $build_num
+      fi
     elif [[ "$target_os" =~ 'stretch' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
