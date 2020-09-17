@@ -3,7 +3,7 @@
 $(eval CT_VERSION := "v0.9.0")
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.3")
-$(eval PACKER_VERSION := "1.6.1")
+$(eval PACKER_VERSION := "1.6.2")
 $(eval CRICTL_VERSION := "v1.18.0")
 
 # Install location
@@ -53,6 +53,9 @@ $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 # Istio
 $(eval ISTIO_VERSION := "1.6.7")
 
+# K9S
+$(eval K9S_VERSIION := "v0.21.7")
+
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
 reqs: linuxreqs
@@ -96,6 +99,16 @@ $(KUBASH_BIN)/istioctl:
 	rm -Rf $(TMP)/istio-$(ISTIO_VERSION)
 	rmdir $(TMP)
 
+k9s: $(KUBASH_BIN)
+	@scripts/kubashnstaller k9s
+
+$(KUBASH_BIN)/k9s:
+	@echo 'Installing k9s'
+	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
+	cd $(TMP) && \
+	curl -L https://github.com/derailed/k9s/releases/download/v0.21.7/k9s_Linux_x86_64.tar.gz |tar zxf -
+	mv $(TMP)/k9s $(KUBASH_DIR)/bin/
+	rm -Rf $(TMP)
 
 kubectl: $(KUBASH_BIN)
 	@scripts/kubashnstaller kubectl
