@@ -413,6 +413,16 @@ $(KUBASH_BIN)/ct:
 	&& mv ct $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
+opctl: $(KUBASH_BIN)/opctl
+
+$(KUBASH_BIN)/opctl:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl -sLO https://github.com/onepanelio/core/releases/latest/download/opctl-linux-amd64 \
+	&& chmod +x opctl-linux-amd64 \
+	&& mv -v opctl-linux-amd64 $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
 gcloud:
 	curl https://sdk.cloud.google.com | bash
 
