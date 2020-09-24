@@ -1,3 +1,6 @@
+default:
+	@echo 'Welcome to the kubash Makefile'
+
 # Reactionetes Makefile
 # define various versions
 $(eval CT_VERSION := "v0.9.0")
@@ -420,7 +423,7 @@ $(KUBASH_BIN)/opctl:
 	cd $(TMP) \
 	&& curl -sLO https://github.com/onepanelio/core/releases/latest/download/opctl-linux-amd64 \
 	&& chmod +x opctl-linux-amd64 \
-	&& mv -v opctl-linux-amd64 $(KUBASH_BIN)/
+	&& mv -v opctl-linux-amd64 $(KUBASH_BIN)/opctl
 	rm -Rf $(TMP)
 
 gcloud:
