@@ -84,10 +84,12 @@ $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
 	@echo 'Installing helm'
 	$(eval TMP := $(shell mktemp -d --suffix=HELMTMP))
-	curl -sLo $(TMP)/helmget --silent https://raw.githubusercontent.com/helm/helm/master/scripts/get
+	curl -fsSL -o $(TMP)/get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+	chmod 700 $(TMP)/get_helm.sh
+	cd $(TMP); $(TMP)/get_helm.sh
 	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
-	sudo bash $(TMP)/helmget
-	rm $(TMP)/helmget
+	sudo bash $(TMP)/get_helm.sh
+	rm $(TMP)/get_helm.sh
 	rmdir $(TMP)
 
 istioctl: $(KUBASH_BIN)
