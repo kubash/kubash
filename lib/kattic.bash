@@ -105,12 +105,6 @@ helm_three () {
   rm -Rf $helmthreeTMP
 }
 
-do_kustomize () {
-  curl -s \
-  "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  \
-  | bash
-}
-
 inst_kubedb_helm () {
   KUBECONFIG=$KUBECONFIG \
   helm repo add appscode https://charts.appscode.com/stable/
