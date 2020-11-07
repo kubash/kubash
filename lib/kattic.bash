@@ -95,6 +95,16 @@ do_tiller () {
   $KUBASH_DIR/w8s/tiller.w8
 }
 
+helm_three () {
+  helmthreeTMP=$(mktemp -d)
+  cd $helmthreeTMP
+  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+  chmod 700 get_helm.sh
+  ./get_helm.sh
+  cd
+  rm -Rf $helmthreeTMP
+}
+
 inst_kubedb_helm () {
   KUBECONFIG=$KUBECONFIG \
   helm repo add appscode https://charts.appscode.com/stable/

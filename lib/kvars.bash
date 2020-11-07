@@ -11,7 +11,7 @@
 #: ${KUBERNETES_VERSION:='v1.15.3'}
 #: ${KUBE_MAJOR_VER:=1}
 #: ${KUBE_MINOR_VER:=15}
-: ${KUBASH_CLUSTER_NAME=default}
+: ${KUBASH_CLUSTER_NAME:=default}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
 : ${KUBASH_HISTORY_LIMIT:=5000}
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
@@ -69,7 +69,7 @@
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}
 : ${VOYAGER_VERSION:='v12.0.0'}
-: ${METALLB_VERSION:='v0.9.3'}
+: ${METALLB_VERSION:='v0.9.5'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}

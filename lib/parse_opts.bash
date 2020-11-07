@@ -591,6 +591,13 @@ parse_opts () {
       exit 1
     fi
     do_tiller
+  elif [[ $RAISON == "helm" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    helm_three
   elif [[ $RAISON == "refresh" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
