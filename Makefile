@@ -471,7 +471,7 @@ $(KUBASH_BIN)/kustomize:
 	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
 	cd $(TMP) \
   && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-	ls -R $(TMP)
+	ls -Rlh $(TMP)
 	chmod +x $(TMP)/kustomize
 	mv -v  $(TMP)/kustomize $(KUBASH_BIN)/
 	rm -Rf $(TMP)
