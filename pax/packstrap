@@ -139,6 +139,26 @@ EOF
   systemctl enable --now crio
 }
 
+install_zabbix_agent () {
+
+  # Configure package repository
+  if [[ $NAME == 'Ubuntu' ]]; then
+    wget https://repo.zabbix.com/zabbix/5.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.0-1%2B${UBUNTU_CODENAME}_all.deb 
+    sudo dpkg -i zabbix-release_5.0-1+${UBUNTU_CODENAME}_all.deb
+  elif [[ $NAME == 'Debian' ]]; then
+    if [[ $VERSION_CODENAME == 'buster' ]]; then
+      echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+    else
+      echo 'debian version unsupported'
+      exit 1
+    fi
+  fi
+
+  sudo apt update
+  sudo apt -yqq install zabbix-agent
+  #sudo systemctl enable zabbix-agent
+}
+
 install_kubernetes_docker () {
   # Follows the official install guide for ubuntu
   # https://kubernetes.io/docs/setup/production-environment/container-runtimes/
@@ -314,6 +334,7 @@ EOF
   echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
   docker version
 
+  install_zabbix_agent
   if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
     date -I >> /root/.additional_packages_isntalled
