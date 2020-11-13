@@ -54,7 +54,7 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 # Istio
-$(eval ISTIO_VERSION := "1.6.7")
+$(eval ISTIO_VERSION := "1.7.4")
 
 # K9S
 $(eval K9S_VERSIION := "v0.21.7")
