@@ -88,7 +88,7 @@ $(KUBASH_BIN)/helm:
 	chmod 700 $(TMP)/get_helm.sh
 	cd $(TMP); \
 	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
-	sudo bash $(TMP)/get_helm.sh
+	bash $(TMP)/get_helm.sh
 	rm $(TMP)/get_helm.sh
 	rmdir $(TMP)
 
