@@ -483,3 +483,15 @@ $(KUBASH_BIN)/kubectl-cert_manager:
 	&& tar xzf kubectl-cert-manager.tar.gz \
 	&& sudo mv kubectl-cert_manager $(KUBASH_BIN)/
 	rm -Rf $(TMP)
+
+kubeprod: $(KUBASH_BIN)/kubeprod
+
+$(KUBASH_BIN)/kubeprod:
+	$(eval BKPR_VERSION := $(shell curl --silent "https://api.github.com/repos/bitnami/kube-prod-runtime/releases/latest" | jq -r '.tag_name'))
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl -LO https://github.com/bitnami/kube-prod-runtime/releases/download/${BKPR_VERSION}/bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
+	&& tar zxf bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
+	&& chmod +x bkpr-${BKPR_VERSION}/kubeprod \
+	&& sudo mv -v bkpr-${BKPR_VERSION}/kubeprod $(KUBASH_BIN)/
+	rm -Rf $(TMP)
