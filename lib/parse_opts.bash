@@ -591,6 +591,13 @@ parse_opts () {
       exit 1
     fi
     do_tiller
+  elif [[ $RAISON == "cert_manager" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_cert_manager
   elif [[ $RAISON == "helm" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule

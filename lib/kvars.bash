@@ -81,6 +81,7 @@
 # https://www.jamescoyle.net/how-to/2060-qcow2-physical-size-with-different-preallocation-settings
 # can be any of off,metadata,falloc,full
 : ${QEMU_PREALLOCATION:='off'}
+: ${CERT_MANAGER_VERSION:='1.0.4'}
 
 # CSV vars
 JQ_INTERPRETER_1_0_0='.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \

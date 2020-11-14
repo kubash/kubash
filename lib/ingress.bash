@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+do_cert_manager () {
+  KUBECONFIG=$KUBECONFIG \
+  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v$CERT_MANAGER_VERSION/cert-manager.yaml
+}
+
 do_nginx_ingress () {
   INGRESS_NAME=$1
   KUBECONFIG=$KUBECONFIG \

@@ -473,3 +473,13 @@ $(KUBASH_BIN)/kustomize:
   && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
 	mv -v  $(TMP)/kustomize $(KUBASH_BIN)/
 	rm -Rf $(TMP)
+
+kubectl-cert_manager: $(KUBASH_BIN)/kubectl-cert_manager
+
+$(KUBASH_BIN)/kubectl-cert_manager:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/v1.0.4/kubectl-cert_manager-linux-amd64.tar.gz \
+	&& tar xzf kubectl-cert-manager.tar.gz \
+	&& sudo mv kubectl-cert_manager $(KUBASH_BIN)/
+	rm -Rf $(TMP)
