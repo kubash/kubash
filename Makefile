@@ -58,6 +58,7 @@ $(eval ISTIO_VERSION := "1.7.4")
 
 # K9S
 $(eval K9S_VERSIION := "v0.21.7")
+$(eval KUBECFG_VERSIION := "v0.16.0")
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
@@ -494,4 +495,13 @@ $(KUBASH_BIN)/kubeprod:
 	&& tar zxf bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
 	&& chmod +x bkpr-${BKPR_VERSION}/kubeprod \
 	&& sudo mv -v bkpr-${BKPR_VERSION}/kubeprod $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+kubecfg: $(KUBASH_BIN)/kubecfg
+
+$(KUBASH_BIN)/kubecfg:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/KUBECFG_VERSIION/kubecfg-linux-amd64
+	install -m711 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
 	rm -Rf $(TMP)
