@@ -625,8 +625,8 @@ do_openebs () {
       kubash_context
       KUBECONFIG=$KUBECONFIG \
       helm install \
+        $KUBASH_OPENEBS_NAME \
         --namespace openebs \
-        --name $KUBASH_OPENEBS_NAME \
         openebs/openebs
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f https://openebs.github.io/charts/openebs-operator.yaml
