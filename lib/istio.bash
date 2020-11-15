@@ -46,7 +46,7 @@ do_istio_legacy_with_cert_manager () {
     helm repo update
     # Install Cert-manager
     helm install \
-      --name=istio-init \
+      istio-init \
       --namespace=istio-system \
       --set gateways.istio-ingressgateway.sds.enabled=true \
       --set global.k8sIngress.enabled=true \
@@ -68,7 +68,7 @@ do_istio_legacy_with_cert_manager () {
     helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
     KUBECONFIG=$KUBECONFIG \
     helm install \
-      --name=istio \
+      istio \
       --namespace=istio-system \
       $LOAD_BALANCER_IP_SET \
       --set kiali.enabled=true \

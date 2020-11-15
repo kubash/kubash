@@ -66,8 +66,8 @@ do_kafka () {
 
   KUBECONFIG=$KUBECONFIG \
   helm install \
-  --name my-kafka \
-  incubator/kafka \
+    my-kafka \
+    incubator/kafka \
     --set persistence.storageClass=openebs-kafka
 }
 
@@ -111,13 +111,21 @@ inst_kubedb_helm () {
   KUBECONFIG=$KUBECONFIG \
   helm repo update
   KUBECONFIG=$KUBECONFIG \
-  helm install appscode/kubedb --name kubedb-operator --version 0.11.0 --namespace kube-system
+  helm install \
+    kubedb-operator \
+    appscode/kubedb \
+    --namespace kube-system \
+    --version 0.11.0
   KUBECONFIG=$KUBECONFIG \
   $KUBASH_DIR/w8s/generic.w8 kubedb-operator kube-system
   # It seems we still need to wait further
   sleep 45
   KUBECONFIG=$KUBECONFIG \
-  helm install appscode/kubedb-catalog --name kubedb-catalog --version 0.11.0 --namespace kube-system
+  helm install \
+    kubedb-catalog \
+    appscode/kubedb-catalog \
+    --version 0.11.0 \
+    --namespace kube-system
 }
 
 dotfiles_install () {
@@ -563,7 +571,9 @@ do_metallb () {
       echo "This method is deprecated by upstream"
       exit 1
       KUBECONFIG=$KUBECONFIG \
-        helm install --name metallb stable/metallb
+      helm install \
+        metallb \
+        stable/metallb
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f \
 	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/namespace.yaml

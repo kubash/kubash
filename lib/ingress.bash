@@ -8,9 +8,9 @@ do_cert_manager () {
 do_nginx_ingress () {
   INGRESS_NAME=$1
   KUBECONFIG=$KUBECONFIG \
-    helm install \
+  helm install \
+    $INGRESS_NAME \
     stable/nginx-ingress \
-    --name $INGRESS_NAME \
     --set rbac.create=true
 }
 
@@ -105,7 +105,7 @@ do_voyager () {
   helm repo update
   KUBECONFIG=$KUBECONFIG \
   helm install appscode/voyager \
-    --name voyager-operator \
+    voyager-operator \
     --version $VOYAGER_VERSION \
     --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
