@@ -8,10 +8,10 @@ TMP=$(mktemp -d)
 
 #: ${DOCKER_PKG:='19.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
-: ${KUBEPKG_VERSION:="1.9.3"}
+: ${KUBEPKG_VERSION:="1.19.3"}
 : ${ETCD_VERSION:="3.2.17"}
-#: ${DOCKER_CGROUP_DRIVER:='systemd'}
-: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+: ${DOCKER_CGROUP_DRIVER:='systemd'}
+#: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
 
 
 cat <<EOF > $TMP/inventory

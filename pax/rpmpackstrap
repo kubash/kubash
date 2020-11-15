@@ -6,14 +6,14 @@ TMP=$(mktemp -d)
 : ${ADDITIONAL_INSTALL_PKGS:=' '}
 : ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
-: ${KUBEPKG_VERSION:="1.15.3"}
+: ${KUBEPKG_VERSION:="1.19.3"}
 : ${ETCD_VERSION:="3.2.22"}
 : ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
 : ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION"}
 : ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION"}
 : ${ETCD_PKG:="etcd-$ETCD_VERSION"}
-#: ${DOCKER_CGROUP_DRIVER:='systemd'}
-: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+: ${DOCKER_CGROUP_DRIVER:='systemd'}
+#: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
 : ${CEPH_RELEASE:="luminous"}
 . /etc/os-release
 
