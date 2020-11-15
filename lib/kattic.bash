@@ -619,16 +619,17 @@ do_rook () {
 
 do_openebs () {
     if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
-    helm repo add openebs https://openebs.github.io/charts
-    helm repo update
-    kubash_context
-    KUBECONFIG=$KUBECONFIG \
-    helm install \
-      --namespace openebs \
-      --name $KUBASH_OPENEBS_NAME \
-      openebs/openebs
+      kubectl create ns openebs
+      helm repo add openebs https://openebs.github.io/charts
+      helm repo update
+      kubash_context
+      KUBECONFIG=$KUBECONFIG \
+      helm install \
+        --namespace openebs \
+        --name $KUBASH_OPENEBS_NAME \
+        openebs/openebs
     else
-      kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+      kubectl --kubeconfig=$KUBECONFIG apply -f https://openebs.github.io/charts/openebs-operator.yaml
     fi
     kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
 }
