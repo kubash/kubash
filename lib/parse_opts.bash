@@ -837,13 +837,13 @@ parse_opts () {
       master_join $node_join_name $node_join_ip $node_join_user $node_join_port
     fi
     exit 0
-  elif [[ $RAISON == "refresh" ]]; then
+  elif [[ $RAISON == "binupdate" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    do_refresh
+    do_binupdate
   else
     squawk 8 'passthru'
     # Else fall through to passing on to kubectl for the current cluster

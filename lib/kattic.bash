@@ -12,7 +12,7 @@ demo () {
   do_minio
 }
 
-do_refresh () {
+do_binupdate () {
   cd $KUBASH_DIR
   rm -f bin/kubectl; make kubectl
   rm -f bin/helm; make helm
