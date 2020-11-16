@@ -104,8 +104,9 @@ do_voyager () {
   KUBECONFIG=$KUBECONFIG \
   helm repo update
   KUBECONFIG=$KUBECONFIG \
-  helm install appscode/voyager \
+  helm install \
     voyager-operator \
+    appscode/voyager \
     --version $VOYAGER_VERSION \
     --namespace kube-system \
     --set cloudProvider=$VOYAGER_PROVIDER \
