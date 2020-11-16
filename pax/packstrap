@@ -8,7 +8,7 @@ TMP=$(mktemp -d)
 
 #: ${DOCKER_PKG:='19.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
-: ${KUBEPKG_VERSION:="1.19.3"}
+: ${KUBEPKG_VERSION:="1.19.4"}
 : ${ETCD_VERSION:="3.2.17"}
 : ${DOCKER_CGROUP_DRIVER:='systemd'}
 #: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
@@ -309,22 +309,22 @@ EOF
     #install_spec_docker
     install_kubernetes_docker
     kubeadm config images pull
-    kubeadm init
-    yes y|kubeadm reset
+    #kubeadm init
+    #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   elif [ "$KUBEADM_INSTALL" = "spec" ]; then
     install_spec_docker
     kubeadm config images pull
-    kubeadm init
-    yes y|kubeadm reset
+    #kubeadm init
+    #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   else
     echo 'Sticking to defaults'
     # install_default_docker
     install_kubernetes_docker
     kubeadm config images pull
-    kubeadm init
-    yes y|kubeadm reset
+    #kubeadm init
+    #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   fi
 
