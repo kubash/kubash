@@ -12,6 +12,12 @@ demo () {
   do_minio
 }
 
+do_refresh () {
+  cd $KUBASH_DIR
+  rm -f bin/kubectl; make kubectl
+  rm -f bin/helm; make helm
+}
+
 do_redis () {
   cd $KUBASH_DIR/submodules/openebs/k8s/demo/redis
   kubectl --kubeconfig=$KUBECONFIG apply -f \
