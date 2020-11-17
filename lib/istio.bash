@@ -25,6 +25,7 @@ EOF
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
     echo 'https://istio.io/latest/docs/setup/getting-started/'
+    kubectl apply -n istio-system -f $KUBASH_DIR/submodules/istio/samples/addons/
 }
 
 do_istio_legacy_with_cert_manager () {

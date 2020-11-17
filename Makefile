@@ -60,6 +60,7 @@ $(eval ISTIO_VERSION := "1.7.4")
 $(eval K9S_VERSION := "v0.23.10")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
+$(eval TERRAFORM_VERSION := "0.13.5")
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
@@ -470,7 +471,7 @@ testy:
 kustomize: $(KUBASH_BIN)/kustomize
 
 $(KUBASH_BIN)/kustomize:
-	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=kustomizeTMP))
 	cd $(TMP) \
   && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
 	mv -v  $(TMP)/kustomize $(KUBASH_BIN)/
@@ -479,7 +480,7 @@ $(KUBASH_BIN)/kustomize:
 kubectl-cert_manager: $(KUBASH_BIN)/kubectl-cert_manager
 
 $(KUBASH_BIN)/kubectl-cert_manager:
-	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=CTmgrTMP))
 	cd $(TMP) \
 	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/v1.0.4/kubectl-cert_manager-linux-amd64.tar.gz \
 	&& tar xzf kubectl-cert-manager.tar.gz \
@@ -490,7 +491,7 @@ kubeprod: $(KUBASH_BIN)/kubeprod
 
 $(KUBASH_BIN)/kubeprod:
 	$(eval BKPR_VERSION := $(shell curl --silent "https://api.github.com/repos/bitnami/kube-prod-runtime/releases/latest" | jq -r '.tag_name'))
-	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=prodTMP))
 	cd $(TMP) \
 	&& curl -LO https://github.com/bitnami/kube-prod-runtime/releases/download/${BKPR_VERSION}/bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
 	&& tar zxf bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
@@ -501,8 +502,18 @@ $(KUBASH_BIN)/kubeprod:
 kubecfg: $(KUBASH_BIN)/kubecfg
 
 $(KUBASH_BIN)/kubecfg:
-	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval TMP := $(shell mktemp -d --suffix=kbTMP))
 	cd $(TMP) \
 	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/${KUBECFG_VERSION}/kubecfg-linux-amd64
 	install -m711 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
+	rm -Rf $(TMP)
+
+terraform: $(KUBASH_BIN)/terraform
+
+$(KUBASH_BIN)/terraform:
+	$(eval TMP := $(shell mktemp -d --suffix=terraformTMP))
+	cd $(TMP) \
+		&& curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+		&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+	install -m711 $(TMP)/terraform $(KUBASH_BIN)/terraform
 	rm -Rf $(TMP)
