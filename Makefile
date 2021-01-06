@@ -61,6 +61,8 @@ $(eval K9S_VERSION := "v0.23.10")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.13.5")
+$(eval KUBEBUILDER_VERS := 2.3.1)
+$(eval KIND_VERS := v0.9.0)
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
@@ -517,3 +519,33 @@ $(KUBASH_BIN)/terraform:
 		&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 	install -m711 $(TMP)/terraform $(KUBASH_BIN)/terraform
 	rm -Rf $(TMP)
+
+
+kubebuilder: $(KUBASH_BIN)/kubebuilder
+
+$(KUBASH_BIN)/kubebuilder:
+	# https://book.kubebuilder.io/quick-start.html#installation
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	#os=$(go env GOOS)
+	$(eval os := $(shell go env GOOS))
+	#arch=$(go env GOARCH)
+	$(eval arch := $(shell go env GOARCH))
+	# download kubebuilder and extract it to tmp
+	# curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+	curl -L https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${os}/${arch} | tar -xz -C ${TMP}
+	# move to a long-term location and put it on your path
+	# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
+	#sudo mv /tmp/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch} /usr/local/kubebuilder
+	ls -Ralh ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/
+	sudo install -m711 ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/bin/kubebuilder $(KUBASH_BIN)/kubebuilder
+	#export PATH=${PATH}:/usr/local/kubebuilder/bin
+	rm -Rf $(TMP)
+
+kind: $(KUBASH_BIN)/kind
+
+$(KUBASH_BIN)/kind:
+	# https://kind.sigs.k8s.io/docs/user/quick-start/
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	curl -Lo $(TMP)/kind https://kind.sigs.k8s.io/dl/${KIND_VERS}/kind-linux-amd64
+	chmod +x $(TMP)/kind
+	sudo install -v -m711 ${TMP}/kind $(KUBASH_BIN)/kind
