@@ -313,6 +313,7 @@ echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
 #          'timedatectl set-local-rtc 0'. 
 # Applying fix 
 timedatectl set-local-rtc 0
+systemctl enable iscsid
 
 # remove temp
 cd
