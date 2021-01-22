@@ -188,7 +188,7 @@ $(KUBASH_BIN)/kompose:
 	$(eval TMP := $(shell mktemp -d --suffix=MINIKUBETMP))
 	cd $(TMP) \
 	&& curl -L https://github.com/kubernetes/kompose/releases/download/v1.18.0/kompose-linux-amd64 -o kompose
-	install -m755 ${TMP}/kompose $(KUBASH_BIN)/
+	install -m511 ${TMP}/kompose $(KUBASH_BIN)/
 	rm ${TMP}/kompose
 	rmdir ${TMP}
 
@@ -288,8 +288,8 @@ oc: $(KUBASH_BIN)
 $(KUBASH_BIN)/oc:
 	$(eval TMP := $(shell mktemp -d --suffix=OCTMP))
 	cd $(TMP) \
-	&& curl -sL https://github.com/openshift/origin/releases/download/v3.9.0-alpha.3/openshift-origin-client-tools-v3.9.0-alpha.3-78ddc10-linux-64bit.tar.gz | tar zxvf -
-	mv -v $(TMP)/openshift-origin-client-tools*/oc $(KUBASH_BIN)/
+	&& curl -sL https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar zxvf -
+	sudo install -v -m511 ${TMP}/oc $(KUBASH_BIN)/oc
 	rm -Rf $(TMP)
 	
 
@@ -507,7 +507,7 @@ $(KUBASH_BIN)/kubecfg:
 	$(eval TMP := $(shell mktemp -d --suffix=kbTMP))
 	cd $(TMP) \
 	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/${KUBECFG_VERSION}/kubecfg-linux-amd64
-	install -m711 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
+	install -m511 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
 	rm -Rf $(TMP)
 
 terraform: $(KUBASH_BIN)/terraform
@@ -517,7 +517,7 @@ $(KUBASH_BIN)/terraform:
 	cd $(TMP) \
 		&& curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
 		&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-	install -m711 $(TMP)/terraform $(KUBASH_BIN)/terraform
+	install -m511 $(TMP)/terraform $(KUBASH_BIN)/terraform
 	rm -Rf $(TMP)
 
 
@@ -537,7 +537,7 @@ $(KUBASH_BIN)/kubebuilder:
 	# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
 	#sudo mv /tmp/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch} /usr/local/kubebuilder
 	ls -Ralh ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/
-	sudo install -m711 ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/bin/kubebuilder $(KUBASH_BIN)/kubebuilder
+	sudo install -m511 ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/bin/kubebuilder $(KUBASH_BIN)/kubebuilder
 	#export PATH=${PATH}:/usr/local/kubebuilder/bin
 	rm -Rf $(TMP)
 
@@ -548,4 +548,4 @@ $(KUBASH_BIN)/kind:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	curl -Lo $(TMP)/kind https://kind.sigs.k8s.io/dl/${KIND_VERS}/kind-linux-amd64
 	chmod +x $(TMP)/kind
-	sudo install -v -m711 ${TMP}/kind $(KUBASH_BIN)/kind
+	sudo install -v -m511 ${TMP}/kind $(KUBASH_BIN)/kind
