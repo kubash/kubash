@@ -235,7 +235,7 @@ main () {
   check_cmd npm
   echo 'ensure jinja2 is installed'
   cd $KUBASH_DIR
-  make jinja2-cli
+  $PIP install --user --upgrade jinja2-cli
   #cat $HOME/.bashrc
   . $HOME/.bashrc
   #echo $PATH

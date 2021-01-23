@@ -444,9 +444,6 @@ cfssl:
 	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
 	sudo chmod +x $(KUBASH_BIN)/cfssl*
 
-jinja2-cli:
-	pip install --user --upgrade jinja2-cli
-
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh
 
