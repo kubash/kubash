@@ -174,7 +174,14 @@ main () {
   check_cmd unzip
   check_cmd uname
   check_cmd go
-  check_cmd pip
+  if [[ "$UBUNTU_CODENAME" == "focal" ]]; then
+    #check_cmd pip3
+    PIP=pip3
+  else
+    #check_cmd pip
+    PIP=pip
+  fi
+  check_cmd $PIP
   check_cmd make
   check_cmd parallel
   check_cmd 'grep'
@@ -255,7 +262,7 @@ main () {
   check_install crictl
   # onessl is deprecated and is being removed
   #check_install onessl
-  pip install --user --upgrade $PIP_INSTALL_PKGS
+  $PIP install --user --upgrade $PIP_INSTALL_PKGS
   if [ -w /usr/local/bin ] ; then
     touch /usr/local/bin/test_file_01
     rm /usr/local/bin/test_file_01
