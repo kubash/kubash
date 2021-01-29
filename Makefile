@@ -63,6 +63,7 @@ $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.13.5")
 $(eval KUBEBUILDER_VERS := 2.3.1)
 $(eval KIND_VERS := v0.9.0)
+$(eval RKE_VERS := v1.0.16)
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
@@ -546,3 +547,14 @@ $(KUBASH_BIN)/kind:
 	curl -Lo $(TMP)/kind https://kind.sigs.k8s.io/dl/${KIND_VERS}/kind-linux-amd64
 	chmod +x $(TMP)/kind
 	sudo install -v -m511 ${TMP}/kind $(KUBASH_BIN)/kind
+	rm -Rf $(TMP)
+
+rke: $(KUBASH_BIN)/rke
+
+$(KUBASH_BIN)/rke:
+	# https://rke.sigs.k8s.io/docs/user/quick-start/
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	curl -Lo $(TMP)/rke https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64
+	chmod +x $(TMP)/rke
+	sudo install -v -m511 ${TMP}/rke $(KUBASH_BIN)/rke
+	rm -Rf $(TMP)
