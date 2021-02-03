@@ -87,7 +87,8 @@ do_dashboard () {
   squawk 1 " do_dashboard"
   kubectl --kubeconfig=$KUBECONFIG \
     apply -f \
-    https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+    https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+
 }
 
 do_tiller () {
