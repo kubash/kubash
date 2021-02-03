@@ -671,3 +671,12 @@ activate_monitoring () {
   kubectl --kubeconfig=$KUBECONFIG create -f \
     grafana-operator.yaml
 }
+
+do_openunison () {
+  helm repo add tremolo https://nexus.tremolo.io/repository/helm/
+  helm repo update
+  kubectl create ns openunison
+  helm install openunison tremolo/openunison-operator --namespace openunison
+  $KUBASH_DIR/w8s/generic.w8 openunison openunison
+  echo 'https://github.com/OpenUnison/openunison-k8s-login-activedirectory'
+}
