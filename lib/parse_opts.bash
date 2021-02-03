@@ -238,6 +238,13 @@ parse_opts () {
       exit 1
     fi
     do_openebs
+  elif [[ $RAISON == "openunison" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_openunison
   elif [[ $RAISON == "genmac" ]]; then
     genmac
   elif [[ $RAISON == "dry" ]]; then
