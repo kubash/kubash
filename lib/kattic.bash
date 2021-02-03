@@ -677,6 +677,6 @@ do_openunison () {
   helm repo update
   kubectl create ns openunison
   helm install openunison tremolo/openunison-operator --namespace openunison
-  $KUBASH_DIR/w8s/generic.w8 openunison openunison
+  $KUBASH_DIR/w8s/generic.w8 openunison-operator openunison
   echo 'https://github.com/OpenUnison/openunison-k8s-login-activedirectory'
 }
