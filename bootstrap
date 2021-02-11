@@ -255,7 +255,8 @@ main () {
   cd $KUBASH_DIR
   make packer
   cd $KUBASH_DIR
-  make coreos_key
+  # coreOS is deprecated
+  #make coreos_key
   cd $KUBASH_DIR
   make kubectl
   cd $KUBASH_DIR
