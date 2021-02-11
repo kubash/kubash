@@ -8,7 +8,7 @@ configure_secondary_network_interfaces () {
   set_csv_columns
   while IFS="," read -r $csv_columns
   do
-    squawk 7 "Os is $K8S_os"
+    squawk 7 "OS is $K8S_os"
     if [[ $K8S_os =~ debian* || $K8S_os =~ ubuntu* ]]; then
       if [ "$K8S_network2" = 'null' ]; then
         squawk 7 "K8S_network2 is null"

@@ -671,3 +671,14 @@ activate_monitoring () {
   kubectl --kubeconfig=$KUBECONFIG create -f \
     grafana-operator.yaml
 }
+
+do_portieris () {
+  TMP=$(mktemp -d)
+  cd $TMP
+  PORTIERIS_VERS=v0.10.0
+  wget https://github.com/IBM/portieris/releases/download/${PORTIERIS_VERS}/portieris-${PORTIERIS_VERS}.tgz
+  tar zxvf portieris-${PORTIERIS_VERS}.tgz
+  sh ./portieris/gencerts
+  helm install portieris --create-namespace --namespace portieris ./portieris
+  rm -Rf $TMP
+}
