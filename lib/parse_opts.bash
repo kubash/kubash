@@ -373,6 +373,13 @@ parse_opts () {
       exit 1
     fi
     do_decom
+  elif [[ $RAISON == "set_registry" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    set_registry_mirror
   elif [[ $RAISON == "demo" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule

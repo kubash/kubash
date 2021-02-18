@@ -70,6 +70,17 @@ genmac () {
   echo "$DEFAULT_MAC_ADDRESS_BLOCK$end" >&3
 }
 
+set_registry_mirror () {
+  squawk 15 'Set registry mirror on all servers'
+  squawk 25 'https://cloud.google.com/container-registry/docs/pulling-cached-images'
+  #echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://registry-1.docker.io"' > /tmp/docker
+  #REGISTRY_MIRROR=https://thisregistry.com
+  printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR > /tmp/docker
+  copy_in_parallel_to_all /tmp/docker /tmp/docker
+  command2run="cat /tmp/docker > /etc/default/docker ; rm /tmp/docker"
+  do_command_in_parallel "$command2run"
+}
+
 set_verbosity () {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     VERBOSITY=0

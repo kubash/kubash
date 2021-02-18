@@ -30,6 +30,7 @@
 #: ${KUBEADMIN_IGNORE_PREFLIGHT_CHECKS:='--ignore-preflight-errors cri'}
 : ${KUBEADMIN_IGNORE_PREFLIGHT_CHECKS:='--ignore-preflight-errors=FileAvailable--etc-kubernetes-manifests-etcd.yaml,ExternalEtcdVersion,cri'}
 : ${VERBOSITY:=0}
+: ${REGISTRY_MIRROR:=https://registry-1.docker.io}
 : ${KVM_builderBasePath:=/var/lib/libvirt/images}
 : ${KVM_builderHost:=localhost}
 : ${KVM_builderPort:=22}
