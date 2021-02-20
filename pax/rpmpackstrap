@@ -40,7 +40,6 @@ install_zabbix_agent () {
   #sudo systemctl enable zabbix-agent
 }
 
-printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 
 cd $TMP
 cat <<EOF > $TMP/inventory
@@ -318,6 +317,7 @@ echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
 timedatectl set-local-rtc 0
 systemctl enable iscsid
 
+printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 # remove temp
 cd
 rm -Rf $TMP

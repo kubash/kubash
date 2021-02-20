@@ -52,7 +52,6 @@ vm.dirty_background_ratio = 5
 vm.swappiness = 15
 EOF
 
-printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -351,6 +350,7 @@ EOF
   else
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
   fi
+  printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 }
 
 main $@
