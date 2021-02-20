@@ -12,6 +12,7 @@ TMP=$(mktemp -d)
 : ${ETCD_VERSION:="3.2.17"}
 : ${DOCKER_CGROUP_DRIVER:='systemd'}
 #: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+: ${REGISTRY_MIRROR:=https://registry-1.docker.io}
 
 
 cat <<EOF > $TMP/inventory
@@ -50,6 +51,8 @@ vm.dirty_ratio = 10
 vm.dirty_background_ratio = 5
 vm.swappiness = 15
 EOF
+
+printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1

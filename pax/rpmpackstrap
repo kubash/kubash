@@ -16,6 +16,7 @@ TMP=$(mktemp -d)
 #: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
 : ${CEPH_RELEASE:="luminous"}
 . /etc/os-release
+: ${REGISTRY_MIRROR:=https://registry-1.docker.io}
 
 if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
 : ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
@@ -38,6 +39,8 @@ install_zabbix_agent () {
   sudo yum install zabbix zabbix-agent
   #sudo systemctl enable zabbix-agent
 }
+
+printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 
 cd $TMP
 cat <<EOF > $TMP/inventory
