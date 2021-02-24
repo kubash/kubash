@@ -1,4 +1,5 @@
-#!/bin/sh -eux
+#!/bin/bash 
+set -eux
 TMP=$(mktemp -d)
 . /etc/os-release
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
@@ -12,7 +13,13 @@ TMP=$(mktemp -d)
 : ${ETCD_VERSION:="3.2.17"}
 : ${DOCKER_CGROUP_DRIVER:='systemd'}
 #: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+if [[ -z $REGISTRY_MIRROR ]]; then
+  printf 'The currect registry_mirror is %s' $REGISTRY_MIRROR
+else
+  echo 'The currect registry_mirror is NOT SET!'
+fi
 : ${REGISTRY_MIRROR:=https://registry-1.docker.io}
+printf 'The registry_mirror is now set to %s' $REGISTRY_MIRROR
 
 
 cat <<EOF > $TMP/inventory
