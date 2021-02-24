@@ -13,7 +13,10 @@ TMP=$(mktemp -d)
 : ${ETCD_VERSION:="3.2.17"}
 : ${DOCKER_CGROUP_DRIVER:='systemd'}
 #: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
-if [[ -z $REGISTRY_MIRROR ]]; then
+echo '>>>> PRINTENV <<<<'
+printenv
+echo '>>>> END_PRINTENV <<<<'
+if [ -z $REGISTRY_MIRROR ]; then
   printf 'The currect registry_mirror is %s' $REGISTRY_MIRROR
 else
   echo 'The currect registry_mirror is NOT SET!'
