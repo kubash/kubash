@@ -17,11 +17,11 @@ echo '>>>> PRINTENV <<<<'
 printenv
 echo '>>>> END_PRINTENV <<<<'
 if [ -z $REGISTRY_MIRROR ]; then
-  printf 'The currect registry_mirror is %s' $REGISTRY_MIRROR
-else
-  echo 'The currect registry_mirror is NOT SET!'
-fi
+  echo 'The current registry_mirror is NOT SET!'
 : ${REGISTRY_MIRROR:=https://registry-1.docker.io}
+else
+  printf 'The current registry_mirror is %s' $REGISTRY_MIRROR
+fi
 printf 'The registry_mirror is now set to %s' $REGISTRY_MIRROR
 
 
