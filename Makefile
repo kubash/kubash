@@ -6,7 +6,7 @@ default:
 $(eval CT_VERSION := "v0.9.0")
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.3")
-$(eval PACKER_VERSION := "1.6.2")
+$(eval PACKER_VERSION := "1.7.0")
 $(eval CRICTL_VERSION := "v1.18.0")
 
 # Install location
