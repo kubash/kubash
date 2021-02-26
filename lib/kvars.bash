@@ -3,6 +3,8 @@ check_default () {
   if [[ -f $1 ]]; then
     printf "Adding default file %s" $1
     . $input_defaults
+  else
+    echo "Default file not found: $1"
   fi
 }
 
