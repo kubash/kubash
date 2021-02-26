@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 check_default () {
   if [[ -f $1 ]]; then
-    printf "Adding default file %s" $1
+    printf "Adding default file %s\n" $1
     . $1
   fi
 }
