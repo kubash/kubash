@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+check_default () {
+  if [[ -f $1 ]]; then
+    printf "Adding default file %s" $1
+    . $input_defaults
+  fi
+}
+find_defaults () {
+  check_default ~/.kubash_defaults
+  check_default ~/.kubash/.kubash_defaults
+  check_default /etc/kubash/kubash_defaults
+}
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
