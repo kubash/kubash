@@ -13,6 +13,8 @@ find_defaults () {
   check_default ~/.kubash/.kubash_defaults
   check_default ~/.kubash_defaults
 }
+
+find_defaults
 # set default fall-through variables
 # if set in the environment these variables will fall-through and retain their value
 # otherwise use the defaults here
