@@ -15,6 +15,9 @@ TMP=$(mktemp -d)
 echo '>>>> PRINTENV <<<<'
 printenv
 echo '>>>> END_PRINTENV <<<<'
+# Registry mirror
+# https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
+# https://docs.docker.com/registry/recipes/mirror/
 printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR
 if [ -z $K8S_REGISTRY_MIRROR ]; then
   echo 'The current registry_mirror is NOT SET!'
