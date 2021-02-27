@@ -21,7 +21,7 @@ echo '>>>> END_PRINTENV <<<<'
 printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR
 if [ -z $K8S_REGISTRY_MIRROR ]; then
   echo 'The current registry_mirror is NOT SET!'
-: ${K8S_REGISTRY_MIRROR:=https://registry-1.docker.io}
+: ${K8S_REGISTRY_MIRROR:=NULL_AND_VOID}
 else
   printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR
 fi
@@ -363,7 +363,10 @@ EOF
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
   fi
   #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
-  sudo bash -c 'cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json'
+  if [[ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]]; then
+  else
+    cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+  fi
 
 }
 
