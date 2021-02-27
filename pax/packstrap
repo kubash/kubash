@@ -364,6 +364,7 @@ EOF
   fi
   #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
   if [[ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]]; then
+    echo 'No registry set, using defaults'
   else
     cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
   fi
