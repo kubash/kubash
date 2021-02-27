@@ -1,5 +1,4 @@
-#!/bin/bash -l
-set -eux
+#!/bin/sh -eux
 TMP=$(mktemp -d)
 . /etc/os-release
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
@@ -24,7 +23,6 @@ else
   printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR
 fi
 printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR
-
 
 cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
