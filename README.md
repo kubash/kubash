@@ -234,3 +234,7 @@ ip -s -s neigh flush all
 ```
 
 Another issue is that the kubash user will have conflicting known_hosts entries for ssh, move your known_hosts file temporarily to test.
+
+##### Packer variables
+
+variables starting with K8S KUBASH or PACKER PKR_VAR are automatically passed through.  See packer.bash for the actual greps.
