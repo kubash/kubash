@@ -1,4 +1,5 @@
-#!/bin/sh -eux
+#!/bin/bash
+set -eux
 TMP=$(mktemp -d)
 . /etc/os-release
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
@@ -369,7 +370,7 @@ EOF
     echo 'No registry set, using defaults'
   else
     echo 'Registry set, using it'
-    #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+    cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
   fi
 
 }
