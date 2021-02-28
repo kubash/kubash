@@ -370,7 +370,10 @@ EOF
     echo 'No registry set, using defaults'
   else
     echo 'Registry set, using it'
-    cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+    daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json)
+    echo "$daemon_json" > /etc/docker/daemon.json
+    #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+    #sudo bash -c 'cat <<< $(jq ".\"registry-mirrors\" = [\"http://192.0.2.1.or.https.your-mirror.example.com\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json'
   fi
 
 }
