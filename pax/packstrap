@@ -66,7 +66,7 @@ vm.swappiness = 15
 EOF
 }
 
-#rook_efficiency
+rook_efficiency
 
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -74,9 +74,8 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sysctl --system
 
-echo 'export GOPATH=$HOME/.go
-export PATH=${GOPATH//://bin:}/bin:$PATH' \
->> .bashrc
+echo 'export GOPATH=$HOME/.go' >> .bashrc
+echo 'export PATH=${GOPATH//://bin:}/bin:$PATH' >> .bashrc
 
 echo ip_vs >> /etc/modules
 echo ip_vs_wrr >> /etc/modules
