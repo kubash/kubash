@@ -368,7 +368,8 @@ EOF
   if [[ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]]; then
     echo 'No registry set, using defaults'
   else
-    cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+    echo 'Registry set, using it'
+    #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
   fi
 
 }
