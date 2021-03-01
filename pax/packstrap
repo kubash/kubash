@@ -381,7 +381,7 @@ EOF
       daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_GRC\""
     fi
     if [ ! -z "$K8S_REGISTRY_MIRROR_K8S" ]; then
-      daemon_string="\"$K8S_REGISTRY_MIRROR_K8S\""
+      daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_K8S\""
     fi
     #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
     #sudo bash -c 'cat <<< $(jq ".\"registry-mirrors\" = [\"http://192.0.2.1.or.https.your-mirror.example.com\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json'

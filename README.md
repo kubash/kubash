@@ -238,3 +238,21 @@ Another issue is that the kubash user will have conflicting known_hosts entries 
 ##### Packer variables
 
 variables starting with K8S KUBASH or PACKER PKR_VAR are automatically passed through.  See packer.bash for the actual greps.
+
+##### Registry Mirrorsf
+
+There are four registry variables that can be defined:
+
+```
+  $K8S_REGISTRY_MIRROR_HUB
+  $K8S_REGISTRY_MIRROR_QUAY
+  $K8S_REGISTRY_MIRROR_GRC
+  $K8S_REGISTRY_MIRROR_K8S
+```
+
+The first of which must be defined for the others to work:
+
+```
+  $K8S_REGISTRY_MIRROR_HUB
+```
+
