@@ -366,10 +366,10 @@ EOF
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
   fi
   #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
-  if [[ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]]; then
+  if [ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]; then
     echo 'No registry set, using defaults'
   else
-    if [ -z $K8S_REGISTRY_MIRROR_QUAY ]; then
+    if [ -z "$K8S_REGISTRY_MIRROR_QUAY" ]; then
       echo 'Registry set, using it'
       daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json)
     else
