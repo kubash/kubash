@@ -19,14 +19,14 @@ echo '>>>> END_PRINTENV <<<<'
 # Registry mirror
 # https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
 # https://docs.docker.com/registry/recipes/mirror/
-printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR
-if [ -z $K8S_REGISTRY_MIRROR ]; then
+printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR_HUB
+if [ -z $K8S_REGISTRY_MIRROR_HUB ]; then
   echo 'The current registry_mirror is NOT SET!'
-: ${K8S_REGISTRY_MIRROR:=NULL_AND_VOID}
+: ${K8S_REGISTRY_MIRROR_HUB:=NULL_AND_VOID}
 else
-  printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR
+  printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR_HUB
 fi
-printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR
+printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR_HUB
 
 cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
@@ -366,15 +366,15 @@ EOF
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
   fi
   #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
-  if [ $K8S_REGISTRY_MIRROR == "NULL_AND_VOID" ]; then
+  if [ $K8S_REGISTRY_MIRROR_HUB == "NULL_AND_VOID" ]; then
     echo 'No registry set, using defaults'
   else
     if [ -z "$K8S_REGISTRY_MIRROR_QUAY" ]; then
       echo 'Registry set, using it'
-      daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json)
+      daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR_HUB\"]" /etc/docker/daemon.json)
     else
       echo 'Quay Registry set, using it'
-      daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\", \"$K8S_REGISTRY_MIRROR_QUAY\"]" /etc/docker/daemon.json)
+      daemon_json=$(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR_HUB\", \"$K8S_REGISTRY_MIRROR_QUAY\"]" /etc/docker/daemon.json)
     fi
     echo "$daemon_json" > /etc/docker/daemon.json
     #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
