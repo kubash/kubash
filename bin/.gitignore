@@ -42,3 +42,4 @@ vlan
 kind
 kubebuilder
 rke
+talos
