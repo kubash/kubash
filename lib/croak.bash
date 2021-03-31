@@ -28,7 +28,7 @@ croak () {
     else
       printf '#{ '
       printf '%s' "$croak_lvl"
-      printf ' }#############'
+      printf ' }>>###<<'
       count_croak=0
       while [[ "$count_croak" -lt "$croak_lvl" ]]; do
         printf '#'

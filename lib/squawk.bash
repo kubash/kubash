@@ -22,7 +22,7 @@ squawk () {
     else
       printf '#{ '
       printf '%s' "$squawk_lvl"
-      printf ' }#############'
+      printf ' }>>###<<'
       count_squawk=0
       while [[ "$count_squawk" -lt "$squawk_lvl" ]]; do
         printf '#'
