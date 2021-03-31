@@ -2640,7 +2640,7 @@ process_hosts_csv () {
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "primary_master" ]]; then
-      squawk 3 "get major minor version for primary master"
+      squawk 3 "get major minor version for primary master get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort"
       get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
       ((primary_master_count++))
     else 
