@@ -206,7 +206,7 @@ get_major_minor_kube_version () {
   this_name=$3
   this_port=$4
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
-  squawk 91 "get_major_minor_kube_version set command"
+  squawk 91 "get_major_minor_kube_version set e command"
   set +e
   command2run="kubeadm version 2>/dev/null"
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
@@ -223,6 +223,7 @@ get_major_minor_kube_version () {
   export KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER|cut -f2 -d,)
   squawk 95 "kube major: $KUBE_MAJOR_VER kube minor: $KUBE_MINOR_VER"
   set -e
+  squawk 95 "exiting get_major_minor_kube_version user=$1 host=$2 name=$3 port=$4"
 }
 
 kubash_context () {

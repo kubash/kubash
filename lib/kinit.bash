@@ -2648,7 +2648,8 @@ process_hosts_csv () {
     if [[ "$K8S_role" == "primary_master" ]]; then
       squawk 3 "get major minor version for primary master get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort"
       get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
-      ((primary_master_count++))
+      let primary_master_count++ 
+      echo "primary_master_count $primary_master_count"
     else 
       squawk 103 "not primary_master"
     fi
