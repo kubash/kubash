@@ -21,7 +21,7 @@ squawk () {
       printf '%s\n' "$squawk"
     else
       printf '#{ '
-      printf '%s\n' "$squawk_lvl"
+      printf '%s' "$squawk_lvl"
       printf ' }#############'
       count_squawk=0
       while [[ "$count_squawk" -lt "$squawk_lvl" ]]; do
@@ -29,7 +29,7 @@ squawk () {
         let count_squawk=count_squawk+5
       done
       printf '#{ '
-      printf '%s\n' "$squawk_lvl"
+      printf '%s' "$squawk_lvl"
       printf ' }### '
       printf '%s\n' "$squawk"
     fi

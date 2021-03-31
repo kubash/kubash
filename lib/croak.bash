@@ -27,7 +27,7 @@ croak () {
       printf '%s\n'  "$croak"
     else
       printf '#{ '
-      printf '%s\n' "$croak_lvl"
+      printf '%s' "$croak_lvl"
       printf ' }#############'
       count_croak=0
       while [[ "$count_croak" -lt "$croak_lvl" ]]; do
@@ -35,7 +35,7 @@ croak () {
         let count_croak=count_croak+5
       done
       printf '#{ '
-      printf '%s\n' "$croak_lvl"
+      printf '%s' "$croak_lvl"
       printf ' }### '
       printf '%s\n'  "$croak"
     fi
