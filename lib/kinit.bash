@@ -2650,7 +2650,9 @@ process_hosts_csv () {
       get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
       squawk 93 "pre primary_master_count $primary_master_count"
       squawk 96 "let primary_master_count++"
-      let "primary_master_count++"
+      squawk 96 "primary_master_count= primary_master_count+1"
+      #let "primary_master_count++"
+      primary_master_count=$((primary_master_count+1))
       squawk 83 "primary_master_count $primary_master_count"
     else 
       squawk 103 "$K8S_user $K8S_ip1  $K8S_node $K8S_sshPort not primary_master"
