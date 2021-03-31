@@ -2647,6 +2647,7 @@ process_hosts_csv () {
       squawk 103 "not primary_master"
     fi
   done <<< "$kubash_hosts_csv_slurped"
+  squawk 11 "Primary master count is $primary_master_count "
   if [[ $primary_master_count == 1 ]]; then
       squawk 103 "primary_master_count is one, good"
   elif [[ $primary_master_count -gt 1 ]]; then
