@@ -2550,7 +2550,7 @@ ntpsync_in_parallel () {
   while IFS="," read -r $csv_columns
   do
     squawk 103 "ntp sync $K8S_user@$K8S_ip1"
-    MY_NTP_SYNC="timedatectl set-ntp true"
+    MY_NTP_SYNC="hostname && timedatectl set-ntp true"
     squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""
     echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""\
         >> $ntp_sync_tmp_para/hopper
@@ -2558,7 +2558,7 @@ ntpsync_in_parallel () {
   while IFS="," read -r $csv_columns
   do
     squawk 103 "ntp sync $K8S_user@$K8S_ip1"
-    MY_NTP_SYNC="timedatectl status "
+    MY_NTP_SYNC="hostname && timedatectl status "
     squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""
     echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""\
         >> $ntp_sync_tmp_para/hopper2
@@ -2566,7 +2566,7 @@ ntpsync_in_parallel () {
   while IFS="," read -r $csv_columns
   do
     squawk 103 "ntp sync $K8S_user@$K8S_ip1"
-    MY_NTP_SYNC="date"
+    MY_NTP_SYNC="hostname && date"
     squawk 5 "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""
     echo "ssh -n -p $K8S_sshPort $K8S_provisionerUser@$K8S_ip1 \"$MY_NTP_SYNC\""\
         >> $ntp_sync_tmp_para/hopper3
@@ -2580,11 +2580,15 @@ ntpsync_in_parallel () {
     $PARALLEL  -j $PARALLEL_JOBS -- < $ntp_sync_tmp_para/hopper2
     $PARALLEL  -j $PARALLEL_JOBS -- < $ntp_sync_tmp_para/hopper3
   else
+    squawk 10 "batch --> timedatectl set-ntp true <-- batch"
     bash $ntp_sync_tmp_para/hopper
+    squawk 10 "batch --> timedatectl status"
     bash $ntp_sync_tmp_para/hopper2
+    squawk 10 "date"
     bash $ntp_sync_tmp_para/hopper3
   fi
   rm -Rf $ntp_sync_tmp_para
+  squawk 90 "finished ntpsync section"
 }
 
 do_nodes () {
@@ -2629,15 +2633,29 @@ do_nodes_in_parallel () {
 }
 
 process_hosts_csv () {
-  squawk 3 " process_hosts_csv"
+  squawk 3 "ntp sync in parallel"
   ntpsync_in_parallel
+  squawk 3 " process_hosts_csv"
+  primary_master_count=0
   while IFS="," read -r $csv_columns
   do
     if [[ "$K8S_role" == "primary_master" ]]; then
       squawk 3 "get major minor version for primary master"
       get_major_minor_kube_version $K8S_user $K8S_ip1  $K8S_node $K8S_sshPort
+      ((primary_master_count++))
+    else 
+      squawk 103 "not primary_master"
     fi
   done <<< "$kubash_hosts_csv_slurped"
+  if [[ $primary_master_count == 1 ]]; then
+      squawk 103 "primary_master_count is one, good"
+  elif [[ $primary_master_count -gt 1 ]]; then
+      croak 1  "Too many primary masters there should only be one. Check your yaml and try again, highlander."
+  elif [[ $primary_master_count -lt 1 ]]; then
+      croak 1  "No primary masters there should be one. Check your yaml and try again."
+  else
+      croak 1  "No primary masters there should be one. Check your yaml and try again."
+  fi
   if [[ $KUBE_MAJOR_VER == 1 ]]; then
     squawk 101 'Major Version 1'
     squawk 53  "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
@@ -2675,7 +2693,7 @@ process_hosts_csv () {
   elif [[ $KUBE_MAJOR_VER == 2 ]]; then
       croak 3  "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is two and not supported at this time"
   else
-    croak 3  "Kube Major version = $KUBE_MAJOR_VER is not 1. Kube Minor version = $KUBE_MINOR_VER. Which is not supported at this time."
+    croak 3  "Kube Major version = '$KUBE_MAJOR_VER' is not 1. Kube Minor version = $KUBE_MINOR_VER. Which is not supported at this time."
   fi
   # spin up nodes
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then

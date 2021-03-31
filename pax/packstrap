@@ -256,16 +256,23 @@ EOF
 
   cat << EOF > /etc/network/if-up.d/show-ip-address
   #!/bin/sh
+  if [[ -f /etc/issue-standard ]]; then
+    cp /etc/issue-standard /etc/issue
+    echo 'issue-standard found' >> /etc/issue
+  fi
+
+  # Warn if run from loopback
   if [ "\$METHOD" = loopback ]; then
-      exit 0
+      echo 'WARNING: running from loopback' >> /etc/issue
+      #exit 0
   fi
 
-  # Only run from ifup.
+  # Warn if not run from ifup.
   if [ "\$MODE" != start ]; then
-      exit 0
+      echo 'WARNING: not running from ifup' >> /etc/issue
+      #exit 0
   fi
 
-  cp /etc/issue-standard /etc/issue
   /usr/local/bin/get-ip-address >> /etc/issue
   echo "" >> /etc/issue
 EOF
