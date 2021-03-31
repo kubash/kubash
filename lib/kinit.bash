@@ -361,6 +361,7 @@ kubeadm_reset () {
 }
 
 prep_init_etcd () {
+  squawk 5 "prep_init_etcd args: '$@'"
   prep_init_etcd_user=$1
   prep_init_etcd_host=$2
   prep_init_etcd_name=$3
@@ -578,7 +579,7 @@ prep_init_etcd_classic () {
 }
 
 prep_etcd () {
-  squawk 5 'prep_etcd'
+  squawk 5 "prep_etcd args: '$@'"
   this_user=$1
   this_host=$2
   this_name=$3
@@ -862,6 +863,7 @@ etcd_kubernetes_12_ext_etcd_method () {
   done <<< "$kubash_hosts_csv_slurped"
   echo $ETCDHOSTS
   sleep 33
+  squawk 11 "866~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
@@ -1356,6 +1358,7 @@ etcd_kubernetes_13_ext_etcd_method () {
   done <<< "$kubash_hosts_csv_slurped"
   echo $ETCDHOSTS
   sleep 33
+  squawk 11 "1361~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
@@ -1801,6 +1804,7 @@ etcd_kubernetes_13_ext_etcd_method () {
   done <<< "$kubash_hosts_csv_slurped"
   echo $ETCDHOSTS
   sleep 33
+  squawk 11 "1807~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
@@ -2222,6 +2226,7 @@ etcd_kubernetes_12_docs_stacked_method () {
   done <<< "$kubash_hosts_csv_slurped"
   echo $ETCDHOSTS
   sleep 33
+  squawk 11 "2229~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
@@ -2413,6 +2418,7 @@ etcd_kubernetes_13_docs_stacked_method () {
       ((++node_count_zero))
     fi
   done <<< "$kubash_hosts_csv_slurped"
+  squawk 11 "2420~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
@@ -2635,7 +2641,7 @@ do_nodes_in_parallel () {
 process_hosts_csv () {
   squawk 3 "ntp sync in parallel"
   ntpsync_in_parallel
-  squawk 3 " process_hosts_csv"
+  squawk 3 "2644~ process_hosts_csv"
   primary_master_count=0
   while IFS="," read -r $csv_columns
   do
