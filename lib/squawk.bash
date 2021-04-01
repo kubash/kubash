@@ -20,12 +20,9 @@ squawk () {
       done
       printf '%s\n' "$squawk"
     else
-      printf '#{ '
+      printf '#>{ '
       printf '%s' "$squawk_lvl"
-      printf ' }>>###<<'
-      printf '{ '
-      printf '%s' "$squawk_lvl"
-      printf ' } '
+      printf ' }<# '
       printf '%s\n' "$squawk"
     fi
   fi

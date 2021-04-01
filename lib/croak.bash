@@ -26,12 +26,9 @@ croak () {
       done
       printf '%s\n'  "$croak"
     else
-      printf '#{ '
+      printf '#>{ '
       printf '%s' "$croak_lvl"
-      printf ' }>>###<<'
-      printf '{ '
-      printf '%s' "$croak_lvl"
-      printf ' } '
+      printf ' }<# '
       printf '%s\n'  "$croak"
     fi
   else
