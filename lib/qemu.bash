@@ -30,12 +30,16 @@ qemu-provisioner () {
       K8S_mac2=$(VERBOSITY=0 kubash --verbosity=1 genmac)
     fi
     SECOND_NIC="--network=$K8S_network2,mac=$K8S_mac2,model=virtio"
+  else
+    SECOND_NIC=""
   fi
   if [[ "$K8S_network3" != 'null' ]]; then
     if [[ "$K8S_mac3" == 'null' ]]; then
       K8S_mac3=$(VERBOSITY=0 kubash --verbosity=1 genmac)
     fi
     THIRD_NIC="--network=$K8S_network3,mac=$K8S_mac3,model=virtio"
+  else
+    THIRD_NIC=""
   fi
 
   squawk 7 "K8S_node=$1
