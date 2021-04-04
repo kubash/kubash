@@ -31,7 +31,7 @@ qemu-provisioner () {
     fi
     SECOND_NIC="--network=$K8S_network2,mac=$K8S_mac2,model=virtio"
   else
-    SECOND_NIC=""
+    SECOND_NIC=" "
   fi
   if [[ "$K8S_network3" != 'null' ]]; then
     if [[ "$K8S_mac3" == 'null' ]]; then
@@ -39,7 +39,7 @@ qemu-provisioner () {
     fi
     THIRD_NIC="--network=$K8S_network3,mac=$K8S_mac3,model=virtio"
   else
-    THIRD_NIC=""
+    THIRD_NIC=" "
   fi
 
   squawk 7 "K8S_node=$1
