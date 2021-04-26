@@ -45,22 +45,23 @@ mount_all_other_targets () {
       else
         storage_iterator=$storage_iteration
       fi
-      if [[ "$K8S_storagePath${storage_iterator}" != "null" ]]; then
+      squawk 3 "${K8S_storagePath${storage_iterator}} ${K8S_storageType${storage_iterator}} ${K8S_storageSize${storage_iterator}} ${K8S_storageTarget${storage_iterator}} ${K8S_storageMountPath${storage_iterator}} ${K8S_storageUUID${storage_iterator}}"
+      if [[ ${K8S_storagePath${storage_iterator}} != "null" ]]; then
         squawk 3 "K8S_storagePath=$K8S_storagePath${storage_iterator}"
-        if [[ "$K8S_storageMountPath${storage_iterator}" != "null" ]]; then
-          if [[ "$K8S_storageTarget${storage_iterator}"  != "null" ]]; then
-            if [[ "$K8S_storageTarget${storage_iterator}"  == "vda" || "$K8S_storageTarget${storage_iterator}"  == "sda" || "$K8S_storageTarget${storage_iterator}"  == "hda" ]]; then
+        if [[ ${K8S_storageMountPath${storage_iterator}} != "null" ]]; then
+          if [[ ${K8S_storageTarget${storage_iterator}}  != "null" ]]; then
+            if [[ ${K8S_storageTarget${storage_iterator}}  == "vda" || ${K8S_storageTarget${storage_iterator}}  == "sda" || ${K8S_storageTarget${storage_iterator}}  == "hda" ]]; then
               croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
             fi
             command2run="mkdir -p $K8S_storageMountPath${storage_iterator}"
             sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-            if [[ "$K8S_storageUUID${storage_iterator}" != "null" ]]; then
-              command2run="fsck.ext4 -p /dev/$K8S_storageTarget${storage_iterator}"
-              K8S_storageMKFS_UUID_OPT="-U $K8S_storageUUID${storage_iterator}"
+            if [[ ${K8S_storageUUID${storage_iterator}} != "null" ]]; then
+              command2run="fsck.ext4 -p /dev/${K8S_storageTarget${storage_iterator}}"
+              K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID${storage_iterator}}"
             else
               K8S_storageUUID=$(uuidgen -r)
-              command2run="fsck.ext4 -p UUID=$K8S_storageUUID${storage_iterator}"
-              K8S_storageMKFS_UUID_OPT="-U $K8S_storageUUID${storage_iterator}"
+              command2run="fsck.ext4 -p UUID=${K8S_storageUUID${storage_iterator}}"
+              K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID${storage_iterator}}"
             fi
             # This might fail in which case we'll format
             set +e
@@ -70,7 +71,7 @@ mount_all_other_targets () {
             else
               set -e
               squawk 3 'fsck failed we will attempt to format the device!'
-              command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/$K8S_storageTarget${storage_iterator}"
+              command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/${K8S_storageTarget${storage_iterator}}"
               sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
             fi
             set -e
