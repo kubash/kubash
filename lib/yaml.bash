@@ -50,6 +50,8 @@ json2cluster () {
     JQ_INTERPRETER="$JQ_INTERPRETER_4_0_0"
   elif [[ "$KUBASH_CSV_VER" == '5.0.0' ]]; then
     JQ_INTERPRETER="$JQ_INTERPRETER_5_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '6.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_6_0_0"
   else
     croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
   fi

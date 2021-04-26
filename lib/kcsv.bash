@@ -46,6 +46,8 @@ set_csv_columns () {
     csv_columns="$CSV_COLUMNS_4_0_0"
   elif [ "$KUBASH_CSV_VER" = '5.0.0' ]; then
     csv_columns="$CSV_COLUMNS_5_0_0"
+  elif [ "$KUBASH_CSV_VER" = '6.0.0' ]; then
+    csv_columns="$CSV_COLUMNS_6_0_0"
   else
     croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
   fi
