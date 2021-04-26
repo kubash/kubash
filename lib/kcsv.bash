@@ -22,6 +22,9 @@ test_kubash_csv_ver () {
   elif [ "$KUBASH_CSV_VER" = '5.0.0' ]; then
     uniq_hosts_list_columns=$uniq_hosts_list_columns_5_0_0
     uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18,19|sort|uniq)"
+  elif [ "$KUBASH_CSV_VER" = '6.0.0' ]; then
+    uniq_hosts_list_columns=$uniq_hosts_list_columns_6_0_0
+    uniq_hosts="$(grep -v '^#' $KUBASH_PROVISION_CSV|cut -d, -f13,14,15,16,17,18,19|sort|uniq)"
   else
     croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
   fi
