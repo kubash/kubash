@@ -357,7 +357,8 @@ qemu-provisioner () {
         $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.qcow2 --target ${K8S_storageTarget3} --persistent --config --live
       fi
     fi
-    fi
+    # suspect
+    #fi
   else
     squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
     ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$qemucmd2run"
