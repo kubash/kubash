@@ -649,6 +649,7 @@ do_openebs () {
       kubectl --kubeconfig=$KUBECONFIG apply -f https://openebs.github.io/charts/openebs-operator.yaml
     fi
     kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
 }
 
 activate_monitoring () {
