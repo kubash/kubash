@@ -613,6 +613,8 @@ do_rook () {
       #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
     # Ceph
     kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/crds.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/common.yaml
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/operator.yaml
@@ -648,7 +650,7 @@ do_openebs () {
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f https://openebs.github.io/charts/openebs-operator.yaml
     fi
-    kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
+    #kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
     kubectl --kubeconfig=$KUBECONFIG apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
 }
 
