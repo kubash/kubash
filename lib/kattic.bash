@@ -622,11 +622,12 @@ do_rook () {
     #$KUBASH_DIR/w8s/generic.w8 rook-discover rook-ceph
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/cluster.yaml
-    #$KUBASH_DIR/w8s/generic.w8 csi-rbdplugin rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-detect-version rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-csi-detect-version rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 csi-rbdplugin rook-ceph
     $KUBASH_DIR/w8s/generic.w8 rook-ceph-mon rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 rook-ceph-detect-version rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 rook-ceph-csi-detect-version rook-ceph
     $KUBASH_DIR/w8s/generic.w8 rook-ceph-crashcollector rook-ceph
+    $KUBASH_DIR/w8s/generic.w8 rook-ceph-osd rook-ceph
     #$KUBASH_DIR/w8s/generic.w8 csi-cephfsplugin-provisioner rook-ceph
     #kubectl --kubeconfig=$KUBECONFIG apply -f \
     #  $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/pool.yaml
