@@ -93,6 +93,8 @@ do_dashboard () {
 
 do_tiller () {
   squawk 1 " do_tiller"
+  echo 'This is not how helm works anymore!'
+  exit 1
   #kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
   kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
   sleep 5
