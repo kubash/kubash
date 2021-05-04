@@ -95,7 +95,7 @@ script:
 #- which jinja2
 #- which helm
 #- which yaml2json
-- bin/kubash --verbosity=50 tiller
+#- bin/kubash --verbosity=50 tiller
 #- bin/kubash --verbosity=50 known_hosts
 #- bin/kubash --verbosity=50 ping
 - bats .ci/.tests.bats
