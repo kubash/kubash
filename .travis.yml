@@ -41,6 +41,7 @@ addons:
       - golang
       - python-pip
       - rlwrap
+      - conntrack
 
 
 before_install:
