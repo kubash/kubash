@@ -60,7 +60,7 @@ $(eval ISTIO_VERSION := "1.7.4")
 $(eval K9S_VERSION := "v0.23.10")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
-$(eval TERRAFORM_VERSION := "0.13.5")
+$(eval TERRAFORM_VERSION := "0.15.3")
 $(eval KUBEBUILDER_VERS := 2.3.1)
 $(eval KIND_VERS := v0.9.0)
 $(eval RKE_VERS := v1.0.16)
