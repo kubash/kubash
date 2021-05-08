@@ -52,8 +52,6 @@ install_fluentd () {
 }
 
 install_efk_opendistro () {
-  #do_sc_openebs
-  do_sc_rook
   cd $thisDIR
   cd /home/coopadmin/opendistro-build/helm/opendistro-es
   echo helm install whc01elastic --values=$THIS_CLUSTER-values.yaml opendistro-es-1.12.0.tgz
