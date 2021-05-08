@@ -53,10 +53,10 @@ install_fluentd () {
 
 install_efk_opendistro () {
   cd $thisDIR
-  cd /home/coopadmin/opendistro-build/helm/opendistro-es
-  echo helm install whc01elastic --values=$THIS_CLUSTER-values.yaml opendistro-es-1.12.0.tgz
+  cd ~/.kubash/submodules/opendistro-build/helm/opendistro-es
+  echo helm install whc01elastic --values=$thisDIR/opendistro-values.yaml .
   sleep 3
-  helm install whc01elastic --values=$THIS_CLUSTER-values.yaml opendistro-es-1.12.0.tgz
+  helm install whc01elastic --values=$thisDIR/opendistro-values.yaml . 
 }
 
 install_efk_all_in_one () {
