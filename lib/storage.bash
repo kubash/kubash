@@ -56,12 +56,12 @@ mount_all_other_targets () {
     squawk 3 "$K8S_storagePath $K8S_storageType $K8S_storageSize $K8S_storageTarget $K8S_storageMountPath $K8S_storageUUID"
 
     squawk 3 "${K8S_storagePath} ${K8S_storageType} ${K8S_storageSize} ${K8S_storageTarget} ${K8S_storageMountPath} ${K8S_storageUUID}"
-    if [[ ${K8S_storagePath} == "lvm" ]]; then
+    if [[ ${K8S_storagePath} != "null" ]]; then
       squawk 3 "K8S_storagePath=$K8S_storagePath"
-      lvm_creation_run ${K8S_storageTarget} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-    elif [[ ${K8S_storagePath} != "null" ]]; then
-      squawk 3 "K8S_storagePath=$K8S_storagePath"
-      if [[ ${K8S_storageMountPath} != "null" ]]; then
+      if [[ ${K8S_storageMountPath} == "lvm" ]]; then
+        squawk 3 "K8S_storageMountPath=$K8S_storageMountPath"
+        lvm_creation_run ${K8S_storageTarget} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+      elif [[ ${K8S_storageMountPath} != "null" ]]; then
         squawk 55 "K8S_storageMountPath=$K8S_storageMountPath"
         if [[ ${K8S_storageTarget}  != "null" ]]; then
           squawk 44 "K8S_storageTarget=$K8S_storageTarget"
@@ -98,12 +98,12 @@ mount_all_other_targets () {
     fi
 
     squawk 3 "${K8S_storagePath1} ${K8S_storageType1} ${K8S_storageSize1} ${K8S_storageTarget1} ${K8S_storageMountPath1} ${K8S_storageUUID1}"
-    if [[ ${K8S_storagePath1} == "lvm" ]]; then
-      squawk 3 "K8S_storagePath1=$K8S_storagePath1"
-      lvm_creation_run ${K8S_storageTarget1} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-    elif [[ ${K8S_storagePath1} != "null" ]]; then
+    if [[ ${K8S_storagePath1} != "null" ]]; then
       squawk 3 "K8S_storagePath=$K8S_storagePath1"
-      if [[ ${K8S_storageMountPath1} != "null" ]]; then
+      if [[ ${K8S_storageMountPath1} == "lvm" ]]; then
+        squawk 3 "K8S_storageMountPath1=$K8S_storageMountPath1"
+        lvm_creation_run ${K8S_storageTarget1} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+      elif [[ ${K8S_storageMountPath1} != "null" ]]; then
         if [[ ${K8S_storageTarget1}  != "null" ]]; then
           if [[ ${K8S_storageTarget1}  == "vda" || ${K8S_storageTarget1}  == "sda" || ${K8S_storageTarget1}  == "hda" ]]; then
             croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
@@ -140,12 +140,12 @@ mount_all_other_targets () {
     fi
 
     squawk 3 "${K8S_storagePath2} ${K8S_storageType2} ${K8S_storageSize2} ${K8S_storageTarget2} ${K8S_storageMountPath2} ${K8S_storageUUID2}"
-    if [[ ${K8S_storagePath2} == "lvm" ]]; then
-      squawk 3 "K8S_storagePath2=$K8S_storagePath2"
-      lvm_creation_run ${K8S_storageTarget2} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-    elif [[ ${K8S_storagePath2} != "null" ]]; then
+    if [[ ${K8S_storagePath2} != "null" ]]; then
       squawk 3 "K8S_storagePath=$K8S_storagePath2"
-      if [[ ${K8S_storageMountPath2} != "null" ]]; then
+      if [[ ${K8S_storageMountPath2} == "lvm" ]]; then
+        squawk 3 "K8S_storageMountPath2=$K8S_storageMountPath2"
+        lvm_creation_run ${K8S_storageTarget2} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+      elif [[ ${K8S_storageMountPath2} != "null" ]]; then
         if [[ ${K8S_storageTarget2}  != "null" ]]; then
           if [[ ${K8S_storageTarget2}  == "vda" || ${K8S_storageTarget2}  == "sda" || ${K8S_storageTarget2}  == "hda" ]]; then
             croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
@@ -182,12 +182,12 @@ mount_all_other_targets () {
     fi
 
     squawk 3 "${K8S_storagePath3} ${K8S_storageType3} ${K8S_storageSize3} ${K8S_storageTarget3} ${K8S_storageMountPath3} ${K8S_storageUUID3}"
-    if [[ ${K8S_storagePath3} == "lvm" ]]; then
-      squawk 3 "K8S_storagePath3=$K8S_storagePath3"
-      lvm_creation_run ${K8S_storageTarget3} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-    elif [[ ${K8S_storagePath3} != "null" ]]; then
+    if [[ ${K8S_storagePath3} != "null" ]]; then
       squawk 3 "K8S_storagePath=$K8S_storagePath3"
-      if [[ ${K8S_storageMountPath3} != "null" ]]; then
+      if [[ ${K8S_storageMountPath3} == "lvm" ]]; then
+        squawk 3 "K8S_storageMountPath3=$K8S_storageMountPath3"
+        lvm_creation_run ${K8S_storageTarget3} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+      elif [[ ${K8S_storageMountPath3} != "null" ]]; then
         if [[ ${K8S_storageTarget3}  != "null" ]]; then
           if [[ ${K8S_storageTarget3}  == "vda" || ${K8S_storageTarget3}  == "sda" || ${K8S_storageTarget3}  == "hda" ]]; then
             croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
