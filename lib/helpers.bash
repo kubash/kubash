@@ -5,7 +5,8 @@
 #ELASTIC_VERS='7.5.2'
 #ELASTIC_VERS='7.8.0'
 #ELASTIC_VERS='7.9.3'
-ELASTIC_VERS='7.10.0'
+#ELASTIC_VERS='7.10.0'
+ELASTIC_VERS='7.12.1'
 ELASTIC_OPERATOR_VERS='1.3.0'
 THIS_NAMESPACE=$(cat .name-space)
 THIS_CLUSTER=$(cat .cluster-name)
@@ -191,10 +192,10 @@ do_sc () {
 do_sc_openebs () {
   kubash -n $THIS_CLUSTER openebs
   ~/.kubash/w8s/generic.w8 maya openebs
-  kubectl apply -f openebs-monitaur-pool.yaml
-  kubectl apply -f openebs-sc-elastic.yaml
+#  kubectl apply -f openebs-monitaur-pool.yaml
+#  kubectl apply -f openebs-sc-elastic.yaml
   kubectl apply -f openebs-localPV.yaml
-  kubectl apply -f openebs-lvm-sc.yaml
+#  kubectl apply -f openebs-lvm-sc.yaml
   sleep 30
 }
 
