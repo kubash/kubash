@@ -29,10 +29,10 @@ croak () {
       printf '#>{ '
       printf '%s' "$croak_lvl"
       printf ' }<# '
-      printf '%s\n'  "$croak"
+      printf ' %s\n'  "$croak"
     fi
   else
-    printf '%s\n'  "$croak"
+    printf ' %s\n'  "$croak"
   fi
   horizontal_rule
   exit 1
