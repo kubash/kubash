@@ -47,6 +47,18 @@ lvm_creation_run () {
   #sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
   command2run="pvcreate /dev/${THIS_storageTarget}"
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
+  command2run="vgcreate ${K8S_lvm_vg} /dev/${THIS_storageTarget}"
+  sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
+}
+
+lvm_extend_run () {
+  THIS_storageTarget=$1
+  THIS_sshPort=$2
+  THIS_user=$3
+  THIS_ip1=$4
+  check_first_device $THIS_storageTarget
+  command2run="pvcreate /dev/${THIS_storageTarget}"
+  sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
   command2run="vgextend ${K8S_lvm_vg} /dev/${THIS_storageTarget}"
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
 }
@@ -106,7 +118,7 @@ mount_all_other_targets () {
       squawk 3 "K8S_storagePath=$K8S_storagePath1"
       if [[ ${K8S_storageMountPath1} == "lvm" ]]; then
         squawk 3 "K8S_storageMountPath1=$K8S_storageMountPath1"
-        lvm_creation_run ${K8S_storageTarget1} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+        lvm_extend_run ${K8S_storageTarget1} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
       elif [[ ${K8S_storageMountPath1} != "null" ]]; then
         if [[ ${K8S_storageTarget1}  != "null" ]]; then
           if [[ ${K8S_storageTarget1}  == "vda" || ${K8S_storageTarget1}  == "sda" || ${K8S_storageTarget1}  == "hda" ]]; then
@@ -148,7 +160,7 @@ mount_all_other_targets () {
       squawk 3 "K8S_storagePath=$K8S_storagePath2"
       if [[ ${K8S_storageMountPath2} == "lvm" ]]; then
         squawk 3 "K8S_storageMountPath2=$K8S_storageMountPath2"
-        lvm_creation_run ${K8S_storageTarget2} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+        lvm_extend_run ${K8S_storageTarget2} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
       elif [[ ${K8S_storageMountPath2} != "null" ]]; then
         if [[ ${K8S_storageTarget2}  != "null" ]]; then
           if [[ ${K8S_storageTarget2}  == "vda" || ${K8S_storageTarget2}  == "sda" || ${K8S_storageTarget2}  == "hda" ]]; then
@@ -190,7 +202,7 @@ mount_all_other_targets () {
       squawk 3 "K8S_storagePath=$K8S_storagePath3"
       if [[ ${K8S_storageMountPath3} == "lvm" ]]; then
         squawk 3 "K8S_storageMountPath3=$K8S_storageMountPath3"
-        lvm_creation_run ${K8S_storageTarget3} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+        lvm_extend_run ${K8S_storageTarget3} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
       elif [[ ${K8S_storageMountPath3} != "null" ]]; then
         if [[ ${K8S_storageTarget3}  != "null" ]]; then
           if [[ ${K8S_storageTarget3}  == "vda" || ${K8S_storageTarget3}  == "sda" || ${K8S_storageTarget3}  == "hda" ]]; then
