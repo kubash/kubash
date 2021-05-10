@@ -75,6 +75,7 @@ find_defaults
 : ${DO_CRICTL:='true'}
 : ${ETCD_VERSION:=v3.2.7}
 : ${ETCD_TLS:='true'}
+: ${K8S_lvm_vg:="lvmpv_vg"}
 : ${KUBASH_RSYNC_OPTS:='-L -H -aze'}
 : ${CALICO_VER:=v3.3}
 : ${CALICO_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml}
