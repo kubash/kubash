@@ -18,12 +18,12 @@ squawk () {
         printf '#'
         ((++count_squawk))
       done
-      printf '%s\n' "$squawk"
+      printf ' %s\n' "$squawk"
     else
       printf '#>{ '
       printf '%s' "$squawk_lvl"
       printf ' }<# '
-      printf '%s\n' "$squawk"
+      printf ' %s\n' "$squawk"
     fi
   fi
 }
