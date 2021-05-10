@@ -148,12 +148,12 @@ refresh_network_addresses () {
         fi
       elif [[ "$K8S_networkDiscovery" == "arp" ]]; then
         countzero=0
-        this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
+        this_node_ip=$($PSEUDO arp -n|grep -i $K8S_mac1|awk '{print $1}'|tail -n 1)
         while [[ -z "$this_node_ip" ]]; do
         squawk 2 "$PSEUDO nmap -p 22 $BROADCAST_TO_NETWORK"
         NMAP_OUTPUT=$($PSEUDO nmap -p 22 $BROADCAST_TO_NETWORK)
-        squawk 1 "arp -n|grep $K8S_mac1|awk '{print \$1}'"
-        this_node_ip=$($PSEUDO arp -n|grep $K8S_mac1|awk '{print $1}'|tail -n 1)
+        squawk 1 "arp -n|grep -i $K8S_mac1|awk '{print \$1}'"
+        this_node_ip=$($PSEUDO arp -n|grep -i $K8S_mac1|awk '{print $1}'|tail -n 1)
         if [[ "$countzero" -gt 2 ]]; then
           sleep 8
         fi
