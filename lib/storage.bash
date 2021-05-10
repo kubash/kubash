@@ -43,7 +43,11 @@ lvm_creation_run () {
   THIS_user=$3
   THIS_ip1=$4
   check_first_device $THIS_storageTarget
-  command2run="blkid /dev/${THIS_storageTarget} && pvcreate /dev/${THIS_storageTarget} && vgcreate /dev/${THIS_storageTarget}"
+  #command2run="blkid /dev/${THIS_storageTarget} && pvcreate /dev/${THIS_storageTarget} && vgcreate /dev/${THIS_storageTarget}"
+  #sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
+  command2run="pvcreate /dev/${THIS_storageTarget}"
+  sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
+  command2run="vgcreate /dev/${THIS_storageTarget}"
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
 }
 
