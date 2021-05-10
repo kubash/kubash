@@ -47,7 +47,7 @@ lvm_creation_run () {
   #sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
   command2run="pvcreate /dev/${THIS_storageTarget}"
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
-  command2run="vgcreate ${K8S_lvm_vg} /dev/${THIS_storageTarget}"
+  command2run="vgextend ${K8S_lvm_vg} /dev/${THIS_storageTarget}"
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
 }
 
