@@ -564,8 +564,16 @@ talos: $(KUBASH_BIN)/talos
 $(KUBASH_BIN)/talos:
 	# https://talos.sigs.k8s.io/docs/user/quick-start/
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	curl -Lo $(TMP)/talos https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64
 	curl -Lo $(TMP)/talosctl https://github.com/talos-systems/talos/releases/latest/download/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
 	chmod +x $(TMP)/talos
 	sudo install -v -m511 ${TMP}/talos $(KUBASH_BIN)/talos
+	rm -Rf $(TMP)
+
+arkade: $(KUBASH_BIN)/arkade
+
+$(KUBASH_BIN)/arkade:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sLS https://dl.get-arkade.dev | sh
+	chmod +x $(TMP)/arkade
+	sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
 	rm -Rf $(TMP)
