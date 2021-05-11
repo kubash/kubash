@@ -26,7 +26,7 @@ taint_ingress () {
     ((++count_ingress))
   done
   if [[ $count_ingress -eq 0 ]]; then
-    croak 3  'No ingress nodes found!'
+    squawk 1  'WARNING: No ingress nodes found!'
   fi
 }
 
@@ -48,7 +48,7 @@ taint_all_ingress () {
   echo "count_all_ingress $count_all_ingress"
   if [[ $count_all_ingress -eq 0 ]]; then
     squawk 150 "slurpy -----> $(echo $kubash_hosts_csv_slurped)"
-    croak 3  'No ingress nodes found!!!'
+    squawk 1  'WARNING: No ingress nodes found!'
   else
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
     squawk 101 "taint these nodes_to_taint=$K8S_node $nodes_to_taint"
@@ -66,7 +66,7 @@ mark_ingress () {
     ((++count_ingress))
   done
   if [[ $count_ingress -eq 0 ]]; then
-    croak 3  'No ingress nodes found!'
+    squawk 1  'WARNING: No ingress nodes found!'
   fi
 }
 
@@ -88,7 +88,7 @@ mark_all_ingress () {
   echo "count_all_ingress $count_all_ingress"
   if [[ $count_all_ingress -eq 0 ]]; then
     squawk 150 "slurpy -----> $(echo $kubash_hosts_csv_slurped)"
-    croak 3  'No ingress nodes found!!!'
+    squawk 1  'WARNING: No ingress nodes found!'
   else
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
     squawk 101 "mark these nodes_to_mark=$K8S_node $nodes_to_mark"
