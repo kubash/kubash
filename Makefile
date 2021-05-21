@@ -577,3 +577,13 @@ $(KUBASH_BIN)/arkade:
 	chmod +x $(TMP)/arkade
 	sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
 	rm -Rf $(TMP)
+
+nomad: $(KUBASH_BIN)/nomad
+
+$(KUBASH_BIN)/nomad:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sLS https://releases.hashicorp.com/nomad/1.1.0/nomad_1.1.0_linux_amd64.zip | jar xv
+	cd $(TMP) && ls -alh
+	chmod +x $(TMP)/nomad
+	sudo install -v -m511 ${TMP}/nomad $(KUBASH_BIN)/nomad
+	rm -Rf $(TMP)
