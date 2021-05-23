@@ -89,7 +89,7 @@ find_defaults
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}
-: ${ISTIO_PROFILE=demo}
+: ${ISTIO_PROFILE=default}
 : ${TAB_1:='  '}
 : ${TAB_2:='    '}
 : ${TAB_3:='      '}
