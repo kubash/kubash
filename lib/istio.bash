@@ -15,10 +15,7 @@ EOF
 
     squawk 10 "KUBECONFIG=$KUBECONFIG \
     istioctl install \
-      --set profile=$ISTIO_PROFILE \
-      --set 'values.kiali.dashboard.jaegerURL=http://jaeger-query:16686' \
-      --set 'values.global.tracer.zipkin.address=jaeger-collector:9411' \
-      --set 'values.kiali.dashboard.grafanaURL=http://grafana:3000'
+      --set profile=$ISTIO_PROFILE
     "
     KUBECONFIG=$KUBECONFIG \
     istioctl install \
