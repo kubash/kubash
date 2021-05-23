@@ -19,6 +19,7 @@ EOF
     "
     KUBECONFIG=$KUBECONFIG \
     istioctl install \
+      -y \
       --set profile=$ISTIO_PROFILE
       # deprecated
       #--set "values.kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
