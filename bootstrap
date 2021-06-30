@@ -175,7 +175,10 @@ main () {
   check_cmd unzip
   check_cmd uname
   check_cmd go
-  if [[ -x $(which pip3) ]]; then
+  if [[ -x /usr/bin/pip3 ]]; then
+    echo 'Setting PIP=/usr/bin/pip3'
+    PIP=/usr/bin/pip3
+  elif [[ -x $(which pip3) ]]; then
     echo 'Setting PIP=pip3'
     PIP=pip3
   else
