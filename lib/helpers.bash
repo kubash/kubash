@@ -55,8 +55,8 @@ install_fluentd () {
 install_efk_opendistro () {
   cd $thisDIR
   cd ~/.kubash/submodules/opendistro-build/helm/opendistro-es
-  echo helm install ${THIS_CLUSTER}.es --values=$thisDIR/opendistro-values.yaml . 
-  helm install ${THIS_CLUSTER}.es --values=$thisDIR/opendistro-values.yaml . 
+  echo helm install ${THIS_CLUSTER}-es --values=$thisDIR/opendistro-values.yaml . 
+  helm install ${THIS_CLUSTER}-es --values=$thisDIR/opendistro-values.yaml . 
 }
 
 install_efk_all_in_one () {
