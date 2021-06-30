@@ -443,6 +443,7 @@ submodules/openebs:
 cfssl:
 	sudo curl -s -o $(KUBASH_BIN)/cfssl https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
 	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+	sudo ls -alh $(KUBASH_BIN)/
 	sudo chmod +x $(KUBASH_BIN)/cfssl*
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
