@@ -11,7 +11,7 @@ else
   YES=' '
   YES_ARCH=' '
 fi
-set -e
+set -ex
 
 check_shell () {
   THIS_SHELL=$(echo $SHELL| rev | cut -d'/' -f 1 | rev)
@@ -119,6 +119,7 @@ flight_checks () {
 
 main () {
   . /etc/os-release
+  cat /etc/os-release
 
   WHOAMI=$(whoami)
   if [[ "$WHOAMI" = "root" ]]; then
@@ -174,11 +175,11 @@ main () {
   check_cmd unzip
   check_cmd uname
   check_cmd go
-  if [[ "$UBUNTU_CODENAME" == "focal" ]]; then
-    #check_cmd pip3
+  if [[ -x /usr/bin/pip3 ]]; then
+    echo 'Setting PIP=pip3'
     PIP=pip3
   else
-    #check_cmd pip
+    echo 'Cannot find pip3 Setting PIP=pip'
     PIP=pip
   fi
   check_cmd $PIP
