@@ -130,7 +130,7 @@ main () {
   fi
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
     if [[ "$CIRCLE_STAGE" == "acceptance-test" ]]; then
-      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm net-tools dnsutils'
+      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm net-tools dnsutils'
     elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
       DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
     elif [[ "$UBUNTU_CODENAME" == "focal" ]]; then
@@ -175,7 +175,7 @@ main () {
   check_cmd unzip
   check_cmd uname
   check_cmd go
-  if [[ -x /usr/bin/pip3 ]]; then
+  if [[ -x $(which pip3) ]]; then
     echo 'Setting PIP=pip3'
     PIP=pip3
   else
