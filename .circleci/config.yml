@@ -58,7 +58,7 @@ jobs:
         name: Boostrap Kubash
         command: |
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          bash bootstrap
+          echo  skipping for now bash bootstrap
     - run:
         name: Test Kubash yaml2cluster
         command: |
