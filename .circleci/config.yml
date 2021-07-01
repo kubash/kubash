@@ -66,6 +66,8 @@ jobs:
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
           export TERM=dumb
           export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
+          sudo apt-get install -y ansible
+          sudo apt-get install -y ansible
           kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
     - run:
         name: Test Kubectl get nodes
