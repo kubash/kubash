@@ -1,5 +1,5 @@
 ---
-  csv_version: '6.0.0'
+  csv_version: '5.0.0'
   kubernetes_version: 'v1.15.3'
   hosts:
     my-master1:

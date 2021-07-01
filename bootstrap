@@ -11,7 +11,7 @@ else
   YES=' '
   YES_ARCH=' '
 fi
-set -ex
+set -e
 
 check_shell () {
   THIS_SHELL=$(echo $SHELL| rev | cut -d'/' -f 1 | rev)

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 TMP=$(mktemp -d)
 TEST_CLUSTER_NAME=$(uuidgen -r | sha256sum | base64 | head -c 8)
 trap "rm -rvf $TMP" EXIT

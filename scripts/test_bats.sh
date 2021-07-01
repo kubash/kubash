@@ -7,6 +7,7 @@ if [ $# -ne 1 ]; then
   echo "$0 KUBASH_DIR" 
   exit 1
 fi
+set -eux
 TMP=$(mktemp -d)
 KUBASH_DIR=$1
 trap "rm -rvf $TMP" EXIT

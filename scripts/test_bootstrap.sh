@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eux
 TMP=$(mktemp -d)
 RAND_TMP="$(uuidgen -r | sha256sum | base64 | head -c 8)"
 trap "rm -rvf $TMP" EXIT
