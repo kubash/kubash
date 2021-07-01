@@ -9,6 +9,7 @@ cp templates/test_yaml2cluster_answer $TMP/
 
 cat <<EOF > $TMP/Dockerfile
 FROM test_bootstrap
+ENV TERM=dumb
 COPY example-cluster.yaml /example-cluster.yaml
 COPY test_yaml2cluster_answer /test_yaml2cluster_answer  
 RUN /bin/bash -l -c "kubash yaml2cluster /example-cluster.yaml -n $TEST_CLUSTER_NAME"

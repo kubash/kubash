@@ -30,38 +30,29 @@ jobs:
     steps:
     - checkout
     - run:
-        name: download
+        name: DL pupernetes
         command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.11.0/pupernetes
           -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
     - run:
         name: apt
         command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
     - run:
-        name: run
+        name: pupernetes
         command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
           --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config
           --dns-check
     - run:
-        name: kubectl
+        name: kubectl get all
         command: kubectl get all
+    - run:
+        name: kubectl config
+        command: cat $HOME/.kube/config
     - run:
         name: Setup helm
         command: |
           curl -L https://git.io/get_helm.sh | bash
           helm init
           helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
-    - run:
-        name: Install Bash Automated Testing Suite
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          export TERM=dumb
-          make bats
-    - run:
-        name: Run Bash Automated Testing Suite
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          export TERM=dumb
-          bats .ci/.tests.bats
     - run:
         name: Upgrade Pip
         command: |
@@ -77,6 +68,11 @@ jobs:
         command: |
           export TERM=dumb
           bash scripts/test_yaml2cluster.sh
+    - run:
+        name: Run Bash Automated Testing Suite
+        command: |
+          export TERM=dumb
+          bash scripts/test_bats.sh
 workflows:
   version: 2
   ci:
