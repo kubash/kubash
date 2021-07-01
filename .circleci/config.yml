@@ -50,9 +50,11 @@ jobs:
     - run:
         name: Setup helm
         command: |
-          curl -L https://git.io/get_helm.sh | bash
-          helm init
-          helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          helm install bitnami/mysql --generate-name
+          helm ls
     - run:
         name: Upgrade Pip
         command: |
@@ -72,7 +74,7 @@ jobs:
         name: Run Bash Automated Testing Suite
         command: |
           export TERM=dumb
-          bash scripts/test_bats.sh /root/.kubash
+          bash scripts/test_bats.sh $HOME/.kubash
 workflows:
   version: 2
   ci:

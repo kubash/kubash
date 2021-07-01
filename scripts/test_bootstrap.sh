@@ -9,6 +9,7 @@ cp templates/bashrc.tpl $TMP/.bashrc
 
 cat <<EOF > $TMP/Dockerfile
 FROM ubuntu:bionic
+ENV TERM=dumb
 COPY bootstrap /bootstrap
 COPY .bashrc /root/.bashrc
 RUN bash /bootstrap -y
