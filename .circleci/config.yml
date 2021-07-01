@@ -63,27 +63,8 @@ jobs:
     - run:
         name: Test Kubash yaml2cluster
         command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
           export TERM=dumb
-          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
-          sudo apt-get install -y ansible
-          sudo apt-get install -y ansible
-          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
-    - run:
-        name: Test Kubectl get nodes
-        command: |
-          kubectl get nodes
-    - run:
-        name: Test Kubash tiller
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
-          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
-          cp $HOME/.kube/config $HOME/.kubash/clusters/$RAND_TMP/
-          echo $KUBERNETES_VERSION > $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          echo $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          cat $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          kubash -n $RAND_TMP tiller
+          bash scripts/test_yaml2cluster.sh
     - run:
         name: Install Bash Automated Testing Suite
         command: |
