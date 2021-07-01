@@ -9,8 +9,6 @@ cp templates/bashrc.tpl $TMP/.bashrc
 cd ..
 sudo cp -a .kubash $TMP/kubash
 sudo chown -R ${USER}. $TMP/kubash
-rm -Rf $TMP/kubash/submodules/*
-echo kubash/submodules > .dockerignore
 
 cat <<EOF > $TMP/Dockerfile
 FROM ubuntu:bionic
