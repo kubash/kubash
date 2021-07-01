@@ -4,14 +4,14 @@
 : ${GOPATH:=$HOME/.go}
 PIP_INSTALL_PKGS="netaddr ceph-deploy"
 if [[ "$1" == '-y' ]]; then
-  echo YES
+  echo 'using YES'
   YES='-y'
   YES_ARCH='--noconfirm'
 else
   YES=' '
   YES_ARCH=' '
 fi
-set -e
+set -ex
 
 check_shell () {
   THIS_SHELL=$(echo $SHELL| rev | cut -d'/' -f 1 | rev)

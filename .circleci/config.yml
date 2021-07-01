@@ -72,7 +72,7 @@ jobs:
         name: Run Bash Automated Testing Suite
         command: |
           export TERM=dumb
-          bash scripts/test_bats.sh
+          bash scripts/test_bats.sh /root/.kubash
 workflows:
   version: 2
   ci:
