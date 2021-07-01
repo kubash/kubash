@@ -51,21 +51,6 @@ jobs:
           helm init
           helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
     - run:
-        name: Upgrade Pip
-        command: |
-          pip install --upgrade pip
-    - run:
-        name: Boostrap Kubash
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          echo bash bootstrap -y
-          bash scripts/test_bootstrap.sh
-    - run:
-        name: Test Kubash yaml2cluster
-        command: |
-          export TERM=dumb
-          bash scripts/test_yaml2cluster.sh
-    - run:
         name: Install Bash Automated Testing Suite
         command: |
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
@@ -77,6 +62,21 @@ jobs:
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
           export TERM=dumb
           bats .ci/.tests.bats
+    - run:
+        name: Upgrade Pip
+        command: |
+          echo skip pip install --upgrade pip
+    - run:
+        name: Boostrap Kubash
+        command: |
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          echo bash bootstrap -y
+          bash scripts/test_bootstrap.sh
+    - run:
+        name: Test Kubash yaml2cluster
+        command: |
+          export TERM=dumb
+          bash scripts/test_yaml2cluster.sh
 workflows:
   version: 2
   ci:
