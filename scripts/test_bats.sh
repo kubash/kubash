@@ -17,7 +17,10 @@ cp ~/.kube/config $TMP/config
 
 cat <<EOF > $TMP/start.sh
 #!/bin/bash -l
+set -ex
 export TERM=dumb
+kubash yaml2cluster /example-cluster.yaml -n test_one
+rm -Rf /root/.kubash/clusters/test_one
 bats /root/.kubash/.ci/.tests.bats
 EOF
 chmod +x $TMP/start.sh
