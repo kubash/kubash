@@ -37,4 +37,4 @@ EOF
 
 cd $TMP
 docker build . -t test_bats
-docker run -it -v $KUBASH_DIR:/root/.kubash test_bats
+docker run -it -v $KUBASH_DIR/clusters:/root/.kubash/clusters test_bats
