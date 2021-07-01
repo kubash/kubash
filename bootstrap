@@ -199,11 +199,9 @@ main () {
     git clone https://github.com/kubash/kubash.git $KUBASH_DIR
   else
     echo "KUBASH_DIR=$KUBASH_DIR found"
-    echo 'attempting to pull in the kubash directory'
+    echo 'using found kubash directory'
     cd $KUBASH_DIR
     pwd
-    ls -alh
-    git pull
     git log -n1|cat
   fi
   export PATH=$HOME/.kubash/bin:$PATH
