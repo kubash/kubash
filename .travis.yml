@@ -12,8 +12,8 @@ matrix:
         - HELM_INSTALL_DIR=$HOME/.local/bin
         - NVM_DIR="$HOME/.nvm"
         - CHANGE_MINIKUBE_NONE_USER=true
-        - MINIKUBE_VERSION=v1.3.1
-        - KUBE_VERSION=v1.12.2
+        - MINIKUBE_VERSION=v1.19.0
+        - KUBE_VERSION=v1.19.0
         - CHANGE_MINIKUBE_NONE_USER=true
       cache: npm
       cache: pip
@@ -41,6 +41,7 @@ addons:
       - golang
       - python-pip
       - rlwrap
+      - conntrack
 
 
 before_install:
@@ -53,7 +54,8 @@ before_script:
 - npm i -g yaml2json
 - if [[ ! -e "$HOME/.local/bin/ct" ]]; then make ct && mv /home/travis/.kubash/bin/ct /home/travis/.local/bin/ct; fi
 - if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo mv .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
-- if [[ ! -e "$HOME/.local/bin/helm" ]]; then curl https://raw.githubusercontent.com/helm/helm/master/scripts/get|bash &> /dev/null; fi
+  #- if [[ ! -e "$HOME/.local/bin/helm" ]]; then curl https://raw.githubusercontent.com/helm/helm/master/scripts/get|bash &> /dev/null; fi
+- curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 # Wait for Kubernetes to be up and ready.
 #- ls -alh /home/travis/.kubash/bin
 #- export PATH=/home/travis/.local/bin:$PATH
@@ -93,7 +95,7 @@ script:
 #- which jinja2
 #- which helm
 #- which yaml2json
-- bin/kubash --verbosity=50 tiller
+#- bin/kubash --verbosity=50 tiller
 #- bin/kubash --verbosity=50 known_hosts
 #- bin/kubash --verbosity=50 ping
 - bats .ci/.tests.bats

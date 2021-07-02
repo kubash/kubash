@@ -1,4 +1,5 @@
-#!/bin/sh -eux
+#!/bin/bash
+set -eux
 TMP=$(mktemp -d)
 . /etc/os-release
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
@@ -8,11 +9,24 @@ TMP=$(mktemp -d)
 
 #: ${DOCKER_PKG:='19.03'}
 : ${DOCKER_COMPOSE_PKG:='1.8.0'}
-: ${KUBEPKG_VERSION:="1.9.3"}
+: ${KUBEPKG_VERSION:="1.19.6"}
 : ${ETCD_VERSION:="3.2.17"}
-#: ${DOCKER_CGROUP_DRIVER:='systemd'}
-: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
-
+: ${DOCKER_CGROUP_DRIVER:='systemd'}
+#: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+echo '>>>> PRINTENV <<<<'
+printenv
+echo '>>>> END_PRINTENV <<<<'
+# Registry mirror
+# https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
+# https://docs.docker.com/registry/recipes/mirror/
+printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR_HUB
+if [ -z $K8S_REGISTRY_MIRROR_HUB ]; then
+  echo 'The current registry_mirror is NOT SET!'
+: ${K8S_REGISTRY_MIRROR_HUB:=NULL_AND_VOID}
+else
+  printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR_HUB
+fi
+printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR_HUB
 
 cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
@@ -39,6 +53,7 @@ localhost
 localhost
 EOF
 
+rook_efficiency () {
 # This is for rook efficiency
 # https://rook.io/docs/rook/v0.9/edgefs-quickstart.html
 cat <<EOF >  /etc/sysctl.d/rook.conf
@@ -50,6 +65,9 @@ vm.dirty_ratio = 10
 vm.dirty_background_ratio = 5
 vm.swappiness = 15
 EOF
+}
+
+rook_efficiency
 
 cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -57,9 +75,8 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sysctl --system
 
-echo 'export GOPATH=$HOME/.go
-export PATH=${GOPATH//://bin:}/bin:$PATH' \
->> .bashrc
+echo 'export GOPATH=$HOME/.go' >> .bashrc
+echo 'export PATH=${GOPATH//://bin:}/bin:$PATH' >> .bashrc
 
 echo ip_vs >> /etc/modules
 echo ip_vs_wrr >> /etc/modules
@@ -137,6 +154,26 @@ EOF
 
   systemctl daemon-reload
   systemctl enable --now crio
+}
+
+install_zabbix_agent () {
+
+  # Configure package repository
+  if [[ $NAME == 'Ubuntu' ]]; then
+    wget https://repo.zabbix.com/zabbix/5.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.0-1%2B${UBUNTU_CODENAME}_all.deb 
+    sudo dpkg -i zabbix-release_5.0-1+${UBUNTU_CODENAME}_all.deb
+  elif [[ $NAME == 'Debian' ]]; then
+    if [[ $VERSION_CODENAME == 'buster' ]]; then
+      echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+    else
+      echo 'debian version unsupported'
+      exit 1
+    fi
+  fi
+
+  sudo apt update
+  sudo apt -yqq install zabbix-agent
+  #sudo systemctl enable zabbix-agent
 }
 
 install_kubernetes_docker () {
@@ -219,16 +256,23 @@ EOF
 
   cat << EOF > /etc/network/if-up.d/show-ip-address
   #!/bin/sh
+  if [[ -f /etc/issue-standard ]]; then
+    cp /etc/issue-standard /etc/issue
+    echo 'issue-standard found' >> /etc/issue
+  fi
+
+  # Warn if run from loopback
   if [ "\$METHOD" = loopback ]; then
-      exit 0
+      echo 'WARNING: running from loopback' >> /etc/issue
+      #exit 0
   fi
 
-  # Only run from ifup.
+  # Warn if not run from ifup.
   if [ "\$MODE" != start ]; then
-      exit 0
+      echo 'WARNING: not running from ifup' >> /etc/issue
+      #exit 0
   fi
 
-  cp /etc/issue-standard /etc/issue
   /usr/local/bin/get-ip-address >> /etc/issue
   echo "" >> /etc/issue
 EOF
@@ -288,24 +332,29 @@ EOF
   elif [ "$KUBEADM_INSTALL" = "kubeadm" ]; then
     #install_spec_docker
     install_kubernetes_docker
-    #kubeadm config images pull
-    kubeadm init
-    yes y|kubeadm reset
+    kubeadm config images pull
+    #kubeadm init
+    #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   elif [ "$KUBEADM_INSTALL" = "spec" ]; then
     install_spec_docker
-    #kubeadm config images pull
-    kubeadm init
-    yes y|kubeadm reset
+    kubeadm config images pull
+    #kubeadm init
+    #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   else
     echo 'Sticking to defaults'
     # install_default_docker
     install_kubernetes_docker
+    kubeadm config images pull
+    #kubeadm init
+    #yes y|kubeadm reset
+    rm -Rf /etc/kubernetes/*
   fi
 
   apt-mark hold docker-ce
-  service open-iscsi restart
+  # service open-iscsi restart
+  systemctl enable iscsid
   systemctl restart docker
 
   mkshowipaddress
@@ -314,6 +363,7 @@ EOF
   echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
   docker version
 
+  install_zabbix_agent
   if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
     date -I >> /root/.additional_packages_isntalled
@@ -322,6 +372,30 @@ EOF
   else
     echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
   fi
+  #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
+
+
+  if [ $K8S_REGISTRY_MIRROR_HUB == "NULL_AND_VOID" ]; then
+    echo 'No registry set, using defaults'
+  else
+    if [ ! -z "$K8S_REGISTRY_MIRROR_HUB" ]; then
+      daemon_string="\"$K8S_REGISTRY_MIRROR_HUB\""
+    fi
+    if [ ! -z "$K8S_REGISTRY_MIRROR_QUAY" ]; then
+      daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_QUAY\""
+    fi
+    if [ ! -z "$K8S_REGISTRY_MIRROR_GRC" ]; then
+      daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_GRC\""
+    fi
+    if [ ! -z "$K8S_REGISTRY_MIRROR_K8S" ]; then
+      daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_K8S\""
+    fi
+    #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
+    #sudo bash -c 'cat <<< $(jq ".\"registry-mirrors\" = [\"http://192.0.2.1.or.https.your-mirror.example.com\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json'
+    daemon_json=$(jq ".\"registry-mirrors\" = [ $daemon_string ]" /etc/docker/daemon.json)
+    echo "$daemon_json" > /etc/docker/daemon.json
+  fi
+
 }
 
 main $@
