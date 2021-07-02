@@ -70,6 +70,17 @@ genmac () {
   echo "$DEFAULT_MAC_ADDRESS_BLOCK$end" >&3
 }
 
+set_registry_mirror () {
+  squawk 15 'Set registry mirror on all servers'
+  squawk 25 'https://cloud.google.com/container-registry/docs/pulling-cached-images'
+  #echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://registry-1.docker.io"' > /tmp/docker
+  #REGISTRY_MIRROR=https://thisregistry.com
+  printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR > /tmp/docker
+  copy_in_parallel_to_all /tmp/docker /tmp/docker
+  command2run="cat /tmp/docker > /etc/default/docker ; rm /tmp/docker"
+  do_command_in_parallel "$command2run"
+}
+
 set_verbosity () {
   if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     VERBOSITY=0
@@ -195,23 +206,24 @@ get_major_minor_kube_version () {
   this_name=$3
   this_port=$4
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
-  squawk 101 "get_major_minor_kube_version set command"
+  squawk 91 "get_major_minor_kube_version set e command"
   set +e
   command2run="kubeadm version 2>/dev/null"
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
   #TEST_KUBEADM_VER=`sudo_command $this_port $this_user $this_host "$command2run"`
   TEST_KUBEADM_VER_STEP_1=$(ssh -p $this_port $this_user@$this_host "$command2run")
   #TEST_KUBEADM_VER_STEP_1=$(sudo_command $this_port $this_user $this_host "$command2run")
-  squawk 101 "get_major_minor_kube_version step 1 output=$TEST_KUBEADM_VER_STEP_1"
+  squawk 91 "get_major_minor_kube_version step 1 output=$TEST_KUBEADM_VER_STEP_1"
   TEST_KUBEADM_VER_STEP_2=$(echo $TEST_KUBEADM_VER_STEP_1 | grep -v -P '^#')
-  squawk 101 "get_major_minor_kube_version step 2 output=$TEST_KUBEADM_VER_STEP_2"
+  squawk 91 "get_major_minor_kube_version step 2 output=$TEST_KUBEADM_VER_STEP_2"
   TEST_KUBEADM_VER=$(echo $TEST_KUBEADM_VER_STEP_2 | sed 's/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/' )
-  squawk 101 "get_major_minor_kube_version step 3 output=$TEST_KUBEADM_VER"
-  squawk 101 "get_major_minor_kube_version exports"
+  squawk 91 "get_major_minor_kube_version step 3 output=$TEST_KUBEADM_VER"
+  squawk 91 "get_major_minor_kube_version exports"
   export KUBE_MAJOR_VER=$(echo $TEST_KUBEADM_VER|cut -f1 -d,)
   export KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER|cut -f2 -d,)
-  squawk 185 "kube major: $KUBE_MAJOR_VER kube minor: $KUBE_MINOR_VER"
+  squawk 95 "kube major: $KUBE_MAJOR_VER kube minor: $KUBE_MINOR_VER"
   set -e
+  squawk 95 "exiting get_major_minor_kube_version user=$1 host=$2 name=$3 port=$4"
 }
 
 kubash_context () {

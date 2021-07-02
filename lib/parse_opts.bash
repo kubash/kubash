@@ -238,6 +238,13 @@ parse_opts () {
       exit 1
     fi
     do_openebs
+  elif [[ $RAISON == "openunison" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_openunison
   elif [[ $RAISON == "genmac" ]]; then
     genmac
   elif [[ $RAISON == "dry" ]]; then
@@ -366,6 +373,13 @@ parse_opts () {
       exit 1
     fi
     do_decom
+  elif [[ $RAISON == "set_registry" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    set_registry_mirror
   elif [[ $RAISON == "demo" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -591,6 +605,20 @@ parse_opts () {
       exit 1
     fi
     do_tiller
+  elif [[ $RAISON == "cert_manager" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_cert_manager
+  elif [[ $RAISON == "helm" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    helm_three
   elif [[ $RAISON == "refresh" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -823,6 +851,13 @@ parse_opts () {
       master_join $node_join_name $node_join_ip $node_join_user $node_join_port
     fi
     exit 0
+  elif [[ $RAISON == "binupdate" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_binupdate
   else
     squawk 8 'passthru'
     # Else fall through to passing on to kubectl for the current cluster

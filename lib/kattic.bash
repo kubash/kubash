@@ -12,6 +12,12 @@ demo () {
   do_minio
 }
 
+do_binupdate () {
+  cd $KUBASH_DIR
+  rm -f bin/kubectl; make kubectl
+  rm -f bin/helm; make helm
+}
+
 do_redis () {
   cd $KUBASH_DIR/submodules/openebs/k8s/demo/redis
   kubectl --kubeconfig=$KUBECONFIG apply -f \
@@ -66,8 +72,8 @@ do_kafka () {
 
   KUBECONFIG=$KUBECONFIG \
   helm install \
-  --name my-kafka \
-  incubator/kafka \
+    my-kafka \
+    incubator/kafka \
     --set persistence.storageClass=openebs-kafka
 }
 
@@ -81,11 +87,14 @@ do_dashboard () {
   squawk 1 " do_dashboard"
   kubectl --kubeconfig=$KUBECONFIG \
     apply -f \
-    https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+    https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+
 }
 
 do_tiller () {
   squawk 1 " do_tiller"
+  echo 'This is not how helm works anymore!'
+  exit 1
   #kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
   kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
   sleep 5
@@ -95,19 +104,37 @@ do_tiller () {
   $KUBASH_DIR/w8s/tiller.w8
 }
 
+helm_three () {
+  helmthreeTMP=$(mktemp -d)
+  cd $helmthreeTMP
+  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+  chmod 700 get_helm.sh
+  ./get_helm.sh
+  cd
+  rm -Rf $helmthreeTMP
+}
+
 inst_kubedb_helm () {
   KUBECONFIG=$KUBECONFIG \
   helm repo add appscode https://charts.appscode.com/stable/
   KUBECONFIG=$KUBECONFIG \
   helm repo update
   KUBECONFIG=$KUBECONFIG \
-  helm install appscode/kubedb --name kubedb-operator --version 0.11.0 --namespace kube-system
+  helm install \
+    kubedb-operator \
+    appscode/kubedb \
+    --namespace kube-system \
+    --version 0.11.0
   KUBECONFIG=$KUBECONFIG \
   $KUBASH_DIR/w8s/generic.w8 kubedb-operator kube-system
   # It seems we still need to wait further
   sleep 45
   KUBECONFIG=$KUBECONFIG \
-  helm install appscode/kubedb-catalog --name kubedb-catalog --version 0.11.0 --namespace kube-system
+  helm install \
+    kubedb-catalog \
+    appscode/kubedb-catalog \
+    --version 0.11.0 \
+    --namespace kube-system
 }
 
 dotfiles_install () {
@@ -553,7 +580,9 @@ do_metallb () {
       echo "This method is deprecated by upstream"
       exit 1
       KUBECONFIG=$KUBECONFIG \
-        helm install --name metallb stable/metallb
+      helm install \
+        metallb \
+        stable/metallb
     else
       kubectl --kubeconfig=$KUBECONFIG apply -f \
 	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/namespace.yaml
@@ -586,41 +615,49 @@ do_rook () {
       #https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/ceph/toolbox.yaml
     # Ceph
     kubectl --kubeconfig=$KUBECONFIG apply -f \
+      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/crds.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/common.yaml
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/operator.yaml
     $KUBASH_DIR/w8s/generic.w8 rook-ceph-operator rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 rook-discover rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-discover rook-ceph
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/cluster.yaml
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-detect-version rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-csi-detect-version rook-ceph
     $KUBASH_DIR/w8s/generic.w8 csi-rbdplugin rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 rook-ceph-mon rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 rook-ceph-crashcollector rook-ceph
-    $KUBASH_DIR/w8s/generic.w8 csi-cephfsplugin-provisioner rook-ceph
-    kubectl --kubeconfig=$KUBECONFIG apply -f \
-      $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/pool.yaml
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-mon rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-crashcollector rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 rook-ceph-osd rook-ceph
+    #$KUBASH_DIR/w8s/generic.w8 csi-cephfsplugin-provisioner rook-ceph
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+    #  $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/pool.yaml
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       $KUBASH_DIR/submodules/rook/cluster/examples/kubernetes/ceph/toolbox.yaml
+    $KUBASH_DIR/w8s/generic.w8 rook-ceph-tools rook-ceph
 
     # cassandra
-    kubectl --kubeconfig=$KUBECONFIG apply -f \
-      https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
+    #kubectl --kubeconfig=$KUBECONFIG apply -f \
+    #  https://raw.githubusercontent.com/rook/rook/master/cluster/examples/kubernetes/cassandra/operator.yaml
 }
 
 do_openebs () {
     if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
-    helm repo add openebs https://openebs.github.io/charts
-    helm repo update
-    kubash_context
-    KUBECONFIG=$KUBECONFIG \
-    helm install \
-      --namespace openebs \
-      --name $KUBASH_OPENEBS_NAME \
-      openebs/openebs
+      kubectl create ns openebs
+      helm repo add openebs https://openebs.github.io/charts
+      helm repo update
+      kubash_context
+      KUBECONFIG=$KUBECONFIG \
+      helm install \
+        $KUBASH_OPENEBS_NAME \
+        --namespace openebs \
+        openebs/openebs
     else
-      kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+      kubectl --kubeconfig=$KUBECONFIG apply -f https://openebs.github.io/charts/openebs-operator.yaml
     fi
-    kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
+    #kubectl --kubeconfig=$KUBECONFIG create -f https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-storageclasses.yaml
+    kubectl --kubeconfig=$KUBECONFIG apply -f https://raw.githubusercontent.com/openebs/lvm-localpv/master/deploy/lvm-operator.yaml
 }
 
 activate_monitoring () {
@@ -643,4 +680,24 @@ activate_monitoring () {
     alertmanager.yaml
   kubectl --kubeconfig=$KUBECONFIG create -f \
     grafana-operator.yaml
+}
+
+do_openunison () {
+  helm repo add tremolo https://nexus.tremolo.io/repository/helm/
+  helm repo update
+  kubectl create ns openunison
+  helm install openunison tremolo/openunison-operator --namespace openunison
+  $KUBASH_DIR/w8s/generic.w8 openunison-operator openunison
+  echo 'https://github.com/OpenUnison/openunison-k8s-login-activedirectory'
+}
+
+do_portieris () {
+  TMP=$(mktemp -d)
+  cd $TMP
+  PORTIERIS_VERS=v0.10.0
+  wget https://github.com/IBM/portieris/releases/download/${PORTIERIS_VERS}/portieris-${PORTIERIS_VERS}.tgz
+  tar zxvf portieris-${PORTIERIS_VERS}.tgz
+  sh ./portieris/gencerts
+  helm install portieris --create-namespace --namespace portieris ./portieris
+  rm -Rf $TMP
 }

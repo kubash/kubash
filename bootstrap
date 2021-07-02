@@ -4,14 +4,14 @@
 : ${GOPATH:=$HOME/.go}
 PIP_INSTALL_PKGS="netaddr ceph-deploy"
 if [[ "$1" == '-y' ]]; then
-  echo YES
+  echo 'using YES'
   YES='-y'
   YES_ARCH='--noconfirm'
 else
   YES=' '
   YES_ARCH=' '
 fi
-set -e
+set -ex
 
 check_shell () {
   THIS_SHELL=$(echo $SHELL| rev | cut -d'/' -f 1 | rev)
@@ -119,6 +119,7 @@ flight_checks () {
 
 main () {
   . /etc/os-release
+  cat /etc/os-release
 
   WHOAMI=$(whoami)
   if [[ "$WHOAMI" = "root" ]]; then
@@ -129,11 +130,13 @@ main () {
   fi
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
     if [[ "$CIRCLE_STAGE" == "acceptance-test" ]]; then
-      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm net-tools dnsutils'
     elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
-      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+    elif [[ "$UBUNTU_CODENAME" == "focal" ]]; then
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
     else
-      DEB_PKG_GET='jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
     fi
     if type "apt-get" &> /dev/null; then
       check_cmd apt-get
@@ -141,7 +144,7 @@ main () {
       $PSEUDO apt-get $YES install $DEB_PKG_GET
     fi
   elif [[ "$NAME" = 'CentOS Linux' ]]; then
-    YUM_PKG_GET='jq git build-essential python-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils qemu-system-x86'
+    YUM_PKG_GET='sudo jq git build-essential python-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools qemu-kvm qemu-img virt-manager libvirt libvirt-python libvirt-client virt-install virt-viewer bridge-utils qemu-system-x86'
     if type "yum" &> /dev/null; then
       check_cmd yum
       $PSEUDO yum $YES update
@@ -151,7 +154,7 @@ main () {
     fi
   elif [[ "$NAME" = 'Arch Linux' ]]; then
     check_cmd pacman
-    ARCH_PKG_GET='awk nettle gettext jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap net-tools openssh'
+    ARCH_PKG_GET='sudo awk nettle gettext jq git make go unzip curl wget parallel ansible rlwrap python-pip openbsd-netcat rsync nmap net-tools openssh'
     #echo "$PSEUDO pacman -Sy"
     #$PSEUDO pacman -Sy
     #$PSEUDO pacman -Su $YES_ARCH
@@ -172,7 +175,17 @@ main () {
   check_cmd unzip
   check_cmd uname
   check_cmd go
-  check_cmd pip
+  if [[ -x /usr/bin/pip3 ]]; then
+    echo 'Setting PIP=/usr/bin/pip3'
+    PIP=/usr/bin/pip3
+  elif [[ -x $(which pip3) ]]; then
+    echo 'Setting PIP=pip3'
+    PIP=pip3
+  else
+    echo 'Cannot find pip3 Setting PIP=pip'
+    PIP=pip
+  fi
+  check_cmd $PIP
   check_cmd make
   check_cmd parallel
   check_cmd 'grep'
@@ -186,11 +199,9 @@ main () {
     git clone https://github.com/kubash/kubash.git $KUBASH_DIR
   else
     echo "KUBASH_DIR=$KUBASH_DIR found"
-    echo 'attempting to pull in the kubash directory'
+    echo 'using found kubash directory'
     cd $KUBASH_DIR
     pwd
-    ls -alh
-    git pull
     git log -n1|cat
   fi
   export PATH=$HOME/.kubash/bin:$PATH
@@ -226,7 +237,7 @@ main () {
   check_cmd npm
   echo 'ensure jinja2 is installed'
   cd $KUBASH_DIR
-  make jinja2-cli
+  $PIP install --user --upgrade jinja2-cli
   #cat $HOME/.bashrc
   . $HOME/.bashrc
   #echo $PATH
@@ -246,14 +257,15 @@ main () {
   cd $KUBASH_DIR
   make packer
   cd $KUBASH_DIR
-  make coreos_key
+  # coreOS is deprecated
+  #make coreos_key
   cd $KUBASH_DIR
   make kubectl
   cd $KUBASH_DIR
   check_install crictl
   # onessl is deprecated and is being removed
   #check_install onessl
-  pip install --user --upgrade $PIP_INSTALL_PKGS
+  $PIP install --user --upgrade $PIP_INSTALL_PKGS
   if [ -w /usr/local/bin ] ; then
     touch /usr/local/bin/test_file_01
     rm /usr/local/bin/test_file_01

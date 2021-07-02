@@ -1,9 +1,12 @@
+default:
+	@echo 'Welcome to the kubash Makefile'
+
 # Reactionetes Makefile
 # define various versions
 $(eval CT_VERSION := "v0.9.0")
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.3")
-$(eval PACKER_VERSION := "1.6.2")
+$(eval PACKER_VERSION := "1.7.0")
 $(eval CRICTL_VERSION := "v1.18.0")
 
 # Install location
@@ -51,10 +54,17 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 # Istio
-$(eval ISTIO_VERSION := "1.6.7")
+$(eval ISTIO_VERSION := "1.10.0")
 
 # K9S
-$(eval K9S_VERSIION := "v0.21.7")
+$(eval K9S_VERSION := "v0.23.10")
+
+$(eval KUBECFG_VERSION := "v0.16.0")
+$(eval TERRAFORM_VERSION := "0.15.3")
+$(eval KUBEBUILDER_VERS := 2.3.1)
+$(eval KIND_VERS := v0.9.0)
+$(eval RKE_VERS := v1.0.16)
+
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
@@ -81,10 +91,12 @@ $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
 	@echo 'Installing helm'
 	$(eval TMP := $(shell mktemp -d --suffix=HELMTMP))
-	curl -sLo $(TMP)/helmget --silent https://raw.githubusercontent.com/helm/helm/master/scripts/get
+	curl -fsSL -o $(TMP)/get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+	chmod 700 $(TMP)/get_helm.sh
+	cd $(TMP); \
 	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
-	sudo bash $(TMP)/helmget
-	rm $(TMP)/helmget
+	bash $(TMP)/get_helm.sh
+	rm $(TMP)/get_helm.sh
 	rmdir $(TMP)
 
 istioctl: $(KUBASH_BIN)
@@ -106,7 +118,7 @@ $(KUBASH_BIN)/k9s:
 	@echo 'Installing k9s'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://github.com/derailed/k9s/releases/download/v0.21.7/k9s_Linux_x86_64.tar.gz |tar zxf -
+	curl -L https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_x86_64.tar.gz |tar zxf -
 	mv $(TMP)/k9s $(KUBASH_DIR)/bin/
 	rm -Rf $(TMP)
 
@@ -178,7 +190,7 @@ $(KUBASH_BIN)/kompose:
 	$(eval TMP := $(shell mktemp -d --suffix=MINIKUBETMP))
 	cd $(TMP) \
 	&& curl -L https://github.com/kubernetes/kompose/releases/download/v1.18.0/kompose-linux-amd64 -o kompose
-	install -m755 ${TMP}/kompose $(KUBASH_BIN)/
+	install -m511 ${TMP}/kompose $(KUBASH_BIN)/
 	rm ${TMP}/kompose
 	rmdir ${TMP}
 
@@ -278,8 +290,8 @@ oc: $(KUBASH_BIN)
 $(KUBASH_BIN)/oc:
 	$(eval TMP := $(shell mktemp -d --suffix=OCTMP))
 	cd $(TMP) \
-	&& curl -sL https://github.com/openshift/origin/releases/download/v3.9.0-alpha.3/openshift-origin-client-tools-v3.9.0-alpha.3-78ddc10-linux-64bit.tar.gz | tar zxvf -
-	mv -v $(TMP)/openshift-origin-client-tools*/oc $(KUBASH_BIN)/
+	&& curl -sL https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar zxvf -
+	sudo install -v -m511 ${TMP}/oc $(KUBASH_BIN)/oc
 	rm -Rf $(TMP)
 	
 
@@ -413,6 +425,16 @@ $(KUBASH_BIN)/ct:
 	&& mv ct $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
+opctl: $(KUBASH_BIN)/opctl
+
+$(KUBASH_BIN)/opctl:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl -sLO https://github.com/onepanelio/core/releases/latest/download/opctl-linux-amd64 \
+	&& chmod +x opctl-linux-amd64 \
+	&& mv -v opctl-linux-amd64 $(KUBASH_BIN)/opctl
+	rm -Rf $(TMP)
+
 gcloud:
 	curl https://sdk.cloud.google.com | bash
 
@@ -422,10 +444,9 @@ submodules/openebs:
 cfssl:
 	sudo curl -s -o $(KUBASH_BIN)/cfssl https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
 	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+	sudo ls -alh $(KUBASH_BIN)/
 	sudo chmod +x $(KUBASH_BIN)/cfssl*
 
-jinja2-cli:
-	pip install --user --upgrade jinja2-cli
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh
@@ -448,3 +469,124 @@ testy:
 	kubash yaml2cluster -n testy ~/.kubash/examples/testy-cluster.yaml
 	kubash -n testy -y provision
 	kubash -n testy --verbosity=105 etcd_ext
+
+
+kustomize: $(KUBASH_BIN)/kustomize
+
+$(KUBASH_BIN)/kustomize:
+	$(eval TMP := $(shell mktemp -d --suffix=kustomizeTMP))
+	cd $(TMP) \
+  && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+	mv -v  $(TMP)/kustomize $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+kubectl-cert_manager: $(KUBASH_BIN)/kubectl-cert_manager
+
+$(KUBASH_BIN)/kubectl-cert_manager:
+	$(eval TMP := $(shell mktemp -d --suffix=CTmgrTMP))
+	cd $(TMP) \
+	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/v1.0.4/kubectl-cert_manager-linux-amd64.tar.gz \
+	&& tar xzf kubectl-cert-manager.tar.gz \
+	&& sudo mv kubectl-cert_manager $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+kubeprod: $(KUBASH_BIN)/kubeprod
+
+$(KUBASH_BIN)/kubeprod:
+	$(eval BKPR_VERSION := $(shell curl --silent "https://api.github.com/repos/bitnami/kube-prod-runtime/releases/latest" | jq -r '.tag_name'))
+	$(eval TMP := $(shell mktemp -d --suffix=prodTMP))
+	cd $(TMP) \
+	&& curl -LO https://github.com/bitnami/kube-prod-runtime/releases/download/${BKPR_VERSION}/bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
+	&& tar zxf bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
+	&& chmod +x bkpr-${BKPR_VERSION}/kubeprod \
+	&& sudo mv -v bkpr-${BKPR_VERSION}/kubeprod $(KUBASH_BIN)/
+	rm -Rf $(TMP)
+
+kubecfg: $(KUBASH_BIN)/kubecfg
+
+$(KUBASH_BIN)/kubecfg:
+	$(eval TMP := $(shell mktemp -d --suffix=kbTMP))
+	cd $(TMP) \
+	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/${KUBECFG_VERSION}/kubecfg-linux-amd64
+	install -m511 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
+	rm -Rf $(TMP)
+
+terraform: $(KUBASH_BIN)/terraform
+
+$(KUBASH_BIN)/terraform:
+	$(eval TMP := $(shell mktemp -d --suffix=terraformTMP))
+	cd $(TMP) \
+		&& curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+		&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+	install -m511 $(TMP)/terraform $(KUBASH_BIN)/terraform
+	rm -Rf $(TMP)
+
+
+kubebuilder: $(KUBASH_BIN)/kubebuilder
+
+$(KUBASH_BIN)/kubebuilder:
+	# https://book.kubebuilder.io/quick-start.html#installation
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	#os=$(go env GOOS)
+	$(eval os := $(shell go env GOOS))
+	#arch=$(go env GOARCH)
+	$(eval arch := $(shell go env GOARCH))
+	# download kubebuilder and extract it to tmp
+	# curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+	curl -L https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${os}/${arch} | tar -xz -C ${TMP}
+	# move to a long-term location and put it on your path
+	# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
+	#sudo mv /tmp/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch} /usr/local/kubebuilder
+	ls -Ralh ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/
+	sudo install -m511 ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/bin/kubebuilder $(KUBASH_BIN)/kubebuilder
+	#export PATH=${PATH}:/usr/local/kubebuilder/bin
+	rm -Rf $(TMP)
+
+kind: $(KUBASH_BIN)/kind
+
+$(KUBASH_BIN)/kind:
+	# https://kind.sigs.k8s.io/docs/user/quick-start/
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	curl -Lo $(TMP)/kind https://kind.sigs.k8s.io/dl/${KIND_VERS}/kind-linux-amd64
+	chmod +x $(TMP)/kind
+	sudo install -v -m511 ${TMP}/kind $(KUBASH_BIN)/kind
+	rm -Rf $(TMP)
+
+rke: $(KUBASH_BIN)/rke
+
+$(KUBASH_BIN)/rke:
+	# https://rke.sigs.k8s.io/docs/user/quick-start/
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	curl -Lo $(TMP)/rke https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64
+	chmod +x $(TMP)/rke
+	sudo install -v -m511 ${TMP}/rke $(KUBASH_BIN)/rke
+	rm -Rf $(TMP)
+
+talos: $(KUBASH_BIN)/talos
+
+$(KUBASH_BIN)/talos:
+	# https://talos.sigs.k8s.io/docs/user/quick-start/
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	curl -Lo $(TMP)/talosctl https://github.com/talos-systems/talos/releases/latest/download/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
+	chmod +x $(TMP)/talos
+	sudo install -v -m511 ${TMP}/talos $(KUBASH_BIN)/talos
+	rm -Rf $(TMP)
+
+arkade: $(KUBASH_BIN)/arkade
+
+$(KUBASH_BIN)/arkade:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sLS https://dl.get-arkade.dev | sh
+	chmod +x $(TMP)/arkade
+	sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
+	rm -Rf $(TMP)
+
+nomad: $(KUBASH_BIN)/nomad
+
+$(KUBASH_BIN)/nomad:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sLS https://releases.hashicorp.com/nomad/1.1.0/nomad_1.1.0_linux_amd64.zip | jar xv
+	cd $(TMP) && ls -alh
+	chmod +x $(TMP)/nomad
+	sudo install -v -m511 ${TMP}/nomad $(KUBASH_BIN)/nomad
+	rm -Rf $(TMP)

@@ -59,7 +59,7 @@ w8_kubectl () {
 
 w8_node () {
   node_name=$1
-  squawk 3 "Wait on the K8S node $node_name to become available" -n
+  squawk 3 "Wait on the K8S node $node_name to become available"
   sleep 5
   # while loop
   countone_w8_node=1
