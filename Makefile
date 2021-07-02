@@ -65,6 +65,7 @@ $(eval KUBEBUILDER_VERS := 2.3.1)
 $(eval KIND_VERS := v0.9.0)
 $(eval RKE_VERS := v1.0.16)
 
+
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
 reqs: linuxreqs
@@ -445,6 +446,7 @@ cfssl:
 	sudo curl -s -o $(KUBASH_BIN)/cfssljson https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
 	sudo ls -alh $(KUBASH_BIN)/
 	sudo chmod +x $(KUBASH_BIN)/cfssl*
+
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh

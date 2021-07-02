@@ -1,7 +1,7 @@
 #!/bin/bash
+# This is a full test of the bootstrap
 set -eux
 TMP=$(mktemp -d)
-RAND_TMP="$(uuidgen -r | sha256sum | base64 | head -c 8)"
 trap "rm -rf $TMP" EXIT
 
 cp bootstrap $TMP/
