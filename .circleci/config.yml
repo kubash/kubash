@@ -30,69 +30,51 @@ jobs:
     steps:
     - checkout
     - run:
-        name: download
+        name: DL pupernetes
         command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.11.0/pupernetes
           -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
     - run:
         name: apt
         command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
     - run:
-        name: run
+        name: pupernetes
         command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
           --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config
           --dns-check
     - run:
-        name: kubectl
+        name: kubectl get all
         command: kubectl get all
+    - run:
+        name: kubectl config
+        command: cat $HOME/.kube/config
     - run:
         name: Setup helm
         command: |
-          curl -L https://git.io/get_helm.sh | bash
-          helm init
-          helm repo add banzaicloud-stable https://kubernetes-charts.banzaicloud.com/
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          helm install bitnami/mysql --generate-name
+          helm ls
     - run:
         name: Upgrade Pip
         command: |
-          pip install --upgrade pip
+          echo skip pip install --upgrade pip
     - run:
         name: Boostrap Kubash
         command: |
           export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          bash bootstrap
+          echo bash bootstrap -y
+          bash scripts/test_bootstrap.sh
     - run:
         name: Test Kubash yaml2cluster
         command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
           export TERM=dumb
-          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
-          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
-    - run:
-        name: Test Kubectl get nodes
-        command: |
-          kubectl get nodes
-    - run:
-        name: Test Kubash tiller
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          export RAND_TMP=$(uuidgen -r | sha256sum | base64 | head -c 8)
-          kubash yaml2cluster examples/example-cluster.yaml -n $RAND_TMP
-          cp $HOME/.kube/config $HOME/.kubash/clusters/$RAND_TMP/
-          echo $KUBERNETES_VERSION > $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          echo $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          cat $HOME/.kubash/clusters/$RAND_TMP/kubernetes_version
-          kubash -n $RAND_TMP tiller
-    - run:
-        name: Install Bash Automated Testing Suite
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
-          export TERM=dumb
-          make bats
+          bash scripts/test_yaml2cluster.sh
     - run:
         name: Run Bash Automated Testing Suite
         command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
           export TERM=dumb
-          bats .ci/.tests.bats
+          bash scripts/test_bats.sh $HOME/.kubash
 workflows:
   version: 2
   ci:

@@ -6,16 +6,17 @@ TMP=$(mktemp -d)
 : ${ADDITIONAL_INSTALL_PKGS:=' '}
 : ${DOCKER_PKG:='18.06.2.ce-3'}
 : ${DOCKER_PKG_NAME:="docker-ce-${DOCKER_PKG}"}
-: ${KUBEPKG_VERSION:="1.15.3"}
+: ${KUBEPKG_VERSION:="1.19.3"}
 : ${ETCD_VERSION:="3.2.22"}
 : ${KUBELET_PKG:="kubelet-$KUBEPKG_VERSION"}
 : ${KUBEADM_PKG:="kubeadm-$KUBEPKG_VERSION"}
 : ${KUBECTL_PKG:="kubectl-$KUBEPKG_VERSION"}
 : ${ETCD_PKG:="etcd-$ETCD_VERSION"}
-#: ${DOCKER_CGROUP_DRIVER:='systemd'}
-: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
+: ${DOCKER_CGROUP_DRIVER:='systemd'}
+#: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
 : ${CEPH_RELEASE:="luminous"}
 . /etc/os-release
+: ${REGISTRY_MIRROR:=https://registry-1.docker.io}
 
 if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
 : ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived ntp rsync ansible socat python python-pip wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct iscsi-initiator-utils scsi-target-utils yum-utils'}
@@ -23,6 +24,22 @@ elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
   # https://www.tecmint.com/create-network-bridge-in-rhel-centos-8/
 : ${INSTALL_PKGS:='zsh sysstat fail2ban unzip device-mapper-persistent-data lvm2 golang ebtables ethtool keepalived chrony rsync ansible socat python2-pip python3-pip wget git net-tools bind-utils iptables-services bash-completion kexec-tools sos psacct iscsi-initiator-utils yum-utils'}
 fi
+install_zabbix_agent () {
+
+  # Configure package repository
+  if [[ "$PRETTY_NAME" == "CentOS Linux 7 (Core)" ]]; then
+    rpm -Uvh https://repo.zabbix.com/zabbix/4.0/rhel/7/x86_64/zabbix-release-4.0-2.el7.noarch.rpm
+  #elif [[ "$PRETTY_NAME" == "CentOS Linux 8 (Core)" ]]; then
+  else
+    echo 'redhat version unsupported'
+    exit 1
+  fi
+
+  sudo yum update
+  sudo yum install zabbix zabbix-agent
+  #sudo systemctl enable zabbix-agent
+}
+
 
 cd $TMP
 cat <<EOF > $TMP/inventory
@@ -289,6 +306,18 @@ export GOPATH=$HOME/.go
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
 echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
 
+# Fixing the following:
+# Warning: The system is configured to read the RTC time in the local time zone.                                                                
+#          This mode can not be fully supported. It will create various problems  
+#          with time zone changes and daylight saving time adjustments. The RTC                                             
+#          time is never updated, it relies on external facilities to maintain it.                
+#          If at all possible, use RTC in UTC by calling                                                                                        
+#          'timedatectl set-local-rtc 0'. 
+# Applying fix 
+timedatectl set-local-rtc 0
+systemctl enable iscsid
+
+printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $REGISTRY_MIRROR >> /etc/default/docker
 # remove temp
 cd
 rm -Rf $TMP

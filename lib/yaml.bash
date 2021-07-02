@@ -50,6 +50,8 @@ json2cluster () {
     JQ_INTERPRETER="$JQ_INTERPRETER_4_0_0"
   elif [[ "$KUBASH_CSV_VER" == '5.0.0' ]]; then
     JQ_INTERPRETER="$JQ_INTERPRETER_5_0_0"
+  elif [[ "$KUBASH_CSV_VER" == '6.0.0' ]]; then
+    JQ_INTERPRETER="$JQ_INTERPRETER_6_0_0"
   else
     croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
   fi
@@ -83,6 +85,8 @@ json2cluster () {
       CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize"
     elif [[ "$KUBASH_CSV_VER" == '5.0.0' ]]; then
       CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_kvm_os_variant,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize,$K8S_storageTarget,$K8S_storageMountPath,$K8S_storageUUID"
+    elif [[ "$KUBASH_CSV_VER" == '6.0.0' ]]; then
+      CSV_BUILDER="$K8S_node,$K8S_role,$K8S_cpuCount,$K8S_Memory,$K8S_sshPort,$K8S_network1,$K8S_mac1,$K8S_ip1,$K8S_routingprefix1,$K8S_subnetmask1,$K8S_broadcast1,$K8S_gateway1,$K8S_provisionerHost,$K8S_provisionerUser,$K8S_provisionerPort,$K8S_provisionerBasePath,$K8S_os,$K8S_kvm_os_variant,$K8S_virt,$K8S_network2,$K8S_mac2,$K8S_ip2,$K8S_routingprefix2,$K8S_subnetmask2,$K8S_broadcast2,$K8S_gateway2,$K8S_network3,$K8S_mac3,$K8S_ip3,$K8S_routingprefix3,$K8S_subnetmask3,$K8S_broadcast3,$K8S_gateway3,$K8S_iscsitarget,$K8S_iscsichapusername,$K8S_iscsichappassword,$K8S_iscsihost,$K8S_storagePath,$K8S_storageType,$K8S_storageSize,$K8S_storageTarget,$K8S_storageMountPath,$K8S_storageUUID,$K8S_storagePath1,$K8S_storageType1,$K8S_storageSize1,$K8S_storageTarget1,$K8S_storageMountPath1,$K8S_storageUUID1,$K8S_storagePath2,$K8S_storageType2,$K8S_storageSize2,$K8S_storageTarget2,$K8S_storageMountPath2,$K8S_storageUUID2,$K8S_storagePath3,$K8S_storageType3,$K8S_storageSize3,$K8S_storageTarget3,$K8S_storageMountPath3,$K8S_storageUUID3"
     else
       croak 3  "CSV columns cannot be set, csv_ver=$CSV_VER not recognized"
     fi
