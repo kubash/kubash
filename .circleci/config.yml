@@ -1,26 +1,28 @@
-# Orb 'banzaicloud/helm@0.0.5' resolved to 'banzaicloud/helm@0.0.5'
-version: 2
-jobs:
-  check:
-    docker:
-    - image: circleci/golang:1.14
-      environment:
-        GOFLAG: -mod=readonly
-    - image: vault:1.1.0
-      environment:
-        SKIP_SETCAP: true
-        KUBERNETES_VERSION: v1.18.6
-        VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
-        TERM: dumb
-        GOPATH: /home/circleci/.go
+version: 2 # use CircleCI 2.0
+jobs: # basic units of work in a run
+  build: # runs not using Workflows must have a `build` job as entry point
+    docker: # run the steps with Docker
+      #- image: cimg/go:1.17
+      - image: circleci/golang:1.16
+        environment:
+          GOFLAG: -mod=readonly
+      - image: vault:1.1.0
+        environment:
+          SKIP_SETCAP: true
+          KUBERNETES_VERSION: v1.21.5
+          VAULT_DEV_ROOT_TOKEN_ID: 227e1cce-6bf7-30bb-2d2a-acc854318caf
+          TERM: dumb
+          GOPATH: /home/circleci/.go
+          CIRCLECI_KUBASH: true
+    parallelism: 2
 
     resource_class: small
     working_directory: /home/circleci/.kubash
     steps:
-    - checkout
-    - run:
-        name: Check dependency licenses
-        command: bash bootstrap
+      - checkout
+      - run:
+          name: Check dependency licenses
+          command: bash bootstrap
   acceptance-test:
     machine: true
     working_directory: /home/circleci/.kubash
@@ -30,12 +32,18 @@ jobs:
     steps:
     - checkout
     - run:
+        name: apt
+        command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
+    - run:
+        name: upgrade Go
+        command: |
+          curl -sL https://golang.org/dl/go1.17.2.linux-amd64.tar.gz | sudo tar -C /usr/local -xzf -
+          echo 'PATH=/usr/local/bin:$PATH'|sudo tee -a /root/.bashrc
+          go version
+    - run:
         name: DL pupernetes
         command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.11.0/pupernetes
           -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
-    - run:
-        name: apt
-        command: sudo apt-get update -qq && sudo apt-get install -yqq systemd
     - run:
         name: pupernetes
         command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
@@ -60,26 +68,30 @@ jobs:
         command: |
           echo skip pip install --upgrade pip
     - run:
+        name: version Go
+        command: |
+          go version
+    - run:
         name: Boostrap Kubash
         command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin/:${HOME}/.local/bin/:${PATH}
+          export PATH=$(pwd)/bin:${HOME}/.kubash/bin:${HOME}/.local/bin:/usr/local/bi:${PATH}
           echo bash bootstrap -y
-          bash scripts/test_bootstrap.sh
+          #bash scripts/test_bootstrap.sh
     - run:
         name: Test Kubash yaml2cluster
         command: |
           export TERM=dumb
-          bash scripts/test_yaml2cluster.sh
+          #bash scripts/test_yaml2cluster.sh
     - run:
         name: Run Bash Automated Testing Suite
         command: |
           export TERM=dumb
-          bash scripts/test_bats.sh $HOME/.kubash
+          echo disabled "bash scripts/test_bats.sh $HOME/.kubash"
 workflows:
   version: 2
-  ci:
+  build-workflow:
     jobs:
-    - check
+    - build
     - acceptance-test:
         requires:
-        - check
+        - build

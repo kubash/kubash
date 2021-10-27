@@ -42,6 +42,7 @@ print_help=no
 . $KUBASH_LIB/kvm.bash
 . $KUBASH_LIB/ingress.bash
 . $KUBASH_LIB/net.bash
+. $KUBASH_LIB/nomad.bash
 . $KUBASH_LIB/packer.bash
 . $KUBASH_LIB/kinit.bash
 . $KUBASH_LIB/yaml.bash

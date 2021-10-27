@@ -2,6 +2,7 @@ arkade
 bats
 bridge
 cfssl
+cfssl-certinfo
 cfssljson
 crictl
 ct
@@ -45,3 +46,9 @@ tiller
 tuning
 velero
 vlan
+nomad
+consul
+vault
+kubectl-minio
+mc
+minio

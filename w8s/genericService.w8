@@ -1,0 +1,30 @@
+#!/bin/sh
+if [ $# -ne 2 ]; then
+  # Print usage
+  echo -n 'Error! wrong number of arguments'
+  echo " [$#]"
+  echo 'usage:'
+  echo "$0 what-service-to-wait-for in-what-namespace"
+  exit 1
+fi
+
+echo -n "wait on service $1 to become available"
+sleep 1
+
+# while loop
+countone=1
+# timeout for 15 minutes
+while [ $countone -lt 151 ]
+do
+  echo -n '.'
+  RESULT=$(kubectl get svc --namespace=$2 | grep $1)
+  if [ "$RESULT" ]; then
+      echo '.'
+      echo "$RESULT"
+      break
+  fi
+  countone=`expr $countone + 1`
+  sleep 3
+done
+
+echo "$1 service is now up"
