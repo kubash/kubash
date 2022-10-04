@@ -6,6 +6,7 @@ submodules='istio kubeadm2ha kubespray openshift-ansible rook'
 upmodule () {
   cd $this_pwd/submodules/$1
   pwd
+  git fetch --all
   git pull
 }
 for i in $submodules; do upmodule $i; done

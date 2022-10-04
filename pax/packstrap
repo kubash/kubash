@@ -5,12 +5,17 @@ sed 's/^/export /' /etc/os-release > /tmp/os-release
 . /tmp/os-release
 printenv
 : ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
-if [ $UBUNTU_CODENAME = 'focal' ]; then
-  echo 'Focal is the OS'
-  : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
-else
-  echo 'Focal is not the OS'
-  : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+
+if [ $ID = 'debian' ]; then
+    : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
+elif [ $ID = 'ubuntu' ]; then
+  if [ $UBUNTU_CODENAME = 'focal' ]; then
+    echo 'Focal is the OS'
+    : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
+  else
+    echo 'Focal is not the OS'
+    : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+  fi
 fi
 # this one is for customization
 : ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
@@ -128,6 +133,9 @@ install_spec_docker () {
 
   install_docker_compose
 
+  rm -fv /etc/containerd/config.toml
+  systemctl daemon-reload
+  systemctl restart containerd
   systemctl enable docker && systemctl start docker
   systemctl enable kubelet && systemctl start kubelet
 
@@ -159,7 +167,9 @@ EOF
   # Install CRI-O
   sudo apt-get -y install cri-o-1.17
 
+  rm -fv /etc/containerd/config.toml
   systemctl daemon-reload
+  systemctl restart containerd
   systemctl enable --now crio
 }
 
@@ -203,10 +213,14 @@ install_kubernetes_docker () {
 
   # Install Docker CE
   apt-get update && apt-get install -y \
-      containerd.io=1.2.13-2 \
-      docker-ce=5:19.03.11~3-0~ubuntu-$(lsb_release -cs) \
-      docker-ce-cli=5:19.03.11~3-0~ubuntu-$(lsb_release -cs)
+      containerd.io \
+      docker-ce \
+      docker-ce-cli
 
+  #deprecating versions
+      #containerd.io=1.2.13-2 \
+      #docker-ce=5:19.03.11~3-0~ubuntu-$(lsb_release -cs) \
+      #docker-ce-cli=5:19.03.11~3-0~ubuntu-$(lsb_release -cs)
   # going with above temporarily
   #docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
 
@@ -234,7 +248,9 @@ EOF
   install_pips
 
   # Restart docker.
+  rm -fv /etc/containerd/config.toml
   systemctl daemon-reload
+  systemctl restart containerd
   systemctl enable docker && systemctl restart docker
   systemctl enable kubelet && systemctl restart kubelet
 }
@@ -253,7 +269,7 @@ EOF
     cat << EOF > /usr/local/bin/get-ip-address
     #!/bin/bash
     echo -n 'IP address = '
-    /sbin/ifconfig | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
+    /sbin/ip a | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
     echo -n 'SSH is on port: '
     grep Port /etc/ssh/sshd_config
 EOF
@@ -406,7 +422,9 @@ EOD
 			curl $K8S_REGISTRY_MIRROR_HUB/ca.crt > /usr/share/ca-certificates/docker_registry_proxy.crt
 			echo "docker_registry_proxy.crt" >> /etc/ca-certificates.conf
 			update-ca-certificates --fresh
+      rm -fv /etc/containerd/config.toml
 			systemctl daemon-reload
+      systemctl restart containerd
 			systemctl restart docker.service
 
     fi

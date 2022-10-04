@@ -8,10 +8,13 @@ do_cert_manager () {
 do_nginx_ingress () {
   INGRESS_NAME=$1
   KUBECONFIG=$KUBECONFIG \
-  helm install \
+  helm upgrade \
+    --install \
     $INGRESS_NAME \
-    stable/nginx-ingress \
-    --set rbac.create=true
+    ingress-nginx \
+    --repo https://kubernetes.github.io/ingress-nginx \
+    --namespace ingress-nginx \
+    --create-namespace
 }
 
 taint_ingress () {

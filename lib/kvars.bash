@@ -86,7 +86,10 @@ find_defaults
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}
 : ${VOYAGER_VERSION:='v12.0.0'}
-: ${METALLB_VERSION:='v0.9.5'}
+: ${METALLB_VERSION:='v0.13.4'}
+: ${PERCONA_NAMESPACE:='pxc'}
+: ${PERCONA_STORAGE_REQ:='20Gi'}
+: ${PERCONA_BACKUP_ENABLED:='false'}
 : ${VOYAGER_ADMISSIONWEBHOOK:='--set apiserver.enableValidatingWebhook=true'}
 : ${LINKERD_URL:='https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-ingress-controller.yml'}
 : ${ISTIO_GATEWAY_TYPE=LoadBalancer}
@@ -99,6 +102,8 @@ find_defaults
 # can be any of off,metadata,falloc,full
 : ${QEMU_PREALLOCATION:='off'}
 : ${CERT_MANAGER_VERSION:='1.0.4'}
+: ${CONSUL_VERSION:='0.39.0'}
+: ${CONSUL_METHOD:='helm'}
 
 # CSV vars
 JQ_INTERPRETER_1_0_0='.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \

@@ -35,9 +35,20 @@ do_rabbitmq () {
 }
 
 do_percona () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/percona
-  kubectl --kubeconfig=$KUBECONFIG apply -f \
-   demo-percona-mysql-pvc.yaml
+  #cd $KUBASH_DIR/submodules/openebs/k8s/demo/percona
+  #kubectl --kubeconfig=$KUBECONFIG apply -f \
+  # demo-percona-mysql-pvc.yaml
+
+  helm repo add percona https://percona.github.io/percona-helm-charts/
+  helm repo update
+  #helm install my-op percona/pxc-operator
+  kubectl --kubeconfig=$KUBECONFIG \
+    create namespace ${PERCONA_NAMESPACE} --dry-run=client -o yaml \
+    | kubectl --kubeconfig=$KUBECONFIG apply -f -
+  KUBECONFIG=$KUBECONFIG \
+  helm install my-db percona/pxc-db --namespace ${PERCONA_NAMESPACE} \
+      --set pxc.volumeSpec.resources.requests.storage=${PERCONA_STORAGE_REQ} \
+        --set backup.enabled=${PERCONA_BACKUP_ENABLED}
 }
 
 do_jupyter () {
@@ -87,8 +98,7 @@ do_dashboard () {
   squawk 1 " do_dashboard"
   kubectl --kubeconfig=$KUBECONFIG \
     apply -f \
-    https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
-
+    https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.1/aio/deploy/recommended.yaml
 }
 
 do_tiller () {
@@ -584,12 +594,11 @@ do_metallb () {
         metallb \
         stable/metallb
     else
-      kubectl --kubeconfig=$KUBECONFIG apply -f \
-	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/namespace.yaml
-      kubectl --kubeconfig=$KUBECONFIG apply -f \
-	https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/manifests/metallb.yaml
-	# On first install only
-      kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+      kubectl --kubeconfig=$KUBECONFIG \
+        apply -f \
+        https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml
+      kubectl --kubeconfig=$KUBECONFIG \
+        create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
     fi
 }
 
@@ -701,3 +710,5 @@ do_portieris () {
   helm install portieris --create-namespace --namespace portieris ./portieris
   rm -Rf $TMP
 }
+
+

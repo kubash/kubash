@@ -54,22 +54,26 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 # Istio
-$(eval ISTIO_VERSION := "1.10.0")
+$(eval ISTIO_VERSION := "1.14.2")
 
 # K9S
 $(eval K9S_VERSION := "v0.23.10")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.15.3")
-$(eval KUBEBUILDER_VERS := 2.3.1)
+$(eval KUBEBUILDER_VERS := latest)
 $(eval KIND_VERS := v0.9.0)
-$(eval RKE_VERS := v1.0.16)
+$(eval RKE_VERS := v1.3.2)
 $(eval KOMPOSE_VERSION := "v1.22.0")
-$(eval NOMAD_VERSION := "1.1.5")
-$(eval VAULT_VERSION := "1.7.3")
-$(eval CONSUL_VERSION := "1.10.1")
+$(eval NOMAD_VERSION := "1.3.1")
+$(eval VAULT_VERSION := "1.10.3")
+$(eval CONSUL_VERSION := "1.12.0")
+$(eval WAYPOINT_VERSION := "0.7.2")
+$(eval VELERO_VERS := v1.7.1)
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
+
+extras: arkade bats cfssl crictl ct helm istioctl k9s kind kompose kubebuilder kubecfg kubectl kubectl-cert_manager kubedb kubeprod kustomize minikube nomad oc opctl packer rke talosctl terraform tiller velero nomad consul vault kubectl-minio mc minio 
 
 reqs: linuxreqs
 
@@ -112,7 +116,7 @@ $(KUBASH_BIN)/istioctl:
 	@echo 'Installing istioctl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$(ISTIO_VERSION) sh -
+	curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$(ISTIO_VERSION) TARGET_ARCH=x86_64 sh -
 	mv $(TMP)/istio-$(ISTIO_VERSION)/bin/istioctl $(KUBASH_DIR)/bin/
 	rm -Rf $(TMP)/istio-$(ISTIO_VERSION)
 	rmdir $(TMP)
@@ -444,16 +448,40 @@ $(KUBASH_BIN)/opctl:
 gcloud:
 	curl https://sdk.cloud.google.com | bash
 
+az:
+	curl -L https://aka.ms/InstallAzureCli | bash
+
+aws: $(KUBASH_BIN)/aws
+
+$(KUBASH_BIN)/aws:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	cd $(TMP) \
+	&& curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+	&& unzip awscliv2.zip \
+	&& sudo ./aws/install -b $(KUBASH_BIN) --update
+	aws --version
+	rm -Rf $(TMP)
+
+eksctl: $(KUBASH_BIN)/eksctl
+
+$(KUBASH_BIN)/eksctl:
+	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
+	$(eval UNAME_S := $(shell uname -s))
+	curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_${UNAME_S}_amd64.tar.gz" | tar xz -C $(TMP)
+	install -m511 $(TMP)/eksctl $(KUBASH_BIN)/eksctl
+	rm -Rf $(TMP)
+	eksctl version
+
 submodules/openebs:
 	cd submodules; git clone https://github.com/openebs/openebs.git
 
-cfssl:
-	which go
-	go version
+cfssl: $(GOPATH)/bin/cfssl
+	go get github.com/cloudflare/cfssl/cmd/cfssl-certinfo
+
+$(GOPATH)/bin/cfssl:
 	go get github.com/cloudflare/cfssl/cmd/cfssl
 	go get github.com/cloudflare/cfssl/cmd/cfssljson
 	go get github.com/cloudflare/cfssl/cmd/cfssl-certinfo
-
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh
@@ -476,7 +504,6 @@ testy:
 	kubash yaml2cluster -n testy ~/.kubash/examples/testy-cluster.yaml
 	kubash -n testy -y provision
 	kubash -n testy --verbosity=105 etcd_ext
-
 
 kustomize: $(KUBASH_BIN)/kustomize
 
@@ -539,15 +566,13 @@ $(KUBASH_BIN)/kubebuilder:
 	#arch=$(go env GOARCH)
 	$(eval arch := $(shell go env GOARCH))
 	# download kubebuilder and extract it to tmp
-	# curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
-	curl -L https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${os}/${arch} | tar -xz -C ${TMP}
+	curl -L -o ${TMP}/kubebuilder https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${os}/${arch}
 	# move to a long-term location and put it on your path
-	# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
-	#sudo mv /tmp/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch} /usr/local/kubebuilder
-	ls -Ralh ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/
-	sudo install -m511 ${TMP}/kubebuilder_${KUBEBUILDER_VERS}_${os}_${arch}/bin/kubebuilder $(KUBASH_BIN)/kubebuilder
+	sudo install -m511 ${TMP}/kubebuilder $(KUBASH_BIN)/kubebuilder
 	#export PATH=${PATH}:/usr/local/kubebuilder/bin
-	rm -Rf $(TMP)
+	#rm -Rf $(TMP)
+	rm $(TMP)/kubebuilder
+	rmdir $(TMP)
 
 kind: $(KUBASH_BIN)/kind
 
@@ -569,23 +594,23 @@ $(KUBASH_BIN)/rke:
 	sudo install -v -m511 ${TMP}/rke $(KUBASH_BIN)/rke
 	rm -Rf $(TMP)
 
-talos: $(KUBASH_BIN)/talos
+talosctl: $(KUBASH_BIN)/talosctl
 
-$(KUBASH_BIN)/talos:
+$(KUBASH_BIN)/talosctl:
 	# https://talos.sigs.k8s.io/docs/user/quick-start/
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	curl -Lo $(TMP)/talosctl https://github.com/talos-systems/talos/releases/latest/download/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
-	chmod +x $(TMP)/talos
-	sudo install -v -m511 ${TMP}/talos $(KUBASH_BIN)/talos
+	chmod +x $(TMP)/talosctl
+	sudo install -v -m511 ${TMP}/talosctl $(KUBASH_BIN)/talosctl
 	rm -Rf $(TMP)
 
-arkade: $(KUBASH_BIN)/arkade
+arkade: /usr/local/bin/arkade
 
-$(KUBASH_BIN)/arkade:
+/usr/local/bin/arkade:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://dl.get-arkade.dev | sh
-	chmod +x $(TMP)/arkade
-	sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
+	cd $(TMP) && curl -sLS https://dl.get-arkade.dev | sudo sh
+	#chmod +x $(TMP)/arkade
+	#sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
 	rm -Rf $(TMP)
 
 nomad: $(KUBASH_BIN)/nomad
@@ -595,6 +620,15 @@ $(KUBASH_BIN)/nomad:
 	cd $(TMP) && curl -sLS https://releases.hashicorp.com/nomad/$(NOMAD_VERSION)/nomad_$(NOMAD_VERSION)_linux_amd64.zip | jar xv
 	chmod +x $(TMP)/nomad
 	sudo install -o $(USER) -g $(USER) -v -m511 ${TMP}/nomad $(KUBASH_BIN)/nomad
+	rm -Rf $(TMP)
+
+waypoint: $(KUBASH_BIN)/waypoint
+
+$(KUBASH_BIN)/waypoint:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sLS https://releases.hashicorp.com/waypoint/$(WAYPOINT_VERSION)/waypoint_$(WAYPOINT_VERSION)_linux_amd64.zip | jar xv
+	chmod +x $(TMP)/waypoint
+	sudo install -o $(USER) -g $(USER) -v -m511 ${TMP}/waypoint $(KUBASH_BIN)/waypoint
 	rm -Rf $(TMP)
 
 vault: $(KUBASH_BIN)/vault
@@ -615,8 +649,29 @@ $(KUBASH_BIN)/consul:
 	cd $(TMP) && ls -alh 
 	chmod +x $(TMP)/consul
 	sudo install -v -m511 ${TMP}/consul $(KUBASH_BIN)/consul
+	  && chmod +x minio \
+	  && sudo install -v -m511 ${TMP}/minio $(KUBASH_BIN)/minio
 	rm -Rf $(TMP)
 
+mc: $(KUBASH_BIN)/mc
+
+$(KUBASH_BIN)/mc:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) \
+	  && wget https://dl.min.io/client/mc/release/linux-amd64/mc \
+	  && chmod +x mc \
+	  && sudo install -v -m511 ${TMP}/mc $(KUBASH_BIN)/mc
+	rm -Rf $(TMP)
+
+kubectl-minio: $(KUBASH_BIN)/kubectl-minio
+
+$(KUBASH_BIN)/kubectl-minio:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) \
+		&& wget https://github.com/minio/operator/releases/download/v4.1.3/kubectl-minio_4.1.3_linux_amd64 -O kubectl-minio \
+	  && chmod +x kubectl-minio \
+	  && sudo install -v -m511 ${TMP}/kubectl-minio $(KUBASH_BIN)/kubectl-minio
+	rm -Rf $(TMP)
 
 minio: $(KUBASH_BIN)/minio mc kubectl-minio
 
@@ -647,3 +702,27 @@ $(KUBASH_BIN)/kubectl-minio:
 	  && chmod +x kubectl-minio \
 	  && sudo install -v -m511 ${TMP}/kubectl-minio $(KUBASH_BIN)/kubectl-minio
 	rm -Rf $(TMP)
+
+velero: $(KUBASH_BIN)/velero
+
+$(KUBASH_BIN)/velero:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && curl -sL https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERS}/velero-${VELERO_VERS}-linux-amd64.tar.gz | tar zxf -
+	#cd $(TMP) && ls -alh $(TMP)/velero-${VELERO_VERS}-linux-amd64
+	chmod +x $(TMP)/velero-${VELERO_VERS}-linux-amd64/velero
+	sudo install -v -m511 ${TMP}/velero-${VELERO_VERS}-linux-amd64/velero $(KUBASH_BIN)/velero
+	rm -Rf $(TMP)
+
+ceph: $(KUBASH_BIN)/ceph
+
+$(KUBASH_BIN)/ceph:
+	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
+	cd $(TMP) && \
+	curl --silent --remote-name --location https://github.com/ceph/ceph/raw/octopus/src/cephadm/cephadm
+	chmod +x $(TMP)/cephadm
+	cd $(TMP) \
+	&& sudo ./cephadm add-repo --release octopus \
+	sudo ./cephadm install
+	which cephadm
+
+hashicorp: waypoint consul vault nomad

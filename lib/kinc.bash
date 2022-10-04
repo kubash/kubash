@@ -57,3 +57,6 @@ print_help=no
 . $KUBASH_LIB/kubespray.bash
 . $KUBASH_LIB/ansible.bash
 . $KUBASH_LIB/istio.bash
+. $KUBASH_LIB/hashicorp.bash
+. $KUBASH_LIB/consul.bash
+. $KUBASH_LIB/vault.bash

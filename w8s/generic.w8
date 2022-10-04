@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ $# -ne 2 ]; then
   # Print usage
   echo -n 'Error! wrong number of arguments'
@@ -7,24 +7,30 @@ if [ $# -ne 2 ]; then
   echo "$0 what-to-wait-for in-what-namespace"
   exit 1
 fi
+TARGET_POD=$1
+TARGET_NAMESPACE=$2
+: ${VERBOSITY:=0}
 
-echo -n "wait on $1 to become available"
-sleep 1
+echo -n "wait on $TARGET_POD to become available"
 
-# while loop
-countone=1
-# timeout for 15 minutes
-while [ $countone -lt 151 ]
-do
-  echo -n '.'
-  RESULT=$(kubectl get po --namespace=$2 | grep $1 | grep Running)
-  if [ "$RESULT" ]; then
-      echo '.'
-      echo "$RESULT"
-      break
-  fi
-  countone=`expr $countone + 1`
-  sleep 3
-done
+while_loop_wait () {
+  # while loop
+  countone=1
+  # timeout for 15 minutes
+  while [ $countone -lt 151 ]
+  do
+    echo -n '.'
+    RESULT=$(kubectl get po --namespace=$TARGET_NAMESPACE | grep $TARGET_POD | grep Running)
+    if [ "$RESULT" ]; then
+        echo '.'
+        echo "$RESULT"
+        break
+    fi
+    countone=`expr $countone + 1`
+    sleep 3
+  done
+}
 
-echo "$1 is now up and running"
+while_loop_wait
+
+echo "$TARGET_POD is now up and running"

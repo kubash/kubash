@@ -16,12 +16,12 @@
 [submodule "submodules/pupernetes"]
 	path = submodules/pupernetes
 	url = https://github.com/DataDog/pupernetes.git
-[submodule "submodules/opendistro-build"]
-	path = submodules/opendistro-build
-	url = https://github.com/opendistro-for-elasticsearch/opendistro-build
 [submodule "submodules/opensearch-devops"]
 	path = submodules/opensearch-devops
 	url = https://github.com/opensearch-project/opensearch-devops.git
+[submodule "submodules/nomad-on-kubernetes"]
+	path = submodules/nomad-on-kubernetes
+	url = https://github.com/joshuacox/nomad-on-kubernetes.git
 [submodule "submodules/nomad-on-kubernetes"]
 	path = submodules/nomad-on-kubernetes
 	url = https://github.com/joshuacox/nomad-on-kubernetes.git

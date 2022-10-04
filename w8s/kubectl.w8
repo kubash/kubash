@@ -1,24 +1,51 @@
-#!/bin/sh
-: ${REACTIONCOMMERCE_NAMESPACE:=r8s}
+#!/bin/bash
+if [ $# -ne 2 ]; then
+  # Print usage
+  echo -n 'Error! wrong number of arguments'
+  echo " [$#]"
+  echo 'usage:'
+  echo "$0 what-to-wait-for in-what-namespace"
+  exit 1
+fi
+TARGET_POD=$1
+TARGET_NAMESPACE=$2
+: ${VERBOSITY:=0}
 
-echo -n "wait on the K8S cluster to become available"
-sleep 3
+if [[ $VERBOSITY > 1 ]]; then
+  echo -n "wait on $TARGET_POD to become available"
+fi
+set -eu
 
-# while loop
-countone=1
-# timeout for 15 minutes
-while [ $countone -lt 151 ]
-do
-   echo -n '.'
-   kubectl get po --namespace=$REACTIONCOMMERCE_NAMESPACE &> /dev/null
-   if [ $? -ne 1 ]; then
-      sleep 6
-      break
-  fi
-  countone=`expr $countone + 1`
-  sleep 3
-done
 
-echo  "."
-echo  "kubectl commands are now able to interact with Minikube cluster"
-sleep 3
+while_loop_wait () {
+  # while loop
+  countone=1
+  # timeout for 15 minutes
+  while [ $countone -lt 151 ]
+  do
+    echo -n '.'
+    RESULT=$(kubectl get po --namespace=$TARGET_NAMESPACE | grep $TARGET_POD | grep Running)
+    if [ "$RESULT" ]; then
+        echo '.'
+        echo "$RESULT"
+        break
+    fi
+    countone=`expr $countone + 1`
+    sleep 3
+  done
+}
+
+kubectl_native_wait () {
+  #kubectl wait --namespace ingress-nginx \\n  --for=condition=ready pod \\n  --selector=app.kubernetes.io/component=controller \\n  --timeout=120s
+  kubectl wait --namespace $TARGET_NAMESPACE --for=condition=ready pod $TARGET_POD --timeout=120s
+}
+
+if [[ $VERBOSITY > 1 ]]; then
+  while_loop_wait
+fi
+
+kubectl_native_wait
+
+if [[ $VERBOSITY > 1 ]]; then
+  echo "$TARGET_POD is now up and running"
+fi

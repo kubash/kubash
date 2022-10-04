@@ -201,6 +201,27 @@ parse_opts () {
       exit 1
     fi
         do_istio
+  elif [[ $RAISON == "traefik" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_traefik
+  elif [[ $RAISON == "vault" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_vault
+  elif [[ $RAISON == "consul" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_consul
   elif [[ $RAISON == "metallb" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -786,6 +807,13 @@ parse_opts () {
         build_num=$(echo $target_os | sed 's/nomad//')
         target_build=nomad$build_num-18.04-amd64
         packer_create_pax_dir 'nomad' $build_num
+      fi
+    elif [[ "$target_os" =~ 'bullseye' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/bullseye//')
+        target_build=bullseye$build_num
+        packer_create_pax_dir 'bullseye' $build_num
       fi
     elif [[ "$target_os" =~ 'buster' ]]; then
       if [[ -z "$target_build" ]]; then
