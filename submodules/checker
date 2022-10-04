@@ -1,0 +1,42 @@
+#!/bin/bash
+THIS_CWD=$(pwd)
+
+cd $THIS_CWD/istio
+git fetch --all
+git checkout release-1.14
+git pull
+
+cd $THIS_CWD/kubeadm2ha
+git fetch --all
+git checkout master
+git pull
+
+cd $THIS_CWD/kubespray
+git fetch --all
+git checkout release-2.19
+git pull
+
+cd $THIS_CWD/nomad-on-kubernetes
+git fetch --all
+git checkout master
+git pull
+
+cd $THIS_CWD/opensearch-devops
+git fetch --all
+git checkout main
+git pull
+
+cd $THIS_CWD/openshift-ansible
+git fetch --all
+git checkout release-4.13
+git pull
+
+cd $THIS_CWD/pupernetes
+git fetch --all
+git checkout v0.11.0
+git pull
+
+cd $THIS_CWD/rook
+git fetch --all
+git checkout release-1.9
+git pull

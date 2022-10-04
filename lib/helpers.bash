@@ -12,19 +12,27 @@ THIS_NAMESPACE=$(cat .name-space)
 THIS_CLUSTER=$(cat .cluster-name)
 
 setup_secrets () {
-  cd $thisDIR
+  cd $thisDir
   kubectl create secret generic acme-account --from-literal=ACME_EMAIL=coopadmin@webhosting.coop
   kubectl create -f monitaur-secret-htpasswd
   kubectl create secret generic monitaur-auth --from-file monitaur-auth
 }
 
 install_ldap () {
-  cd $thisDIR/osixia-openldap
+  cd $thisDir/osixia-openldap
   kubectl apply -f ldap-secret.yaml
   kubectl apply -f ldap-statefulset.yaml
   ~/.kubash/w8s/generic.w8 ldap-0 $THIS_NAMESPACE
   kubectl apply -f ldap-service.yaml
-  cd $thisDIR
+  cd $thisDir
+}
+
+do_traefik () {
+  # Install Traefik Resource Definitions:
+  kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v2.8/docs/content/reference/dynamic-configuration/kubernetes-crd-definition-v1.yml
+
+  # Install RBAC for Traefik:
+  kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v2.8/docs/content/reference/dynamic-configuration/kubernetes-crd-rbac.yml
 }
 
 install_grafana () {
@@ -40,7 +48,7 @@ install_grafana () {
 
 install_fluentd () {
   ## Install Fluentd
-  cd $thisDIR
+  cd $thisDir
   helm install \
     --name monitaur-fluentd \
     kiwigrid/fluentd-elasticsearch \
@@ -53,7 +61,7 @@ install_fluentd () {
 }
 
 install_efk_secrets () {
-  cd $thisDIR
+  cd $thisDir
   kubectl create secret generic aws-s3-keys --from-file=access-key-id=./.aws_access_key --from-file=access-secret-key=./.aws_secret_key
   kubectl create secret generic gcs-cred --from-file=gcs-json-cred=./gcs-json-cred.json
 }
@@ -61,24 +69,24 @@ install_efk_secrets () {
 install_efk_opendistro () {
   install_efk_secrets
   cd ~/.kubash/submodules/opendistro-build/helm/opendistro-es
-  echo helm install ${THIS_CLUSTER}-opendistro --values=$thisDIR/opendistro-values.yaml . 
-  helm install ${THIS_CLUSTER}-opendistro --values=$thisDIR/opendistro-values.yaml . 
-  cd $thisDIR
+  echo helm install ${THIS_CLUSTER}-opendistro --values=$thisDir/opendistro-values.yaml . 
+  helm install ${THIS_CLUSTER}-opendistro --values=$thisDir/opendistro-values.yaml . 
+  cd $thisDir
 }
 
 install_efk_opensearch () {
   install_efk_secrets
-  cd ~/.kubash/submodules/opensearch-devops/Helm/opensearch
-  echo helm install ${THIS_CLUSTER}-opensearch --values=$thisDIR/opensearch-values.yaml . 
-  helm install ${THIS_CLUSTER}-opensearch --values=$thisDIR/opensearch-values.yaml . 
-  cd $thisDIR
+  cd ~/.kubash/submodules/opensearch-devops/helm-charts/charts/opensearch
+  echo helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
+  helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
+  cd $thisDir
 }
 
 install_efk_opensearch_dashboards () {
-  cd ~/.kubash/submodules/opensearch-devops/Helm/opensearch-dashboards
-  echo helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDIR/opensearch-dashboard-values.yaml . 
-  helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDIR/opensearch-dashboard-values.yaml . 
-  cd $thisDIR
+  cd ~/.kubash/submodules/opensearch-devops/helm-charts/charts/opensearch-dashboards
+  echo helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDir/opensearch-dashboard-values.yaml . 
+  helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDir/opensearch-dashboard-values.yaml . 
+  cd $thisDir
 }
 
 install_efk_all_in_one () {
@@ -108,7 +116,7 @@ template_efk () {
   helm repo add elastic https://helm.elastic.co
   helm repo add kiwigrid https://kiwigrid.github.io
   helm repo update
-  cd $thisDIR
+  cd $thisDir
   # namespace: oltorf
   ## Bring up ES
   helm fetch \
@@ -158,7 +166,7 @@ install_efk () {
   helm repo add elastic https://helm.elastic.co
   helm repo add kiwigrid https://kiwigrid.github.io
   helm repo update
-  cd $thisDIR
+  cd $thisDir
   # namespace: oltorf
   ## Bring up ES
   helm install \
@@ -230,7 +238,7 @@ do_sc_rook () {
 }
 
 do_proxy () {
-  cd $thisDIR
+  cd $thisDir
   kubectl apply -f elasticsearch-proxy.yaml
   kubectl apply -f fluentd-svc.yaml
   kubectl apply -f fluentd-proxy.yaml
@@ -254,20 +262,20 @@ install_mongodb () {
 }
 
 install_postgres () {
-  cd $thisDIR
+  cd $thisDir
   kubectl apply -f postgres.yaml
   ~/.kubash/w8s/generic.w8 postgres $THIS_NAMESPACE
 }
 
 install_cassandra () {
-  cd $thisDIR
+  cd $thisDir
   kubectl apply -f sc-cassandra.yaml
   kubash -n $THIS_CLUSTER rook
   kubectl apply -f rook-cassandra.yaml
 }
 
 make_ingress () {
-  cd $thisDIR
+  cd $thisDir
 
   kubectl apply -f cerberus.monitaur.net-svc.yaml
   kubectl apply -f zm.oltorf.net-svc.yaml
@@ -289,7 +297,7 @@ install_zeppelin () {
     --set persistence.dataNode.enabled=true \
     --set persistence.dataNode.storageClass='openebs-cstor-monitaur-hadoop-data' \
     stable/hadoop
-  cd $thisDIR
+  cd $thisDir
   helm install \
     --name monitaur-zeppelin \
     --namespace $THIS_NAMESPACE \

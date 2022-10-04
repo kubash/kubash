@@ -42,12 +42,13 @@ jobs: # basic units of work in a run
           go version
     - run:
         name: DL pupernetes
-        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.11.0/pupernetes
+        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.12.0/pupernetes
           -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
     - run:
         name: pupernetes
-        command: sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
+        command: echo sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
           --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config
+          --hyperkube-version=1.18
           --dns-check
     - run:
         name: kubectl get all

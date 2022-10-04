@@ -1,0 +1,16 @@
+#!/bin/bash
+REFRESHERS="nomad consul waypoint terraform vault"
+
+refreshr () {
+  rm -fv bin/$i
+  make $i
+}
+
+main () {
+  for i in $REFRESHERS
+  do
+    refreshr $i
+  done
+}
+
+time main

@@ -3,6 +3,7 @@ KUBASH_VERSION='v1.15.3'
 : ${KUBASH_DIR:=$HOME/.kubash}
 # import our includes
 . $KUBASH_DIR/lib/kinc.bash
+thisDir="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 TMP=$(mktemp -d --suffix='.kubash.tmp' 2>/dev/null || mktemp -d -t '.kubash.tmp')
 trap killtmp EXIT
 # exit on errors
