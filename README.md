@@ -2,8 +2,9 @@
 
 Build, provision, initialize, add common components, interact and tear down a cluster PDQ.
 
-[![Build Status](https://travis-ci.org/kubash/kubash.svg?branch=master)](https://travis-ci.org/kubash/kubash)
-[![Waffle.io - Columns and their card count](https://badge.waffle.io/kubash/kubash.svg?columns=all)](https://waffle.io/kubash/kubash)
+[![Kubash](https://circleci.com/gh/kubash/kubash.svg?style=svg)](https://app.circleci.com/pipelines/github/kubash/kubash)
+
+[![Build Status](https://travis-ci.com/kubash/kubash.svg?branch=master)](https://travis-ci.com/kubash/kubash)
 
 Build production ready clusters using a variety of technologies along the way.
 
@@ -20,22 +21,14 @@ Install with one easy line:
 curl -L git.io/kubash|bash
 ```
 
-Get started by making the example clusters:
-
-```
-cd ~/.kubash
-make all-examples
-ls -l clusters/
-```
-
-or to generate just the main example:
+Get started by making the example:
 
 ```
 kubash -n example yaml2cluster examples/example-cluster.yaml
 ls -l clusters/example
 ```
 
-Now build the image `kubash build --target-os kubeadm`
+Now build an image `kubash build --target-os bionic1.20.1` where bionic is the OS and 1.20.1 is the K8S version
 
 [![asciicast](https://asciinema.org/a/164070.png)](https://asciinema.org/a/164070)
 
@@ -51,7 +44,7 @@ By default kubash is quiet unless an error is hit (though many of the
 programs called by kubash might not be very quiet so there is still
 lot's of noise at `VERBOSITY=0`).  If you like
 watching noisy output crank up the verbosity by adding a few v flags
-(i.e. `-vvvv`) or secify the verbosity `--verbosity 100` or export it as
+(i.e. `-vvvv`) or specify the verbosity `--verbosity 100` or export it as
 a environment variable e.g.
 
 ```

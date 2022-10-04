@@ -8,11 +8,77 @@ image_creator () {
   this_storage_target_size=$3
   this_storage_target_preallocation=$4
   squawk 10 "$PSEUDO qemu-img create -f ${this_storage_target_type} ${this_storage_target} ${this_storage_target_size} -o preallocation=${this_storage_target_preallocation}"
-$PSEUDO qemu-img create \
+  $PSEUDO qemu-img create \
   -f ${this_storage_target_type} \
   ${this_storage_target} \
   ${this_storage_target_size} \
   -o preallocation=${this_storage_target_preallocation}
+}
+
+virsh_disk_attach_localhost () {
+  THIS_storageType=$1
+  THIS_storagePath=$2
+  THIS_storageTarget=$3
+  THIS_storageSize=$4
+  if [[ $THIS_storageType == 'raw' ]]; then
+    if [[ -f $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw ]]; then
+      squawk 33 "File already exists using it"
+    else
+      #image_creator this_storage_target=$1 this_storage_target_type=$2 this_storage_target_size=$3 this_storage_target_preallocation=$4
+      image_creator $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw raw $THIS_storageSize $QEMU_PREALLOCATION
+    fi
+    $PSEUDO virsh attach-disk --domain $K8S_node $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw --target $THIS_storageTarget --persistent --config --live
+  elif [[ $THIS_storageType == 'qcow2' ]]; then
+    if [[ -f $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 ]]; then
+      squawk 33 "File already exists using it"
+    else
+      #image_creator this_storage_target=$1 this_storage_target_type=$2 this_storage_target_size=$3 this_storage_target_preallocation=$4
+      image_creator $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 qcow2 $THIS_storageSize $QEMU_PREALLOCATION
+    fi
+    $PSEUDO virsh attach-disk --domain $K8S_node $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 --target $THIS_storageTarget --persistent --config --live
+  fi
+}
+
+virsh_disk_attach () {
+  THIS_storageType=$1
+  THIS_storagePath=$2
+  THIS_storageTarget=$3
+  THIS_storageSize=$4
+
+  if [[ $THIS_storageType == 'raw' ]]; then
+    set +e
+    ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw"
+    if [[ $? -eq 0 ]]; then
+      squawk 33 "File already exists using it"
+    else
+      squawk 33 "File does not already exist. Creating it"
+        virshcmd2run="$PSEUDO qemu-img create -f raw $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw $THIS_storageSize -o preallocation=$QEMU_PREALLOCATION"
+            squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+            ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
+    fi
+    set -e
+    virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.raw --target $THIS_storageTarget --persistent --config --live"
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+    ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
+  elif [[ $THIS_storageType == 'qcow2' ]]; then
+    virshcmd2run="$PSEUDO qemu-img create -f qcow2 $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 $THIS_storageSize -o preallocation=$QEMU_PREALLOCATION"
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+    ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
+    set +e
+          ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2"
+    if [[ $? -eq 0 ]]; then
+      squawk 33 "File already exists using it"
+    else
+      squawk 33 "File does not already exist. Creating it"
+        virshcmd2run="$PSEUDO qemu-img create -f qcow2 $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 $THIS_storageSize -o preallocation=$QEMU_PREALLOCATION"
+            squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+            ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
+    fi
+    set -e
+    virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 --target $THIS_storageTarget --persistent --config --live"
+    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
+    ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
+  fi
 }
 
 qemu-provisioner () {
@@ -193,142 +259,18 @@ qemu-provisioner () {
       $PSEUDO chown root. $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/domain.xml
       $PSEUDO chown root. $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data.ign
       $PSEUDO virsh start $K8S_node
-      if [[ $K8S_storageType == 'raw' ]]; then
-        if [[ -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          #image_creator this_storage_target=$1 this_storage_target_type=$2 this_storage_target_size=$3 this_storage_target_preallocation=$4
-          image_creator $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw raw $K8S_storageSize $QEMU_PREALLOCATION
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw --target $K8S_storageTarget --persistent --config --live
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-        if [[ -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          #image_creator this_storage_target=$1 this_storage_target_type=$2 this_storage_target_size=$3 this_storage_target_preallocation=$4
-          image_creator $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 qcow2 $K8S_storageSize $QEMU_PREALLOCATION
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 --target $K8S_storageTarget --persistent --config --live
-      fi
-      # disk 1
-      if [[ $K8S_storageType1 == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath1}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget1}.raw raw ${K8S_storageSize1} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.raw --target ${K8S_storageTarget1} --persistent --config --live
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath1}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget1}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath1}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget1}.qcow2 qcow2 ${K8S_storageSize1} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.qcow2 --target ${K8S_storageTarget1} --persistent --config --live
-      fi
-      # disk 2
-      if [[ $K8S_storageType2 == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath2}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget2}.raw raw ${K8S_storageSize2} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.raw --target ${K8S_storageTarget2} --persistent --config --live
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath2}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget2}.qcow2 qcow2 ${K8S_storageSize2} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.qcow2 --target ${K8S_storageTarget2} --persistent --config --live
-      fi
-      # disk 3
-      if [[ $K8S_storageType1 == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath3}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget3}.raw raw ${K8S_storageSize3} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.raw --target ${K8S_storageTarget3} --persistent --config --live
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath3}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget3}.qcow3 qcow3 ${K8S_storageSize3} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.qcow2 --target ${K8S_storageTarget3} --persistent --config --live
-      fi
     else
       # not coreOS
       squawk 5 "$PSEUDO $virshcmd2run"
       $PSEUDO $virshcmd2run
-      if [[ $K8S_storageType == 'raw' ]]; then
-        if [[ -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget}.raw raw ${K8S_storageSize} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw --target $K8S_storageTarget --persistent --config --live
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-        if [[ -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget}.qcow qcow ${K8S_storageSize} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 --target $K8S_storageTarget --persistent --config --live
-      fi
-      # disk 1
-      if [[ ${K8S_storageType1} == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath1}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget1}.raw raw ${K8S_storageSize1} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.raw --target ${K8S_storageTarget1} --persistent --config --live
-      elif [[ ${K8S_storageType1} == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath1}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget1}.qcow1 qcow1 ${K8S_storageSize1} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath1}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget1}.qcow2 --target ${K8S_storageTarget1} --persistent --config --live
-      fi
-      # disk 2
-      if [[ ${K8S_storageType2} == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath2}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget2}.raw raw ${K8S_storageSize2} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.raw --target ${K8S_storageTarget2} --persistent --config --live
-      elif [[ ${K8S_storageType2} == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath2}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget2}.qcow2 qcow2 ${K8S_storageSize2} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath2}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget2}.qcow2 --target ${K8S_storageTarget2} --persistent --config --live
-      fi
-      # disk 3
-      if [[ ${K8S_storageType3} == 'raw' ]]; then
-        if [[ -f ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.raw ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath3}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget3}.raw raw ${K8S_storageSize3} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.raw --target ${K8S_storageTarget3} --persistent --config --live
-      elif [[ ${K8S_storageType3} == 'qcow2' ]]; then
-        if [[ -f ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.qcow2 ]]; then
-          squawk 33 "File already exists using it"
-        else
-          image_creator ${K8S_storagePath3}/${KUBASH_CLUSTER_NAME}-k8s-${K8S_node}-${K8S_storageTarget3}.qcow3 qcow3 ${K8S_storageSize3} ${QEMU_PREALLOCATION}
-        fi
-        $PSEUDO virsh attach-disk --domain $K8S_node ${K8S_storagePath3}/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-${K8S_storageTarget3}.qcow2 --target ${K8S_storageTarget3} --persistent --config --live
-      fi
     fi
-    # suspect
-    #fi
+    if [[ ! -z $K8S_storageType  ]]; then virsh_disk_attach_localhost $K8S_storageType  $K8S_storagePath  $K8S_storageTarget  $K8S_storageSize ; fi
+    if [[ ! -z $K8S_storageType1 ]]; then virsh_disk_attach_localhost $K8S_storageType1 $K8S_storagePath1 $K8S_storageTarget1 $K8S_storageSize1; fi
+    if [[ ! -z $K8S_storageType2 ]]; then virsh_disk_attach_localhost $K8S_storageType2 $K8S_storagePath2 $K8S_storageTarget2 $K8S_storageSize2; fi
+    if [[ ! -z $K8S_storageType3 ]]; then virsh_disk_attach_localhost $K8S_storageType3 $K8S_storagePath3 $K8S_storageTarget3 $K8S_storageSize3; fi
+    if [[ ! -z $K8S_storageType4 ]]; then virsh_disk_attach_localhost $K8S_storageType4 $K8S_storagePath4 $K8S_storageTarget4 $K8S_storageSize4; fi
   else
+    # not localhost
     squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
     ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$qemucmd2run"
 
@@ -349,41 +291,6 @@ qemu-provisioner () {
       squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
 
-      if [[ $K8S_storageType == 'raw' ]]; then
-      set +e
-            ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw"
-      if [[ $? -eq 0 ]]; then
-        squawk 33 "File already exists using it"
-      else
-        squawk 33 "File does not already exist. Creating it"
-          virshcmd2run="$PSEUDO qemu-img create -f raw $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw $K8S_storageSize -o preallocation=$QEMU_PREALLOCATION"
-              squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-              ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      fi
-	set -e
-        virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw --target $K8S_storageTarget --persistent --config --live"
-        squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-        ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-	virshcmd2run="$PSEUDO qemu-img create -f qcow2 $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 $K8S_storageSize -o preallocation=$QEMU_PREALLOCATION"
-        squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-        ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-	set +e
-        ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2"
-	if [[ $? -eq 0 ]]; then
-	  squawk 33 "File already exists using it"
-	else
-	  squawk 33 "File does not already exist. Creating it"
-  	  virshcmd2run="$PSEUDO qemu-img create -f qcow2 $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 $K8S_storageSize -o preallocation=$QEMU_PREALLOCATION"
-          squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-          ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-	fi
-	set -e
-        virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 --target $K8S_storageTarget --persistent --config --live"
-        squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-        ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      fi
-
       virshcmd2run="$PSEUDO virsh start $K8S_node"
       squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
@@ -391,37 +298,12 @@ qemu-provisioner () {
       # not coreOS
       squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
       ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      if [[ $K8S_storageType == 'raw' ]]; then
-	set +e
-        ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw"
-	if [[ $? -eq 0 ]]; then
-	  squawk 33 "File already exists using it"
-	else
-	  squawk 33 "File does not already exist. Creating it"
-  	  virshcmd2run="$PSEUDO qemu-img create -f raw $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw $K8S_storageSize -o preallocation=$QEMU_PREALLOCATION"
-          squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-          ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-	fi
-	set -e
-        virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.raw --target $K8S_storageTarget --persistent --config --live"
-        squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-        ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      elif [[ $K8S_storageType == 'qcow2' ]]; then
-	set +e
-        ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2"
-	if [[ $? -eq 0 ]]; then
-	  squawk 33 "File already exists using it"
-	else
-	  squawk 33 "File does not already exist. Creating it"
-  	  virshcmd2run="$PSEUDO qemu-img create -f qcow2 $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 $K8S_storageSize -o preallocation=$QEMU_PREALLOCATION"
-          squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-          ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-	fi
-	set -e
-        virshcmd2run="$PSEUDO virsh attach-disk --domain $K8S_node $K8S_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$K8S_storageTarget.qcow2 --target $K8S_storageTarget --persistent --config --live"
-        squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-        ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
-      fi
+
     fi
+    if [[ ! -z $K8S_storageType  ]]; then virsh_disk_attach $K8S_storageType  $K8S_storagePath  $K8S_storageTarget  $K8S_storageSize ; fi
+    if [[ ! -z $K8S_storageType1 ]]; then virsh_disk_attach $K8S_storageType1 $K8S_storagePath1 $K8S_storageTarget1 $K8S_storageSize1; fi
+    if [[ ! -z $K8S_storageType2 ]]; then virsh_disk_attach $K8S_storageType2 $K8S_storagePath2 $K8S_storageTarget2 $K8S_storageSize2; fi
+    if [[ ! -z $K8S_storageType3 ]]; then virsh_disk_attach $K8S_storageType3 $K8S_storagePath3 $K8S_storageTarget3 $K8S_storageSize3; fi
+    if [[ ! -z $K8S_storageType4 ]]; then virsh_disk_attach $K8S_storageType4 $K8S_storagePath4 $K8S_storageTarget4 $K8S_storageSize4; fi
   fi
 }

@@ -179,16 +179,8 @@ master_grab_kube_config () {
   sudo chown -R $USER. $KUBASH_CLUSTER_CONFIG
 }
 
-node_join () {
-  my_node_name=$1
-  my_node_ip=$2
-  my_node_user=$3
-  my_node_port=$4
-  squawk 1 " node_join $my_node_name $my_node_ip $my_node_user $my_node_port"
-  if [[ "$DO_NODE_JOIN" == "true" ]] ; then
-    #result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO hostname;$PSEUDO uname -a")
+common_join () {
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "hostname; uname -a")
-    squawk 3 "hostname and uname is $result"
     squawk 3 "Kubeadmn join"
     run_join=$(cat $KUBASH_CLUSTER_DIR/join.sh \
         | grep -P -- "$my_grep" \
@@ -197,6 +189,55 @@ node_join () {
     result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join --ignore-preflight-errors=IsPrivilegedUser")
     squawk 3 "run_join result is $result"
     w8_node $my_node_name
+}
+
+vault_server_join () {
+  my_node_name=$1
+  my_node_ip=$2
+  my_node_user=$3
+  my_node_port=$4
+  squawk 1 " vault_server_join $my_node_name $my_node_ip $my_node_user $my_node_port"
+  if [[ "$DO_NODE_JOIN" == "true" ]] ; then
+    common_join
+    rolero $my_node_name vault_server
+    squawk 3 "hostname and uname is $result"
+    squawk 3 "vault taint"
+    #kubectl --kubeconfig=$KUBECONFIG taint nodes $my_node_name dedicated=vault:NoSchedule
+    kubectl --kubeconfig=$KUBECONFIG label nodes $my_node_name dedicated=vault
+  fi
+}
+
+nomad_worker_join () {
+  my_node_name=$1
+  my_node_ip=$2
+  my_node_user=$3
+  my_node_port=$4
+  squawk 1 " nomad_worker_join $my_node_name $my_node_ip $my_node_user $my_node_port"
+  if [[ "$DO_NODE_JOIN" == "true" ]] ; then
+    common_join
+    command2run="chown  ${my_node_user}. /usr/local/bin"
+    sudo_command $my_node_port $my_node_user $my_node_ip "$command2run"
+    rolero $my_node_name nomad_worker
+    squawk 3 "hostname and uname is $result"
+    squawk 3 "nomad taint"
+    kubectl --kubeconfig=$KUBECONFIG taint nodes $my_node_name dedicated=nomad:NoSchedule
+    #run_join=$(cat $KUBASH_CLUSTER_DIR/nomad.sh \
+    #    | grep -P -- "$my_grep" \
+    #)
+    # WIP does nothing for now so I can try
+    #result=$(ssh -n -p $my_node_port $my_node_user@$my_node_ip "$PSEUDO $run_join")
+    #@squawk 3 "run_join result is $result"
+  fi
+}
+
+node_join () {
+  my_node_name=$1
+  my_node_ip=$2
+  my_node_user=$3
+  my_node_port=$4
+  squawk 1 " node_join $my_node_name $my_node_ip $my_node_user $my_node_port"
+  if [[ "$DO_NODE_JOIN" == "true" ]] ; then
+    common_join
     rolero $my_node_name node
   fi
 }
@@ -2617,6 +2658,13 @@ do_nodes_in_parallel () {
       squawk 81 " K8S_role $K8S_role $K8S_ip1 $K8S_user $K8S_sshPort"
       echo "kubash -n $KUBASH_CLUSTER_NAME node_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_SU_USER --node-join-port $K8S_sshPort --node-join-role node" \
         >> $do_nodes_tmp_para/hopper
+    elif [[ "$K8S_role" == "vault_server" ]]; then
+      echo "kubash -n $KUBASH_CLUSTER_NAME vault_server_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_SU_USER --node-join-port $K8S_sshPort --node-join-role vault_server" \
+        >> $do_nodes_tmp_para/hopper
+    elif [[ "$K8S_role" == "nomad_worker" ]]; then
+      COPY_NOMAD_2_ROLE='true'
+      echo "kubash -n $KUBASH_CLUSTER_NAME nomad_worker_join --node-join-name $K8S_node --node-join-ip $K8S_ip1 --node-join-user $K8S_SU_USER --node-join-port $K8S_sshPort --node-join-role nomad_worker" \
+        >> $do_nodes_tmp_para/hopper
     else
       squawk 91 " K8S_role NOT NODE"
       squawk 91 " K8S_role $K8S_role $K8S_ip1 $K8S_user $K8S_sshPort"
@@ -2635,6 +2683,9 @@ do_nodes_in_parallel () {
   fi
   rm -Rf $do_nodes_tmp_para
   taint_all_storage
+  if [[ $COPY_NOMAD_2_ROLE == 'true' ]]; then
+    copy_in_parallel_to_role "nomad_worker" "$KUBASH_BIN/nomad" "/usr/local/bin/"
+  fi
   #mount_all_iscsi_targets
 }
 

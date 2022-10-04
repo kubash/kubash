@@ -136,7 +136,7 @@ main () {
     elif [[ "$UBUNTU_CODENAME" == "focal" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
     else
-      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
     fi
     if type "apt-get" &> /dev/null; then
       check_cmd apt-get

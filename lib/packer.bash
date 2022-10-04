@@ -42,8 +42,8 @@ packer_build () {
     debug_flag=''
     PACKER_LOG=0
   fi
-  squawk 33 "rsync $KUBASH_RSYNC_OPTS 'ssh -p $KVM_builderPort' $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer"
-  rsync $KUBASH_RSYNC_OPTS "ssh -p $KVM_builderPort" $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer
+  squawk 33 "$PSEUDO rsync $KUBASH_RSYNC_OPTS 'ssh -p $KVM_builderPort' $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer"
+  $PSEUDO rsync $KUBASH_RSYNC_OPTS "ssh -p $KVM_builderPort" $KUBASH_BIN/packer $KVM_builderUser@$KVM_builderHost:/usr/local/bin/packer
   squawk 2 "TMPDIR=$KVM_builderTMP packer build -only=$build_virt $debug_flag $target_build.json"
   squawk 10 "packer variable docs: https://www.packer.io/guides/hcl/variables"
   packer_build_env="KEYS_TO_ADD='$KEYS_TO_ADD' KEYS_URL='$KEYS_URL' PACKER_LOG=$PACKER_LOG TMPDIR=$KVM_builderTMP $(printenv |grep -i KUBASH|tr '\n' ' ') $(printenv |grep -i K8S|tr '\n' ' ') $(printenv |grep -i PACKER|tr '\n' ' ') $(printenv |grep -i PKR_VAR|tr '\n' ' ')"

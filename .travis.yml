@@ -6,27 +6,24 @@ matrix:
       services:
       - docker
       env:
+        - KUBE_VERSION=v1.21.0
+        - MINIKUBE_VERSION=v1.21.0
+        - MINIKUBE_DRIVER=docker
         - MINIKUBE_MEMORY=7777
         - MINIKUBE_CPU=4
-        - MINIKUBE_DRIVER=none
-        - HELM_INSTALL_DIR=$HOME/.local/bin
+        - TRAVIS_KUBASH=true
         - NVM_DIR="$HOME/.nvm"
         - CHANGE_MINIKUBE_NONE_USER=true
-        - MINIKUBE_VERSION=v1.19.0
-        - KUBE_VERSION=v1.19.0
-        - CHANGE_MINIKUBE_NONE_USER=true
+        - HELM_INSTALL_DIR=$HOME/.local/bin
       cache: npm
       cache: pip
       cache:
           directories:
             - $HOME/.local/bin
-            #- .git
-          #- $HOME/.kube
-          #- $HOME/.minikube
 
 language: node_js
 node_js:
-  - "8"
+  - "12"
 
 addons:
   apt:
@@ -49,13 +46,14 @@ before_install:
 - printf '#!/bin/bash\nexit 0'>/tmp/nmap && chmod +x /tmp/nmap && sudo mv /tmp/nmap /usr/bin/nmap
 
 before_script:
+- printenv
 - make bats
 - pip install --user jinja2-cli
 - npm i -g yaml2json
 - if [[ ! -e "$HOME/.local/bin/ct" ]]; then make ct && mv /home/travis/.kubash/bin/ct /home/travis/.local/bin/ct; fi
-- if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo mv .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
-  #- if [[ ! -e "$HOME/.local/bin/helm" ]]; then curl https://raw.githubusercontent.com/helm/helm/master/scripts/get|bash &> /dev/null; fi
-- curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+  #- if [[ ! -e "$HOME/.local/bin/nsenter" ]]; then .ci/ubuntu-compile-nsenter.sh && sudo mv .tmp/util-linux-2.30.2/nsenter $HOME/.local/bin; fi
+  #- curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+- if [[ ! -e "$HOME/.local/bin/helm" ]]; then curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash &> /dev/null; fi
 # Wait for Kubernetes to be up and ready.
 #- ls -alh /home/travis/.kubash/bin
 #- export PATH=/home/travis/.local/bin:$PATH
@@ -64,10 +62,10 @@ before_script:
 # Make root mounted as rshared to fix kube-dns issues.
 - sudo mount --make-rshared /
 # Download kubectl, which is a requirement for using minikube.
-- curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+- curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBE_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl /home/travis/.local/bin
 # Download minikube.
-- curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
-- sudo minikube start --vm-driver=none --kubernetes-version=$KUBE_VERSION
+- curl -Lo minikube https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64 && chmod +x minikube && mv minikube /home/travis/.local/bin
+- minikube start --kubernetes-version=$KUBE_VERSION
 - bash scripts/dotfiles
 - bash scripts/chkdirs
 - sudo chown $USER /var/lib
@@ -83,41 +81,11 @@ before_script:
 
 script:
 - kubectl cluster-info
-# Verify kube-addon-manager.
-# Wait for Kubernetes to be up and ready.
-#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
-# kube-addon-manager is responsible for managing other kubernetes components, such as kube-dns, dashboard, storage-provisioner..
-#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lcomponent=kube-addon-manager -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-addon-manager to be available"; kubectl get pods --all-namespaces; done
-# Wait for kube-dns to be ready.
-#- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl -n kube-system get pods -lk8s-app=kube-dns -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-dns to be available"; kubectl get pods --all-namespaces; done
-#- which ct
-#- which nsenter
-#- which jinja2
-#- which helm
-#- which yaml2json
-#- bin/kubash --verbosity=50 tiller
-#- bin/kubash --verbosity=50 known_hosts
-#- bin/kubash --verbosity=50 ping
-- bats .ci/.tests.bats
-#- /bin/bash -l -c "kubash openebs"
-#- /bin/bash -l -c "w8s/generic.w8 openebs-provisioner default"
-#- sleep 5
-#- /bin/bash -l -c "kubash demo"
-# too much memory usage so we will end it there and destroy the VM
-# as the next though successful take too long
-#- /bin/bash -l -c "kubash demo"
-#- /bin/bash -l -c "w8s/generic.w8 percona default"
-#- /bin/bash -l -c "w8s/generic.w8 pgset-0 default"
-#- /bin/bash -l -c "w8s/generic.w8 rabbitmq-0 default"
-#- sudo chown -R $USER /usr/local
-#- sudo ls -lh /usr/bin
-#- sudo chown -R $USER /lib/systemd/system
-#- sudo chown $USER /usr/bin
-#- sudo mkdir -p /etc/kubernetes
-#- sudo chown $USER /etc
-#- sudo chown -R $USER /etc/kubernetes
-#- sudo mkdir /etc/system.d
-#- sudo chown -R $USER /etc/system.d
-#- /bin/bash -l -c "w8s/generic.w8 mongo-0 default"
-#- env
-#- pwd
+  #- cd .. && cp -al kubash .kubash && cd kubash
+  #- bash scripts/test_bootstrap.sh
+  #- bash scripts/test_yaml2cluster.sh
+  #- bash scripts/test_bats.sh $HOME/.kubash
+  #- /bin/bash -l -c "ssh-keyscan 127.0.0.1 >> $HOME/.ssh/known_hosts"
+- /bin/bash -l -c "kubash openebs"
+- /bin/bash -l -c "kubash voyager"
+- /bin/bash -l -c "bats .ci/.tests.bats"

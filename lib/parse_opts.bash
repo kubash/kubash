@@ -570,6 +570,13 @@ parse_opts () {
       exit 1
     fi
     do_voyager
+  elif [[ $RAISON == "nginx" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+    do_nginx
   elif [[ $RAISON == "configure_interfaces" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -766,6 +773,20 @@ parse_opts () {
         target_build=bionic$build_num-18.04-amd64
         packer_create_pax_dir 'bionic' $build_num
       fi
+    elif [[ "$target_os" =~ 'focal' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/focal//')
+        target_build=focal$build_num-20.04-amd64
+        packer_create_pax_dir 'focal' $build_num
+      fi
+    elif [[ "$target_os" =~ 'nomad' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/nomad//')
+        target_build=nomad$build_num-18.04-amd64
+        packer_create_pax_dir 'nomad' $build_num
+      fi
     elif [[ "$target_os" =~ 'buster' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
@@ -818,6 +839,72 @@ parse_opts () {
       croak 3  'VeeWee support not built yet :('
     else
       croak 3  'builder not recognized'
+    fi
+    exit 0
+  elif [[ $RAISON == "nomad" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      node_usage
+      exit 1
+    fi
+    init_nomad_in_kubernetes
+    exit 0
+  elif [[ $RAISON == "vault_server_join" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      node_usage
+      exit 1
+    fi
+    if [[ -z "$node_join_name" ]]; then
+      croak 3  'you must specify the --node-join-name option'
+    fi
+    if [[ -z "$node_join_ip" ]]; then
+      croak 3  'you must specify the --node-join-ip option'
+    fi
+    if [[ -z "$node_join_user" ]]; then
+      croak 3  'you must specify the --node-join-user option'
+    fi
+    if [[ -z "$node_join_port" ]]; then
+      croak 3  'you must specify the --node-join-port option'
+    fi
+    if [[ -z "$node_join_role" ]]; then
+      croak 3  'you must specify the --node-join-role option'
+    fi
+    if [[ $node_join_role == "vault_server" ]]; then
+      squawk 2 " Executing nomad worker join..."
+      DO_NODE_JOIN=true
+      vault_server_join $node_join_name $node_join_ip $node_join_user $node_join_port
+    else
+      croak 3 "unknown role --> $node_join_role"
+    fi
+    exit 0
+  elif [[ $RAISON == "nomad_worker_join" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      node_usage
+      exit 1
+    fi
+    if [[ -z "$node_join_name" ]]; then
+      croak 3  'you must specify the --node-join-name option'
+    fi
+    if [[ -z "$node_join_ip" ]]; then
+      croak 3  'you must specify the --node-join-ip option'
+    fi
+    if [[ -z "$node_join_user" ]]; then
+      croak 3  'you must specify the --node-join-user option'
+    fi
+    if [[ -z "$node_join_port" ]]; then
+      croak 3  'you must specify the --node-join-port option'
+    fi
+    if [[ -z "$node_join_role" ]]; then
+      croak 3  'you must specify the --node-join-role option'
+    fi
+    if [[ $node_join_role == "nomad_worker" ]]; then
+      squawk 2 " Executing nomad worker join..."
+      DO_NODE_JOIN=true
+      nomad_worker_join $node_join_name $node_join_ip $node_join_user $node_join_port
+    else
+      croak 3 "unknown role --> $node_join_role"
     fi
     exit 0
   elif [[ $RAISON == "node_join" ]]; then
