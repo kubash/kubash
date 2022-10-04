@@ -52,11 +52,33 @@ install_fluentd () {
   kubectl apply -f fluentd-proxy.yaml
 }
 
-install_efk_opendistro () {
+install_efk_secrets () {
   cd $thisDIR
+  kubectl create secret generic aws-s3-keys --from-file=access-key-id=./.aws_access_key --from-file=access-secret-key=./.aws_secret_key
+  kubectl create secret generic gcs-cred --from-file=gcs-json-cred=./gcs-json-cred.json
+}
+
+install_efk_opendistro () {
+  install_efk_secrets
   cd ~/.kubash/submodules/opendistro-build/helm/opendistro-es
-  echo helm install ${THIS_CLUSTER}-es --values=$thisDIR/opendistro-values.yaml . 
-  helm install ${THIS_CLUSTER}-es --values=$thisDIR/opendistro-values.yaml . 
+  echo helm install ${THIS_CLUSTER}-opendistro --values=$thisDIR/opendistro-values.yaml . 
+  helm install ${THIS_CLUSTER}-opendistro --values=$thisDIR/opendistro-values.yaml . 
+  cd $thisDIR
+}
+
+install_efk_opensearch () {
+  install_efk_secrets
+  cd ~/.kubash/submodules/opensearch-devops/Helm/opensearch
+  echo helm install ${THIS_CLUSTER}-opensearch --values=$thisDIR/opensearch-values.yaml . 
+  helm install ${THIS_CLUSTER}-opensearch --values=$thisDIR/opensearch-values.yaml . 
+  cd $thisDIR
+}
+
+install_efk_opensearch_dashboards () {
+  cd ~/.kubash/submodules/opensearch-devops/Helm/opensearch-dashboards
+  echo helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDIR/opensearch-dashboard-values.yaml . 
+  helm install ${THIS_CLUSTER}-opensearch-dashboards --values=$thisDIR/opensearch-dashboard-values.yaml . 
+  cd $thisDIR
 }
 
 install_efk_all_in_one () {
@@ -64,9 +86,8 @@ install_efk_all_in_one () {
 # https://medium.com/@raphaeldelio/deploy-the-elastic-stack-in-kubernetes-with-the-elastic-cloud-on-kubernetes-eck-b51f667828f9
 # https://medium.com/@raphaeldelio/how-to-backup-elasticsearch-on-kubernetes-with-amazon-s3-and-kibana-b282771e4da2
 # https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-deploy-eck.html
+   install_efk_secrets
    kubectl apply -f https://download.elastic.co/downloads/eck/$ELASTIC_OPERATOR_VERS/all-in-one.yaml
-   kubectl create secret generic aws-s3-keys --from-file=access-key-id=./.aws_access_key --from-file=access-secret-key=./.aws_secret_key
-   kubectl create secret generic gcs-cred --from-file=gcs-json-cred=./gcs-json-cred.json
    ~/.kubash/w8s/generic.w8 elastic-operator elastic-system
    sleep 2
    kubectl apply -f elasticsearch.yaml

@@ -1,9 +1,17 @@
 #!/bin/bash
-set -eux
+set -ex
 TMP=$(mktemp -d)
-. /etc/os-release
-: ${DEB_PRE_PACKAGES_TO_INSTALL:='apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
-: ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+sed 's/^/export /' /etc/os-release > /tmp/os-release
+. /tmp/os-release
+printenv
+: ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
+if [ $UBUNTU_CODENAME = 'focal' ]; then
+  echo 'Focal is the OS'
+  : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
+else
+  echo 'Focal is not the OS'
+  : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+fi
 # this one is for customization
 : ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 
@@ -19,7 +27,6 @@ echo '>>>> END_PRINTENV <<<<'
 # Registry mirror
 # https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
 # https://docs.docker.com/registry/recipes/mirror/
-printf 'The registry_mirror is set to %s' $K8S_REGISTRY_MIRROR_HUB
 if [ -z $K8S_REGISTRY_MIRROR_HUB ]; then
   echo 'The current registry_mirror is NOT SET!'
 : ${K8S_REGISTRY_MIRROR_HUB:=NULL_AND_VOID}
@@ -141,10 +148,10 @@ EOF
   sysctl --system
 
   # Configure package repository
-  if [[ $NAME == 'Ubuntu' ]]; then
+  if [ "$NAME" = 'Ubuntu' ]; then
     sudo sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
     wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${NAME}_${VERSION_ID}/Release.key -O- | sudo apt-key add -
-  elif [[ $NAME == 'Debian' ]]; then
+  elif [ "$NAME" = 'Debian' ]; then
     echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
     wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/Debian_10/Release.key -O- | sudo apt-key add -
   fi
@@ -159,11 +166,11 @@ EOF
 install_zabbix_agent () {
 
   # Configure package repository
-  if [[ $NAME == 'Ubuntu' ]]; then
+  if [ "$NAME" = 'Ubuntu' ]; then
     wget https://repo.zabbix.com/zabbix/5.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.0-1%2B${UBUNTU_CODENAME}_all.deb 
     sudo dpkg -i zabbix-release_5.0-1+${UBUNTU_CODENAME}_all.deb
-  elif [[ $NAME == 'Debian' ]]; then
-    if [[ $VERSION_CODENAME == 'buster' ]]; then
+  elif [ "$NAME" = 'Debian' ]; then
+    if [ "$VERSION_CODENAME" = 'buster' ]; then
       echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
     else
       echo 'debian version unsupported'
@@ -234,7 +241,7 @@ EOF
 
 mkshowipaddress () {
   ## Show IP address in /etc/issue
-  if [[ $UBUNTU_CODENAME == 'xenial' ]]; then
+  if [ "$UBUNTU_CODENAME" = 'xenial' ]; then
   cat << EOF > /usr/local/bin/get-ip-address
     #!/bin/bash
     echo -n 'IP address = '
@@ -256,7 +263,7 @@ EOF
 
   cat << EOF > /etc/network/if-up.d/show-ip-address
   #!/bin/sh
-  if [[ -f /etc/issue-standard ]]; then
+  if [ -f /etc/issue-standard ]; then
     cp /etc/issue-standard /etc/issue
     echo 'issue-standard found' >> /etc/issue
   fi
@@ -281,6 +288,8 @@ EOF
 }
 
 main () {
+  # for ES
+  echo 'vm.max_map_count=262144'|sudo tee -a /etc/sysctl.d/vm.conf
   apt-get update
   apt-get install -yqq \
   $DEB_PRE_PACKAGES_TO_INSTALL
@@ -322,6 +331,12 @@ EOF
     # leaving clean for now, let ansible initialize
     echo 'Sticking to defaults for kubespray'
     #install_default_docker
+  elif [ "$KUBEADM_INSTALL" = "nomad" ]; then
+    # Installing nomad
+    install_kubernetes_docker
+		curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+		sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+		sudo apt-get -yqq update && sudo apt-get install -yqq nomad
   elif [ "$KUBEADM_INSTALL" = "kubeadm2ha" ]; then
     #install_spec_docker
     install_kubernetes_docker
@@ -375,11 +390,25 @@ EOF
   #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
 
 
-  if [ $K8S_REGISTRY_MIRROR_HUB == "NULL_AND_VOID" ]; then
+  if [ "$K8S_REGISTRY_MIRROR_HUB" = "NULL_AND_VOID" ]; then
     echo 'No registry set, using defaults'
   else
     if [ ! -z "$K8S_REGISTRY_MIRROR_HUB" ]; then
       daemon_string="\"$K8S_REGISTRY_MIRROR_HUB\""
+			mkdir -p /etc/systemd/system/docker.service.d
+
+cat << EOD > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=$K8S_REGISTRY_MIRROR_HUB"
+Environment="HTTPS_PROXY=$K8S_REGISTRY_MIRROR_HUB"
+EOD
+
+			curl $K8S_REGISTRY_MIRROR_HUB/ca.crt > /usr/share/ca-certificates/docker_registry_proxy.crt
+			echo "docker_registry_proxy.crt" >> /etc/ca-certificates.conf
+			update-ca-certificates --fresh
+			systemctl daemon-reload
+			systemctl restart docker.service
+
     fi
     if [ ! -z "$K8S_REGISTRY_MIRROR_QUAY" ]; then
       daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_QUAY\""

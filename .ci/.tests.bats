@@ -8,10 +8,9 @@ setup () {
 @test "yaml2cluster test" {
   rm -Rf clusters/$MY_TMP
   cd $HOME/.kubash
-#/home/travis/.kubash/scripts/test_bats.sh $MY_TMP /home/travis/.kubash
 #yamlresult="$(kubash yaml2cluster /example-cluster.yaml -n $MY_TMP)"
-  kubash yaml2cluster /example-cluster.yaml -n $MY_TMP
-#  cp $HOME/.kube/config clusters/$MY_TMP/
+    example_cluster=$HOME/.kubash/examples/example-cluster.yaml
+    kubash yaml2cluster $example_cluster -n $MY_TMP
   [ -e "clusters/$MY_TMP/provision.csv" ]
 }
 

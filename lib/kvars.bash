@@ -25,6 +25,7 @@ find_defaults
 #: ${KUBERNETES_VERSION:='v1.15.3'}
 #: ${KUBE_MAJOR_VER:=1}
 #: ${KUBE_MINOR_VER:=15}
+: ${NAMESPACE:=default}
 : ${KUBASH_CLUSTER_NAME:=default}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
 : ${KUBASH_HISTORY_LIMIT:=5000}
@@ -80,7 +81,7 @@ find_defaults
 : ${CALICO_VER:=v3.3}
 : ${CALICO_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml}
 : ${CALICO_RBAC_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml}
-: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml}
+: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml}
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}

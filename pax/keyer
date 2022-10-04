@@ -8,10 +8,12 @@ cd $TMP
 touch $TMP/keys
 if [ ! -z "$KUBASH_SET_ROOT_PW" ]; then
   echo 'root passwd given, setting'
-	echo "$KUBASH_SET_ROOT_PW" | passwd foo --stdin
+	#passwd root <<< "$KUBASH_SET_ROOT_PW"
+	echo "root:$KUBASH_SET_ROOT_PW" | chpasswd
 else
   echo 'no root passwd given, not setting'
 fi
+sleep 3
 if [ ! -z "$KUBASH_SET_SU_PW" ]; then
   echo 'su passwd given, setting'
 	echo "$K8S_SU_USER:$KUBASH_SET_SU_PW" | chpasswd
