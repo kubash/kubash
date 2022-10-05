@@ -21,3 +21,4 @@ submodules/openebs
 *.packer_cache_path
 *.orig
 builds
+.idea/*
