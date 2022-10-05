@@ -54,7 +54,7 @@ jobs: # basic units of work in a run
           --dns-check
     - run:
         name: kubectl get all
-        command: kubectl get all
+        command: /usr/local/bin/kubectl get all
     - run:
         name: kubectl config
         command: cat $HOME/.kube/config
