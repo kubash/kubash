@@ -45,8 +45,9 @@ dotfiles_install () {
   mkdir -p $HOME/.local/bin
   # here we'll make a bin dir in $HOME and add it to path
   LOCAL_BIN=$HOME/.local/bin
+  GO_BIN=/usr/local/go/bin
   chkdir $KUBASH_BIN
-  LINE_TO_ADD="$(printf "export PATH=\"%s:%s:\$PATH\"" $KUBASH_BIN $LOCAL_BIN)"
+  LINE_TO_ADD="$(printf "export PATH=\"%s:%s:%s:\$PATH\"" $KUBASH_BIN $LOCAL_BIN $GO_BIN)"
   TARGET_FILE_FOR_ADD=$HOME/.bashrc
   check_if_line_exists || add_line_to
   TARGET_FILE_FOR_ADD=$HOME/.zshrc
