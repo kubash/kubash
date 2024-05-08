@@ -117,6 +117,14 @@ flight_checks () {
   fi
 }
 
+upgrade_go () {
+  GOTMP=$(mktemp -d)
+  cd $GOTMP
+  wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+  sudo rm -rf /usr/local/go
+  sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
+}
+
 main () {
   . /etc/os-release
   cat /etc/os-release
@@ -133,10 +141,16 @@ main () {
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm net-tools dnsutils'
     elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+    elif [[ "$UBUNTU_CODENAME" == "bionic" ]]; then
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      upgrade_go
     elif [[ "$UBUNTU_CODENAME" == "focal" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+    elif [[ "$UBUNTU_CODENAME" == "jammy" ]]; then
+          DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
     else
-      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      echo 'OS not detected! bailing out. you are on your own.'
+      exit 1
     fi
     if type "apt-get" &> /dev/null; then
       check_cmd apt-get
