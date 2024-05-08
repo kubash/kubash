@@ -81,12 +81,14 @@ find_defaults
 : ${CALICO_VER:=v3.3}
 : ${CALICO_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml}
 : ${CALICO_RBAC_URL:=https://docs.projectcalico.org/$CALICO_VER/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml}
-: ${FLANNEL_URL:=https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml}
+: ${FLANNEL_URL:=https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml}
 : ${USE_TRAEFIK_DAEMON_SET:='true'}
 : ${USE_TRAEFIK_RBAC:='true'}
 : ${VOYAGER_PROVIDER:='metallb'}
 : ${VOYAGER_VERSION:='v12.0.0'}
-: ${METALLB_VERSION:='v0.13.4'}
+: ${METALLB_VERSION:='v0.13.6'}
+: ${OPENSEARCH_INSTALL_METHOD:='helm'}
+: ${OPENSEARCH_DEPLOYMENT_NAME:='opensearch'}
 : ${PERCONA_NAMESPACE:='pxc'}
 : ${PERCONA_STORAGE_REQ:='20Gi'}
 : ${PERCONA_BACKUP_ENABLED:='false'}
@@ -104,6 +106,11 @@ find_defaults
 : ${CERT_MANAGER_VERSION:='1.0.4'}
 : ${CONSUL_VERSION:='0.39.0'}
 : ${CONSUL_METHOD:='helm'}
+: ${CONSUL_VERSION:='0.39.0'}
+: ${KUBEGRES_VERSION:='v1.16'}
+: ${POSTGRES_IMAGE_TAG:='postgres:15-alpine'}
+: ${POSTGRES_REPLICA_COUNT:=3}
+: ${POSTGRES_DB_SIZE:='200Mi'}
 
 # CSV vars
 JQ_INTERPRETER_1_0_0='.hosts[] | "\(.hostname),\(.role),\(.cpuCount),\(.Memory),\(.sshPort),\(.network1.network),\(.network1.mac),\(.network1.ip),\(.provisioner.Host),\(.provisioner.User),\(.provisioner.Port),\(.provisioner.BasePath),\(.os),\(.virt),\(.network2.network),\(.network2.mac),\(.network2.ip),\(.network3.network),\(.network3.mac),\(.network3.ip)"' \

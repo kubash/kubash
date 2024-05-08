@@ -1,0 +1,26 @@
+#!/bin/bash
+#set -eux
+this_pwd=$(pwd)
+submodules='istio kubeadm2ha kubespray openshift-ansible rook'
+
+checkmodule () {
+  cd $this_pwd/submodules/$1
+  pwd
+  git fetch --all
+  if [[ $1 == 'istio' ]]; then
+    git checkout release-1.18
+  elif [[ $1 == 'kubeadm2ha' ]]; then
+    git checkout master
+  elif [[ $1 == 'kubespray' ]]; then
+    git checkout release-2.22
+  elif [[ $1 == 'openshift-ansible' ]]; then
+    git checkout release-4.9
+  elif [[ $1 == 'rook' ]]; then
+    git checkout release-1.9
+  elif [[ $1 == 'test' ]]; then
+    echo "git checkout branch"
+    git branch -a
+  fi
+  git pull
+}
+for i in $submodules; do checkmodule $i; done

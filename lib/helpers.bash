@@ -1,15 +1,19 @@
 #!/bin/bash
-#ELASTIC_VERS='7.0.0-alpha1'
-#ELASTIC_VERS='7.2.0'
-#ELASTIC_VERS='7.4.0'
-#ELASTIC_VERS='7.5.2'
-#ELASTIC_VERS='7.8.0'
-#ELASTIC_VERS='7.9.3'
-#ELASTIC_VERS='7.10.0'
 ELASTIC_VERS='7.12.1'
 ELASTIC_OPERATOR_VERS='1.3.0'
-THIS_NAMESPACE=$(cat .name-space)
-THIS_CLUSTER=$(cat .cluster-name)
+if [[ -f .name-space ]]; then
+  THIS_NAMESPACE=$(cat .name-space)
+else
+  echo '.name-space file not found! exiting' 
+  exit 1
+fi
+if [[ -f .cluster-name ]]; then
+  
+  THIS_CLUSTER=$(cat .cluster-name)
+else
+  echo '.cluster-name file not found! exiting' 
+  exit 1
+fi
 
 setup_secrets () {
   cd $thisDir
@@ -60,25 +64,40 @@ install_fluentd () {
   kubectl apply -f fluentd-proxy.yaml
 }
 
+install_fluentd () {
+  ## Install Fluentd
+  cd $thisDir
+  helm install \
+    --name monitaur-fluentd \
+    kiwigrid/fluentd-elasticsearch \
+    --namespace $THIS_NAMESPACE \
+    -f fluentd-values.yaml
+
+  ~/.kubash/w8s/generic.w8 monitaur-fluentd-fluentd-elasticsearch $THIS_NAMESPACE
+  kubectl apply -f fluentd-svc.yaml
+  kubectl apply -f fluentd-proxy.yaml
+}
+
 install_efk_secrets () {
   cd $thisDir
   kubectl create secret generic aws-s3-keys --from-file=access-key-id=./.aws_access_key --from-file=access-secret-key=./.aws_secret_key
   kubectl create secret generic gcs-cred --from-file=gcs-json-cred=./gcs-json-cred.json
 }
 
-install_efk_opendistro () {
-  install_efk_secrets
-  cd ~/.kubash/submodules/opendistro-build/helm/opendistro-es
-  echo helm install ${THIS_CLUSTER}-opendistro --values=$thisDir/opendistro-values.yaml . 
-  helm install ${THIS_CLUSTER}-opendistro --values=$thisDir/opendistro-values.yaml . 
-  cd $thisDir
-}
-
 install_efk_opensearch () {
-  install_efk_secrets
-  cd ~/.kubash/submodules/opensearch-devops/helm-charts/charts/opensearch
-  echo helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
-  helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
+  if [[ $OPENSEARCH_INSTALL_METHOD == 'helm' ]]; then
+    helm repo add opensearch https://opensearch-project.github.io/helm-charts/   
+    helm repo update
+    helm install $OPENSEARCH_DEPLOYMENT_NAME opensearch/opensearch --values=$thisDir/opensearch-values.yaml
+  elif [[ $OPENSEARCH_INSTALL_METHOD == 'submodule' ]]; then
+    install_efk_secrets
+    cd ~/.kubash/submodules/opensearch-devops/helm-charts/charts/opensearch
+    echo helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
+    helm install ${THIS_CLUSTER}-opensearch --values=$thisDir/opensearch-values.yaml . 
+  else
+    echo 'unrecognized OPENSEARCH_INSTALL_METHOD method'
+    exit 1
+  fi
   cd $thisDir
 }
 

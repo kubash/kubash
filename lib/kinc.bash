@@ -60,3 +60,4 @@ print_help=no
 . $KUBASH_LIB/hashicorp.bash
 . $KUBASH_LIB/consul.bash
 . $KUBASH_LIB/vault.bash
+. $KUBASH_LIB/kubegres.bash

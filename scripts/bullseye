@@ -15,5 +15,5 @@ if [[ -e $KUBASH_DIR/.packer_cache_path ]]; then
 	PACKER_CACHE_PATH=$(cat $KUBASH_DIR/.packer_cache_path)
 	ln -s $PACKER_CACHE_PATH ./packer_cache
 fi
-mv ${THIS_OS}REPLACEME_KUBE_VERSION.json ${THIS_OS}${KUBE_VERSION}.json
-sed -i "s/REPLACEME_KUBE_VERSION/${KUBE_VERSION}/g" ${THIS_OS}${KUBE_VERSION}.json
+mv ${THIS_OS}REPLACEME_KUBE_VERSION-11.2-amd64.json ${THIS_OS}${KUBE_VERSION}-11.2-amd64.json
+sed -i "s/REPLACEME_KUBE_VERSION/${KUBE_VERSION}/g" ${THIS_OS}${KUBE_VERSION}-11.2-amd64.json
