@@ -3,6 +3,7 @@
 : ${KUBASH_BIN:=$KUBASH_DIR/bin}
 : ${GOPATH:=$HOME/.go}
 PIP_INSTALL_PKGS="netaddr ceph-deploy"
+APT_OPTS='-o DPkg::Lock::Timeout=60'
 if [[ "$1" == '-y' ]]; then
   echo 'using YES'
   YES='-y'
@@ -124,6 +125,14 @@ upgrade_go () {
   sudo rm -rf /usr/local/go
   sudo tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
 }
+apt_runner () {
+    if type "apt-get" &> /dev/null; then
+      check_cmd apt-get
+      $PSEUDO apt-get update
+      $PSEUDO apt-get $YES $APT_OPTS install $DEB_PKG_GET
+    fi
+    export PATH=/usr/local/go/bin:$PATH
+}
 
 main () {
   . /etc/os-release
@@ -139,23 +148,32 @@ main () {
   if [[ "$NAME" = 'Debian GNU/Linux' || $NAME = 'Ubuntu'   ]]; then
     if [[ "$CIRCLE_STAGE" == "acceptance-test" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm net-tools dnsutils'
+      apt_runner
+    elif [[ "$VERSION_CODENAME" == "buster" ]]; then
+      DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      apt_runner
+      upgrade_go
+    elif [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+      DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      apt_runner
+      upgrade_go
     elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      apt_runner
     elif [[ "$UBUNTU_CODENAME" == "bionic" ]]; then
-      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      apt_runner
       upgrade_go
     elif [[ "$UBUNTU_CODENAME" == "focal" ]]; then
-      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      apt_runner
+      upgrade_go
     elif [[ "$UBUNTU_CODENAME" == "jammy" ]]; then
-          DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
+      apt_runner
     else
       echo 'OS not detected! bailing out. you are on your own.'
       exit 1
-    fi
-    if type "apt-get" &> /dev/null; then
-      check_cmd apt-get
-      $PSEUDO apt-get update
-      $PSEUDO apt-get $YES install $DEB_PKG_GET
     fi
   elif [[ "$NAME" = 'CentOS Linux' ]]; then
     YUM_PKG_GET='sudo jq @development python3-pip golang unzip curl wget parallel ansible rlwrap rsync nmap net-tools qemu-kvm qemu-img virt-manager libvirt libvirt-python3 libvirt-client virt-install virt-viewer bridge-utils'
@@ -244,8 +262,8 @@ main () {
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-    nvm install --lts
-    nvm use --default --lts
+    nvm install lts/fermium
+    nvm use --default lts/fermium
     nvm alias default node
   fi
   check_cmd npm

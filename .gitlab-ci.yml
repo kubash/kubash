@@ -21,6 +21,20 @@ bootstrap_buster:
     - cat ./bootstrap
     - ./bootstrap -y
 
+bootstrap_bullseye:
+  stage: bootstrap
+  image: debian:bullseye
+  allow_failure: true
+  only:
+    - fulltest
+  variables:
+    DEBIAN_FRONTEND: noninteractive
+  script:
+    - echo 'export PATH="/root/.local/bin:/root/.kubash/bin:$PATH"' >> ~/.bashrc
+    - apt-get update -qq; apt-get install -yqq sudo
+    - cat ./bootstrap
+    - ./bootstrap -y
+
 bootstrap_bionic:
   stage: bootstrap
   image: ubuntu:bionic
@@ -37,12 +51,30 @@ bootstrap_bionic:
     - cat ./bootstrap
     - ./bootstrap -y
 
-bootstrap_xenial:
+bootstrap_focal:
   stage: bootstrap
-  allow_failure: true
+  image: ubuntu:focal
+  allow_failure: false
   only:
     - fulltest
   variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    DEBIAN_FRONTEND: noninteractive
+  before_script:
+    - export PATH="/root/.local/bin:/root/.kubash/bin:$PATH"
+  script:
+    - apt-get update -qq; apt-get install -yqq sudo
+    - cat ./bootstrap
+    - ./bootstrap -y
+
+bootstrap_jammy:
+  stage: bootstrap
+  image: ubuntu:jammy
+  allow_failure: false
+  only:
+    - fulltest
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
     DEBIAN_FRONTEND: noninteractive
   before_script:
     - export PATH="/root/.local/bin:/root/.kubash/bin:$PATH"
@@ -65,7 +97,7 @@ bootstrap_centos7:
     - ./bootstrap -y
 
 bootstrap_arch:
-  image: archlinux/base
+  image: archlinux:base-devel
   stage: bootstrap
   allow_failure: false
   only:
@@ -91,13 +123,14 @@ fulltest-bootstrap:
   allow_failure: true
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
+    DEBIAN_FRONTEND: noninteractive
   script:
     - export PATH="/home/gitlab-runner/.nvm/versions/node/v10.16.0/bin:/home/gitlab-runner/.local/bin:/home/gitlab-runner/.kubash/bin:$PATH"
     - echo 'fulltest1bootstrap'
     - bash -l -c 'PATH="/home/gitlab-runner/.nvm/versions/node/v10.16.0/bin:/home/gitlab-runner/.local/bin:/home/gitlab-runner/.kubash/bin:$PATH" ./bootstrap -y'
     - cd $HOME/.kubash && git pull && echo '/home/packer_cache/' > .packer_cache_path && cd pax && ./update_packer_cache 
 
-fulltest-xenial1.15.1:
+fulltest-bionic1.25.2:
   stage: build
   tags:
     - fulltest
@@ -107,37 +140,9 @@ fulltest-xenial1.15.1:
     - merge_requests
   allow_failure: true
   script:
-    - .ci/ubuilder xenial1.15.1
+    - .ci/ubuilder bionic1.25.2
 
-fulltest-xenial1.14.4:
-  stage: build
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  allow_failure: false
-  script:
-    - echo 'debug' 
-    - . ~/.bashrc
-    - printenv
-    - echo 'build xenial1.14.4' 
-    - .ci/ubuilder xenial1.14.4
-
-fulltest-xenial1.13.8:
-  stage: build
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  allow_failure: false
-  script:
-    - .ci/ubuilder xenial1.13.8
-
-fulltest-bionic1.14.4:
+fulltest-centos71.25.2:
   stage: build
   tags:
     - fulltest
@@ -147,9 +152,9 @@ fulltest-bionic1.14.4:
     - merge_requests
   allow_failure: true
   script:
-    - .ci/ubuilder bionic1.14.4
+    - .ci/ubuilder centos71.25.2
 
-fulltest-centos71.14.4:
+fulltest-bullseye1.25.2:
   stage: build
   tags:
     - fulltest
@@ -159,19 +164,7 @@ fulltest-centos71.14.4:
     - merge_requests
   allow_failure: true
   script:
-    - .ci/ubuilder centos71.14.4
-
-fulltest-buster1.14.4:
-  stage: build
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  allow_failure: true
-  script:
-    - .ci/ubuilder buster1.14.4
+    - .ci/ubuilder bullseye1.25.2
 
 fulltest-build:
   stage: build
@@ -186,7 +179,7 @@ fulltest-build:
     - echo 'fulltest1build'
     - .ci/builder.sh
 
-stacked-buster1.14.4:
+stacked-buster1.25.2:
   stage: test
   tags:
     - fulltest
@@ -198,10 +191,10 @@ stacked-buster1.14.4:
   script:
     - echo 'experimental pending' 
     - . ~/.bashrc
-    - echo 'commence stacked-buster-v1.14.4' 
-    - scripts/tester stacked buster1.14.4 v1.14.4
+    - echo 'commence stacked-buster-v1.25.2' 
+    - scripts/tester stacked buster1.25.2 v1.25.2
 
-stacked-bionic1.14.4:
+stacked-bionic1.25.2:
   stage: test
   tags:
     - fulltest
@@ -213,10 +206,10 @@ stacked-bionic1.14.4:
   script:
     - echo 'experimental pending' 
     - . ~/.bashrc
-    - echo 'commence stacked-bionic-v1.14.4' 
-    - scripts/tester stacked bionic1.14.4 v1.14.4
+    - echo 'commence stacked-bionic-v1.25.2' 
+    - scripts/tester stacked bionic1.25.2 v1.25.2
 
-stacked-centos71.14.4:
+stacked-centos71.25.2:
   stage: test
   tags:
     - fulltest
@@ -228,82 +221,8 @@ stacked-centos71.14.4:
   script:
     - echo 'experimental pending' 
     - . ~/.bashrc
-    - echo 'commence stacked-centos7-v1.14.4' 
-    - scripts/tester stacked centos71.14.4 v1.14.4
-
-stacked-xenial1.14.4:
-  stage: test
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  script:
-    - . ~/.bashrc
-    - echo 'commence stacked-xenial-v1.14.4' 
-    - scripts/tester stacked xenial1.14.4 v1.14.4
-
-stacked-xenial1.15.0:
-  stage: test
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  allow_failure: true
-  script:
-    - echo 'experimental pending' 
-    - . ~/.bashrc
-    - printenv
-    - echo 'commence stacked-xenial-v1.15.0' 
-    - scripts/tester stacked xenial1.15.0 v1.15.0
-
-extetcd-xenial1.14.4:
-  stage: test
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  script:
-    - echo 'debug' 
-    - . ~/.bashrc
-    - printenv
-    - echo 'commence extetcd-xenial-v1.14.4' 
-    - scripts/tester extetcd xenial1.14.4 v1.14.4
-
-stacked-xenial1.13.8:
-  stage: test
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  script:
-    - echo 'debug' 
-    - . ~/.bashrc
-    - printenv
-    - echo 'commence stacked-xenial-v1.13.8' 
-    - scripts/tester stacked xenial1.13.8 v1.13.8
-
-extetcd-xenial1.13.8:
-  stage: test
-  tags:
-    - fulltest
-  only:
-    - fulltest
-  except:
-    - merge_requests
-  script:
-    - echo 'debug' 
-    - . ~/.bashrc
-    - printenv
-    - echo 'commence extetcd-xenial-v1.13.8' 
-    - scripts/tester extetcd xenial1.13.8 v1.13.8
+    - echo 'commence stacked-centos7-v1.25.2' 
+    - scripts/tester stacked centos71.25.2 v1.25.2
 
 stacked-coreos:
   stage: test

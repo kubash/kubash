@@ -12,33 +12,15 @@ do_istio () {
       #LOAD_BALANCER_IP_SET="--set gateways.istio-ilbgateway.loadBalancerIP=$LOAD_BALANCER_IP"
       LOAD_BALANCER_IP_SET="--set gateways.istio-ingressgateway.loadBalancerIP=$LOAD_BALANCER_IP"
     fi
-    cd $KUBASH_DIR/submodules/istio/install/kubernetes/helm
+
     KUBECONFIG=$KUBECONFIG \
-    helm install \
-      --name=istio-init \
-      --namespace=istio-system \
-      --set gateways.istio-ingressgateway.sds.enabled=true \
-      --set global.k8sIngress.enabled=true \
-      --set certmanager.enabled=true \
-      --set certmanager.email=$LETSENCRYPT_EMAIL \
-      istio.io/istio-init
-    sleep 1
-    ISTIO_CRD_COUNT=0
-    countzero=0
-    while [[ $ISTIO_CRD_COUNT -lt 28 ]]
-    do
-      ISTIO_CRD_COUNT=$(kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l)
-      if [[ $countzero > 15 ]]; then
-        echo "ISTIO_CRD_COUNT=$ISTIO_CRD_COUNT"
-      fi
-      sleep 1
-      ((++countzero))
-    done
-    helm repo add istio.io https://storage.googleapis.com/istio-release/releases/1.4.3/charts/
+    helm repo add istio https://istio-release.storage.googleapis.com/charts
     KUBECONFIG=$KUBECONFIG \
-    helm install \
-      --name=istio \
-      --namespace=istio-system \
+    helm repo update
+    KUBECONFIG=$KUBECONFIG \
+    kubectl create namespace istio-system
+
+    DEPRECATED_COMMON_ARGS="--namespace=istio-system \
       $LOAD_BALANCER_IP_SET \
       --set kiali.enabled=true \
       --set grafana.enabled=true \
@@ -52,9 +34,49 @@ do_istio () {
       --set gateways.istio-ingressgateway.type=$ISTIO_GATEWAY_TYPE \
       --set gateways.istio-ingressgateway.sds.enabled=true \
       --set global.k8sIngress.gatewayName=ingressgateway \
-      --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
-      --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
-      istio.io/istio
+      --set 'kiali.dashboard.grafanaURL=http://grafana:3000' \
+      --set 'kiali.dashboard.jaegerURL=http://jaeger-query:16686"
+
+    BASE_ARGS="--set global.istioNamespace='istio-system' \
+      --set global.istiod.enalbleAnalytics=true"
+
+    COMMON_ARGS="--namespace=istio-system"
+
+    KUBECONFIG=$KUBECONFIG \
+    helm install istio-base istio/base -n istio-system \
+      $BASE_ARGS \
+      $COMMON_ARGS
+
+    KUBECONFIG=$KUBECONFIG \
+    helm install istiod istio/istiod -n istio-system --wait \
+      $COMMON_ARGS
+
     KUBECONFIG=$KUBECONFIG \
     kubectl label namespace default --overwrite istio-injection=enabled
+
+    KUBECONFIG=$KUBECONFIG \
+    kubectl create namespace istio-ingress
+    KUBECONFIG=$KUBECONFIG \
+    kubectl label namespace istio-ingress istio-injection=enabled
+    KUBECONFIG=$KUBECONFIG \
+    helm install istio-ingress istio/gateway -n istio-ingress --wait
+}
+
+demo_istio () {
+  PRE_CWD=$(pwd)
+  istioctl install --set profile=demo -y
+  kubectl label namespace default istio-injection=enabled
+  cd $KUBASH_DIR/submodules/istio
+  kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+  kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+  export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+  export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+  export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+  echo "$GATEWAY_URL"
+  echo "http://$GATEWAY_URL/productpage"
+  kubectl apply -f samples/addons
+  kubectl rollout status deployment/kiali -n istio-system
+  echo "Info: https://istio.io/latest/docs/setup/getting-started/"
+  cd ${PRE_CWD}
 }

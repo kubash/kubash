@@ -216,7 +216,7 @@
     }
   ],
   "variables": {
-    "box_basename": "kubash-bullseye",
+    "box_basename": "kubash-bullseye-11.2",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
     "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
@@ -231,7 +231,7 @@
     "DOCKER_COMPOSE_PKG": "1.8.0",
     "KUBEPKG_VERSION": "REPLACEME_KUBE_VERSION",
     "ETCD_VERSION": "3.2.17",
-    "build_directory": "../../builds",
+    "build_directory": "../builds",
     "build_timestamp": "{{isotime \"20060102150405\"}}",
     "cpus": "4",
     "disk_size": "65536",
@@ -246,7 +246,7 @@
     "memory": "2048",
     "mirror": "http://cdimage.debian.org/cdimage/release",
     "mirror_directory": "11.2.0/amd64/iso-cd",
-    "name": "kubash-debian-11.2",
+    "name": "kubash-REPLACEME_KUBE_VERSION-11.2",
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "debian-9/preseed.cfg",
     "qemu_display": "none",

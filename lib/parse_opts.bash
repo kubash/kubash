@@ -194,6 +194,20 @@ parse_opts () {
       exit 1
     fi
     exit 0
+  elif [[ $RAISON == "kubegres" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        do_kubegres
+  elif [[ $RAISON == "istio_demo" ]]; then
+    if [[ $print_help == "true" ]]; then
+      horizontal_rule
+      usage
+      exit 1
+    fi
+        demo_istio
   elif [[ $RAISON == "istio" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -766,33 +780,12 @@ parse_opts () {
       fi
       build_usage
       croak 3  'support removed request repair :('
-    elif [[ "$target_os" =~ 'centos7' ]]; then
-      if [[ -z "$target_build" ]]; then
-        echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/centos7//')
-        target_build=centos7$build_num
-        packer_create_pax_dir 'centos7' $build_num
-      fi
     elif [[ "$target_os" =~ 'centos8' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/centos8//')
         target_build=centos8$build_num
         packer_create_pax_dir 'centos8' $build_num
-      fi
-    elif [[ "$target_os" =~ 'stretch' ]]; then
-      if [[ -z "$target_build" ]]; then
-        echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/stretch//')
-        target_build=stretch$build_num
-        packer_create_pax_dir 'stretch' $build_num
-      fi
-    elif [[ "$target_os" =~ 'bionic' ]]; then
-      if [[ -z "$target_build" ]]; then
-        echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/bionic//')
-        target_build=bionic$build_num-18.04-amd64
-        packer_create_pax_dir 'bionic' $build_num
       fi
     elif [[ "$target_os" =~ 'focal' ]]; then
       if [[ -z "$target_build" ]]; then
@@ -812,15 +805,8 @@ parse_opts () {
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
         build_num=$(echo $target_os | sed 's/bullseye//')
-        target_build=bullseye$build_num
+        target_build=bullseye$build_num-11.2-amd64
         packer_create_pax_dir 'bullseye' $build_num
-      fi
-    elif [[ "$target_os" =~ 'buster' ]]; then
-      if [[ -z "$target_build" ]]; then
-        echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/buster//')
-        target_build=buster$build_num
-        packer_create_pax_dir 'buster' $build_num
       fi
     elif [[ "$target_os" =~ 'ubuntu' ]]; then
       if [[ -z "$target_build" ]]; then
@@ -828,13 +814,6 @@ parse_opts () {
         build_num=$(echo $target_os | sed 's/ubuntu//')
         target_build=ubuntu$build_num-16.04-amd64
         packer_create_pax_dir 'ubuntu' $build_num
-      fi
-    elif [[ "$target_os" =~ 'xenial' ]]; then
-      if [[ -z "$target_build" ]]; then
-        echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/xenial//')
-        target_build=xenial$build_num-16.04-amd64
-        packer_create_pax_dir 'xenial' $build_num
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm

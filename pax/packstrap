@@ -3,9 +3,289 @@ set -ex
 TMP=$(mktemp -d)
 sed 's/^/export /' /etc/os-release > /tmp/os-release
 . /tmp/os-release
-printenv
-: ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt ntp software-properties-common'}
+: ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt software-properties-common'}
+# this one is for customization
+: ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
+: ${DOCKER_CGROUP_DRIVER:='systemd'}
 
+kube_major=$(echo $KUBEPKG_VERSION | cut -f1 -d'.')
+kube_minor=$(echo $KUBEPKG_VERSION | cut -f2 -d'.')
+export SHORT_KUBEPKG_VERSION=${kube_major}.${kube_minor}
+
+rook_efficiency () {
+# This is for rook efficiency
+# https://rook.io/docs/rook/v0.9/edgefs-quickstart.html
+cat <<EOF >  /etc/sysctl.d/rook.conf
+net.core.rmem_default = 80331648
+net.core.rmem_max = 80331648
+net.core.wmem_default = 33554432
+net.core.wmem_max = 50331648
+vm.dirty_ratio = 10
+vm.dirty_background_ratio = 5
+vm.swappiness = 15
+EOF
+}
+
+containerd_config () {
+  echo containerd_config
+  mkdir -p  /etc/containerd
+  cat <<EOF >  /etc/containerd/config.toml
+disabled_plugins = []
+imports = []
+oom_score = 0
+plugin_dir = ""
+required_plugins = []
+root = "/var/lib/containerd"
+state = "/run/containerd"
+temp = ""
+version = 2
+
+[cgroup]
+  path = ""
+
+[debug]
+  address = ""
+  format = ""
+  gid = 0
+  level = ""
+  uid = 0
+
+[grpc]
+  address = "/run/containerd/containerd.sock"
+  gid = 0
+  max_recv_message_size = 16777216
+  max_send_message_size = 16777216
+  tcp_address = ""
+  tcp_tls_ca = ""
+  tcp_tls_cert = ""
+  tcp_tls_key = ""
+  uid = 0
+
+[metrics]
+  address = ""
+  grpc_histogram = false
+
+[plugins]
+
+  [plugins."io.containerd.gc.v1.scheduler"]
+    deletion_threshold = 0
+    mutation_threshold = 100
+    pause_threshold = 0.02
+    schedule_delay = "0s"
+    startup_delay = "100ms"
+
+  [plugins."io.containerd.grpc.v1.cri"]
+    device_ownership_from_security_context = false
+    disable_apparmor = false
+    disable_cgroup = false
+    disable_hugetlb_controller = true
+    disable_proc_mount = false
+    disable_tcp_service = true
+    enable_selinux = false
+    enable_tls_streaming = false
+    enable_unprivileged_icmp = false
+    enable_unprivileged_ports = false
+    ignore_image_defined_volumes = false
+    max_concurrent_downloads = 3
+    max_container_log_line_size = 16384
+    netns_mounts_under_state_dir = false
+    restrict_oom_score_adj = false
+    sandbox_image = "registry.k8s.io/pause:3.6"
+    selinux_category_range = 1024
+    stats_collect_period = 10
+    stream_idle_timeout = "4h0m0s"
+    stream_server_address = "127.0.0.1"
+    stream_server_port = "0"
+    systemd_cgroup = false
+    tolerate_missing_hugetlb_controller = true
+    unset_seccomp_profile = ""
+
+    [plugins."io.containerd.grpc.v1.cri".cni]
+      bin_dir = "/opt/cni/bin"
+      conf_dir = "/etc/cni/net.d"
+      conf_template = ""
+      ip_pref = ""
+      max_conf_num = 1
+
+    [plugins."io.containerd.grpc.v1.cri".containerd]
+      default_runtime_name = "runc"
+      disable_snapshot_annotations = true
+      discard_unpacked_layers = false
+      ignore_rdt_not_enabled_errors = false
+      no_pivot = false
+      snapshotter = "overlayfs"
+
+      [plugins."io.containerd.grpc.v1.cri".containerd.default_runtime]
+        base_runtime_spec = ""
+        cni_conf_dir = ""
+        cni_max_conf_num = 0
+        container_annotations = []
+        pod_annotations = []
+        privileged_without_host_devices = false
+        runtime_engine = ""
+        runtime_path = ""
+        runtime_root = ""
+        runtime_type = ""
+
+        [plugins."io.containerd.grpc.v1.cri".containerd.default_runtime.options]
+
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes]
+
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+          base_runtime_spec = ""
+          cni_conf_dir = ""
+          cni_max_conf_num = 0
+          container_annotations = []
+          pod_annotations = []
+          privileged_without_host_devices = false
+          runtime_engine = ""
+          runtime_path = ""
+          runtime_root = ""
+          runtime_type = "io.containerd.runc.v2"
+
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+            BinaryName = ""
+            CriuImagePath = ""
+            CriuPath = ""
+            CriuWorkPath = ""
+            IoGid = 0
+            IoUid = 0
+            NoNewKeyring = false
+            NoPivotRoot = false
+            Root = ""
+            ShimCgroup = ""
+            SystemdCgroup = true
+
+      [plugins."io.containerd.grpc.v1.cri".containerd.untrusted_workload_runtime]
+        base_runtime_spec = ""
+        cni_conf_dir = ""
+        cni_max_conf_num = 0
+        container_annotations = []
+        pod_annotations = []
+        privileged_without_host_devices = false
+        runtime_engine = ""
+        runtime_path = ""
+        runtime_root = ""
+        runtime_type = ""
+
+        [plugins."io.containerd.grpc.v1.cri".containerd.untrusted_workload_runtime.options]
+
+    [plugins."io.containerd.grpc.v1.cri".image_decryption]
+      key_model = "node"
+
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = ""
+
+      [plugins."io.containerd.grpc.v1.cri".registry.auths]
+
+      [plugins."io.containerd.grpc.v1.cri".registry.configs]
+
+      [plugins."io.containerd.grpc.v1.cri".registry.headers]
+
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+
+    [plugins."io.containerd.grpc.v1.cri".x509_key_pair_streaming]
+      tls_cert_file = ""
+      tls_key_file = ""
+
+  [plugins."io.containerd.internal.v1.opt"]
+    path = "/opt/containerd"
+
+  [plugins."io.containerd.internal.v1.restart"]
+    interval = "10s"
+
+  [plugins."io.containerd.internal.v1.tracing"]
+    sampling_ratio = 1.0
+    service_name = "containerd"
+
+  [plugins."io.containerd.metadata.v1.bolt"]
+    content_sharing_policy = "shared"
+
+  [plugins."io.containerd.monitor.v1.cgroups"]
+    no_prometheus = false
+
+  [plugins."io.containerd.runtime.v1.linux"]
+    no_shim = false
+    runtime = "runc"
+    runtime_root = ""
+    shim = "containerd-shim"
+    shim_debug = false
+
+  [plugins."io.containerd.runtime.v2.task"]
+    platforms = ["linux/amd64"]
+    sched_core = false
+
+  [plugins."io.containerd.service.v1.diff-service"]
+    default = ["walking"]
+
+  [plugins."io.containerd.service.v1.tasks-service"]
+    rdt_config_file = ""
+
+  [plugins."io.containerd.snapshotter.v1.aufs"]
+    root_path = ""
+
+  [plugins."io.containerd.snapshotter.v1.btrfs"]
+    root_path = ""
+
+  [plugins."io.containerd.snapshotter.v1.devmapper"]
+    async_remove = false
+    base_image_size = ""
+    discard_blocks = false
+    fs_options = ""
+    fs_type = ""
+    pool_name = ""
+    root_path = ""
+
+  [plugins."io.containerd.snapshotter.v1.native"]
+    root_path = ""
+
+  [plugins."io.containerd.snapshotter.v1.overlayfs"]
+    mount_options = []
+    root_path = ""
+    sync_remove = false
+    upperdir_label = false
+
+  [plugins."io.containerd.snapshotter.v1.zfs"]
+    root_path = ""
+
+  [plugins."io.containerd.tracing.processor.v1.otlp"]
+    endpoint = ""
+    insecure = false
+    protocol = ""
+
+[proxy_plugins]
+
+[stream_processors]
+
+  [stream_processors."io.containerd.ocicrypt.decoder.v1.tar"]
+    accepts = ["application/vnd.oci.image.layer.v1.tar+encrypted"]
+    args = ["--decryption-keys-path", "/etc/containerd/ocicrypt/keys"]
+    env = ["OCICRYPT_KEYPROVIDER_CONFIG=/etc/containerd/ocicrypt/ocicrypt_keyprovider.conf"]
+    path = "ctd-decoder"
+    returns = "application/vnd.oci.image.layer.v1.tar"
+
+  [stream_processors."io.containerd.ocicrypt.decoder.v1.tar.gzip"]
+    accepts = ["application/vnd.oci.image.layer.v1.tar+gzip+encrypted"]
+    args = ["--decryption-keys-path", "/etc/containerd/ocicrypt/keys"]
+    env = ["OCICRYPT_KEYPROVIDER_CONFIG=/etc/containerd/ocicrypt/ocicrypt_keyprovider.conf"]
+    path = "ctd-decoder"
+    returns = "application/vnd.oci.image.layer.v1.tar+gzip"
+
+[timeouts]
+  "io.containerd.timeout.bolt.open" = "0s"
+  "io.containerd.timeout.shim.cleanup" = "5s"
+  "io.containerd.timeout.shim.load" = "5s"
+  "io.containerd.timeout.shim.shutdown" = "3s"
+  "io.containerd.timeout.task.state" = "2s"
+
+[ttrpc]
+  address = ""
+  gid = 0
+  uid = 0
+EOF
+}
+
+preps () {
 if [ $ID = 'debian' ]; then
     : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
 elif [ $ID = 'ubuntu' ]; then
@@ -14,31 +294,9 @@ elif [ $ID = 'ubuntu' ]; then
     : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
   else
     echo 'Focal is not the OS'
-    : ${DEB_PACKAGES_TO_INSTALL:='ceph ceph-test sysstat rsync fail2ban net-tools dnsutils python-pip vim htop iotop iftop zsh'}
+    : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python-pip  vim htop iotop iftop zsh ntp ceph-test'}
   fi
 fi
-# this one is for customization
-: ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
-
-#: ${DOCKER_PKG:='19.03'}
-: ${DOCKER_COMPOSE_PKG:='1.8.0'}
-: ${KUBEPKG_VERSION:="1.19.6"}
-: ${ETCD_VERSION:="3.2.17"}
-: ${DOCKER_CGROUP_DRIVER:='systemd'}
-#: ${DOCKER_CGROUP_DRIVER:='cgroupfs'}
-echo '>>>> PRINTENV <<<<'
-printenv
-echo '>>>> END_PRINTENV <<<<'
-# Registry mirror
-# https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
-# https://docs.docker.com/registry/recipes/mirror/
-if [ -z $K8S_REGISTRY_MIRROR_HUB ]; then
-  echo 'The current registry_mirror is NOT SET!'
-: ${K8S_REGISTRY_MIRROR_HUB:=NULL_AND_VOID}
-else
-  printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR_HUB
-fi
-printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR_HUB
 
 cat <<EOF > $TMP/inventory
 localhost ansible_connection=local
@@ -65,35 +323,21 @@ localhost
 localhost
 EOF
 
-rook_efficiency () {
-# This is for rook efficiency
-# https://rook.io/docs/rook/v0.9/edgefs-quickstart.html
-cat <<EOF >  /etc/sysctl.d/rook.conf
-net.core.rmem_default = 80331648
-net.core.rmem_max = 80331648
-net.core.wmem_default = 33554432
-net.core.wmem_max = 50331648
-vm.dirty_ratio = 10
-vm.dirty_background_ratio = 5
-vm.swappiness = 15
-EOF
-}
-
-rook_efficiency
-
-cat <<EOF >  /etc/sysctl.d/k8s.conf
+  cat <<EOF >  /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
-sysctl --system
-
-echo 'export GOPATH=$HOME/.go' >> .bashrc
-echo 'export PATH=${GOPATH//://bin:}/bin:$PATH' >> .bashrc
-
-echo ip_vs >> /etc/modules
-echo ip_vs_wrr >> /etc/modules
-echo ip_vs_sh >> /etc/modules
-echo ip_vs_rr >> /etc/modules
+  sysctl --system
+  
+  echo 'export GOPATH=$HOME/.go' >> .bashrc
+  echo 'export PATH=${GOPATH//://bin:}/bin:$PATH' >> .bashrc
+  
+  echo ip_vs >> /etc/modules
+  echo ip_vs_wrr >> /etc/modules
+  echo ip_vs_sh >> /etc/modules
+  echo ip_vs_rr >> /etc/modules
+# end indent breaks
+}
 
 install_pips () {
   sudo -H pip install --upgrade pip
@@ -123,6 +367,11 @@ install_default_docker () {
   #sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
   # /etc/sysconfig/docker
 }
+
+install_default_docker () {
+  apt-get -yqq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
 
 install_spec_docker () {
   apt-get install -yqq --allow-downgrades \
@@ -155,17 +404,20 @@ EOF
 
   sysctl --system
 
-  # Configure package repository
-  if [ "$NAME" = 'Ubuntu' ]; then
-    sudo sh -c "echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/x${NAME}_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
-    wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/x${NAME}_${VERSION_ID}/Release.key -O- | sudo apt-key add -
-  elif [ "$NAME" = 'Debian' ]; then
-    echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-    wget -nv https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/Debian_10/Release.key -O- | sudo apt-key add -
-  fi
-  sudo apt-get update
+
   # Install CRI-O
-  sudo apt-get -y install cri-o-1.17
+  # https://github.com/cri-o/cri-o/blob/main/install.md#install-packaged-versions-of-cri-o
+  export OS=Debian_12
+  export VERSION=$KUBEPKG_VERSION
+  echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+  echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
+
+  mkdir -p /usr/share/keyrings
+  curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg
+  curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg
+
+  apt-get update
+  apt-get install -yqq cri-o cri-o-runc
 
   rm -fv /etc/containerd/config.toml
   systemctl daemon-reload
@@ -193,42 +445,19 @@ install_zabbix_agent () {
   #sudo systemctl enable zabbix-agent
 }
 
-install_kubernetes_docker () {
-  # Follows the official install guide for ubuntu
-  # https://kubernetes.io/docs/setup/production-environment/container-runtimes/
-  # Install Docker CE
-  ## Set up the repository:
-  ### Install packages to allow apt to use a repository over HTTPS
-  apt-get update && apt-get install -y \
-      apt-transport-https ca-certificates curl software-properties-common gnupg2
+get_cni () {
+  mkdir -p /opt/cni/bin
+  curl -O -L https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz
+  tar -C /opt/cni/bin -xzf cni-plugins-linux-amd64-v1.2.0.tgz
+}
 
-  ### Add Docker’s official GPG key
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-
-  ### Add Docker apt repository.
-  add-apt-repository \
-    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) \
-    stable"
-
-  # Install Docker CE
-  apt-get update && apt-get install -y \
-      containerd.io \
-      docker-ce \
-      docker-ce-cli
-
-  #deprecating versions
-      #containerd.io=1.2.13-2 \
-      #docker-ce=5:19.03.11~3-0~ubuntu-$(lsb_release -cs) \
-      #docker-ce-cli=5:19.03.11~3-0~ubuntu-$(lsb_release -cs)
-  # going with above temporarily
-  #docker-ce=$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}') \
-
+common_kube_install () {
   apt-get install -yqq --allow-downgrades \
   kubelet=$(apt-cache madison kubelet | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}') \
   kubeadm=$(apt-cache madison kubeadm | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}') \
   kubectl=$(apt-cache madison kubectl | grep $KUBEPKG_VERSION | head -1 | awk '{print $3}')
 
+  mkdir -p /etc/docker
   # Setup daemon.
   cat > /etc/docker/daemon.json <<EOF
 {
@@ -243,8 +472,6 @@ EOF
 
   mkdir -p /etc/systemd/system/docker.service.d
 
-
-  install_docker_compose
   install_pips
 
   # Restart docker.
@@ -253,77 +480,104 @@ EOF
   systemctl restart containerd
   systemctl enable docker && systemctl restart docker
   systemctl enable kubelet && systemctl restart kubelet
+  crictl config runtime-endpoint unix:///var/run/containerd/containerd.sock
+}
+
+install_kubernetes_docker () {
+  prep_kubernetes_key
+  get_cni
+  official_docker_install
+  common_kube_install
+}
+
+install_kubernetes_wo_docker () {
+  prep_kubernetes_key
+  get_cni
+  install_kubernetes_crio
+  common_kube_install
 }
 
 mkshowipaddress () {
   ## Show IP address in /etc/issue
-  if [ "$UBUNTU_CODENAME" = 'xenial' ]; then
-  cat << EOF > /usr/local/bin/get-ip-address
-    #!/bin/bash
-    echo -n 'IP address = '
-    /sbin/ifconfig | grep "inet addr" | grep -v "127.0.0.1" | awk '{ print \$2 }' | awk -F: '{ print \$2 }'
-    echo -n 'SSH is on port: '
-    grep Port /etc/ssh/sshd_config
-EOF
-  else
     cat << EOF > /usr/local/bin/get-ip-address
-    #!/bin/bash
-    echo -n 'IP address = '
-    /sbin/ip a | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
-    echo -n 'SSH is on port: '
-    grep Port /etc/ssh/sshd_config
+#!/bin/bash
+echo -n 'IP address = '
+/sbin/ip a | grep "inet" | grep -v "inet6 ::1" | grep -v "inet 127.0.0.1" | awk '{ print \$2 }'
+echo -n 'SSH is on port: '
+grep Port /etc/ssh/sshd_config
 EOF
-  fi
 
   chmod +x /usr/local/bin/get-ip-address
 
   cat << EOF > /etc/network/if-up.d/show-ip-address
-  #!/bin/sh
-  if [ -f /etc/issue-standard ]; then
-    cp /etc/issue-standard /etc/issue
-    echo 'issue-standard found' >> /etc/issue
-  fi
+#!/bin/sh
+if [ -f /etc/issue-standard ]; then
+cp /etc/issue-standard /etc/issue
+echo 'issue-standard found' >> /etc/issue
+fi
 
-  # Warn if run from loopback
-  if [ "\$METHOD" = loopback ]; then
-      echo 'WARNING: running from loopback' >> /etc/issue
-      #exit 0
-  fi
+# Warn if run from loopback
+if [ "\$METHOD" = loopback ]; then
+echo 'WARNING: running from loopback' >> /etc/issue
+#exit 0
+fi
 
-  # Warn if not run from ifup.
-  if [ "\$MODE" != start ]; then
-      echo 'WARNING: not running from ifup' >> /etc/issue
-      #exit 0
-  fi
+# Warn if not run from ifup.
+if [ "\$MODE" != start ]; then
+echo 'WARNING: not running from ifup' >> /etc/issue
+#exit 0
+fi
 
-  /usr/local/bin/get-ip-address >> /etc/issue
-  echo "" >> /etc/issue
+/usr/local/bin/get-ip-address >> /etc/issue
+echo "" >> /etc/issue
 EOF
 
   chmod +x /etc/network/if-up.d/show-ip-address
 }
 
-main () {
-  # for ES
-  echo 'vm.max_map_count=262144'|sudo tee -a /etc/sysctl.d/vm.conf
+official_docker_install () {
+  set +e
+  for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get -yqq remove $pkg; done
+  set -e
+  sudo apt-get -yqq install ca-certificates curl gnupg
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+  
+  # Add the repository to Apt sources:
+  echo \
+    "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
   apt-get update
-  apt-get install -yqq \
-  $DEB_PRE_PACKAGES_TO_INSTALL
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-  add-apt-repository \
-     "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
-     $(lsb_release -cs) \
-     stable"
-  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-  cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-  deb http://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-  apt-get update
-  apt-get install -yqq \
-  $DEB_PACKAGES_TO_INSTALL
+  apt-get -yqq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  containerd_config
+  apt-mark hold docker-ce
+  systemctl restart docker
+  systemctl restart containerd
+  docker version
+}
 
-  sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat
+prep_kubernetes_key () {
+  # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+  sudo mkdir -m 755 /etc/apt/keyrings
+  curl -fsSL https://pkgs.k8s.io/core:/stable:/v${SHORT_KUBEPKG_VERSION}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${SHORT_KUBEPKG_VERSION}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+}
 
+additional_packages_install () {
+  if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
+    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+    date -I >> /root/.additional_packages_isntalled
+    echo "apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL" >> /root/.additional_packages_isntalled
+    apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL
+  else
+    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+  fi
+  #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
+}
+
+go_installer () {
   # test snap
   if ! test_cmd_loc="$(type -p "snap")" || [ -z "$test_cmd_loc" ]; then
     echo "snap was not found in your path! skipping"
@@ -332,11 +586,40 @@ EOF
     snap install --classic go
   fi
   export GOPATH=$HOME/.go
-  #go get github.com/kubernetes-incubator/cri-tools/cmd/crictl
-  #mv $HOME/go/bin/crictl /usr/local/bin/
+}
+
+turn_off_swap () {
   swapoff --all
   sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+}
 
+pre_packages_install () {
+  # for ES
+  set +e
+  echo 'vm.max_map_count=262144'|sudo tee -a /etc/sysctl.d/vm.conf
+  ls -alh /etc/sysctl.d/vm.conf
+  sed -i 's/ENABLED="false"/ENABLED="true"/' /etc/default/sysstat
+  cat /etc/default/sysstat
+  set -e
+
+  apt-get update
+  apt-get install -yqq \
+  $DEB_PRE_PACKAGES_TO_INSTALL
+
+  # service open-iscsi restart
+  systemctl enable iscsid
+}
+
+packages_install () {
+  apt-get update
+  apt-get install -yqq \
+  $DEB_PACKAGES_TO_INSTALL
+
+  echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
+  echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
+}
+
+chooser () {
   if [ "$KUBEADM_INSTALL" = "openshift" ]; then
     # leaving clean for now, let ansible initialize
     #yum install -y centos-release-openshift-origin origin-clients
@@ -382,38 +665,35 @@ EOF
     #yes y|kubeadm reset
     rm -Rf /etc/kubernetes/*
   fi
+}
 
-  apt-mark hold docker-ce
-  # service open-iscsi restart
-  systemctl enable iscsid
-  systemctl restart docker
-
-  mkshowipaddress
-
-  echo 'PATH=/usr/local/bin:$PATH' >> /root/.bash_profile
-  echo 'PATH=/usr/local/bin:$PATH' >> /root/.zshrc
-  docker version
-
-  install_zabbix_agent
-  if [ "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL" != "NIL" ]; then
-    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
-    date -I >> /root/.additional_packages_isntalled
-    echo "apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL" >> /root/.additional_packages_isntalled
-    apt-get install -y $ADDITIONAL_DEB_PACKAGES_TO_INSTALL
+setup_registry () {
+  # Registry mirror
+  # https://circleci.com/docs/2.0/docker-hub-pull-through-mirror/
+  # https://docs.docker.com/registry/recipes/mirror/
+  if [ -z $K8S_REGISTRY_MIRROR_HUB ]; then
+    echo 'The current registry_mirror is NOT SET!'
+  : ${K8S_REGISTRY_MIRROR_HUB:=NULL_AND_VOID}
   else
-    echo -n "$ADDITIONAL_DEB_PACKAGES_TO_INSTALL - " >> /root/.additional_packages_isntalled
+    printf 'The current registry_mirror is %s' $K8S_REGISTRY_MIRROR_HUB
   fi
-  #printf 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=%s"' $K8S_REGISTRY_MIRROR >> /etc/default/docker
-
+  printf 'The registry_mirror is now set to %s' $K8S_REGISTRY_MIRROR_HUB
 
   if [ "$K8S_REGISTRY_MIRROR_HUB" = "NULL_AND_VOID" ]; then
     echo 'No registry set, using defaults'
   else
     if [ ! -z "$K8S_REGISTRY_MIRROR_HUB" ]; then
       daemon_string="\"$K8S_REGISTRY_MIRROR_HUB\""
-			mkdir -p /etc/systemd/system/docker.service.d
+      mkdir -p /etc/systemd/system/docker.service.d
+      mkdir -p /etc/systemd/system/containerd.service.d
 
 cat << EOD > /etc/systemd/system/docker.service.d/http-proxy.conf
+[Service]
+Environment="HTTP_PROXY=$K8S_REGISTRY_MIRROR_HUB"
+Environment="HTTPS_PROXY=$K8S_REGISTRY_MIRROR_HUB"
+EOD
+
+cat << EOD > /etc/systemd/system/containerd.service.d/http-proxy.conf
 [Service]
 Environment="HTTP_PROXY=$K8S_REGISTRY_MIRROR_HUB"
 Environment="HTTPS_PROXY=$K8S_REGISTRY_MIRROR_HUB"
@@ -437,12 +717,30 @@ EOD
     if [ ! -z "$K8S_REGISTRY_MIRROR_K8S" ]; then
       daemon_string="$daemon_string, \"$K8S_REGISTRY_MIRROR_K8S\""
     fi
+    mkdir -p /etc/docker
     #cat <<< $(jq ".\"registry-mirrors\" = [\"$K8S_REGISTRY_MIRROR\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json
     #sudo bash -c 'cat <<< $(jq ".\"registry-mirrors\" = [\"http://192.0.2.1.or.https.your-mirror.example.com\"]" /etc/docker/daemon.json) > /etc/docker/daemon.json'
     daemon_json=$(jq ".\"registry-mirrors\" = [ $daemon_string ]" /etc/docker/daemon.json)
     echo "$daemon_json" > /etc/docker/daemon.json
   fi
+}
 
+main () {
+  preps
+  echo '>>>> PRINTENV <<<<'
+  printenv
+  echo '>>>> END_PRINTENV <<<<'
+  rook_efficiency
+  pre_packages_install
+  packages_install
+  go_installer 
+  turn_off_swap
+  chooser
+  mkshowipaddress
+  install_zabbix_agent
+  additional_packages_install
+  setup_registry
 }
 
 main $@
+containerd_config

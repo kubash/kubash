@@ -2,13 +2,19 @@
 : ${K8S_SU_USER:=coopadmin}
 
 TMP=$(mktemp -d)
+trap "rm -Rf $TMP" EXIT
 cd $TMP
+
+useradd -s /bin/zsh $K8S_SU_USER
+groupadd -rf docker
+gpasswd -a $K8S_SU_USER docker
+groupadd -rf sudo
+gpasswd -a $K8S_SU_USER sudo
 
 # Keyer
 touch $TMP/keys
 if [ ! -z "$KUBASH_SET_ROOT_PW" ]; then
   echo 'root passwd given, setting'
-	#passwd root <<< "$KUBASH_SET_ROOT_PW"
 	echo "root:$KUBASH_SET_ROOT_PW" | chpasswd
 else
   echo 'no root passwd given, not setting'
@@ -20,18 +26,19 @@ if [ ! -z "$KUBASH_SET_SU_PW" ]; then
 else
   echo 'no su passwd given, not setting'
 fi
-if [ ! -z "$KEYS_URL" ]; then
-  echo 'KEYS_URL given'
-  curl --silent -L "$KEYS_URL" >> $TMP/keys
-else
-  echo 'no KEYS_URL given'
-fi
 if [ ! -z  "$KEYS_TO_ADD" ]; then
   echo 'KEYS_TO_ADD given'
   echo "$KEYS_TO_ADD" >> $TMP/keys
 else
   echo 'no KEYS_TO_ADD given'
 fi
+if [ ! -z "$KEYS_URL" ]; then
+  echo 'KEYS_URL given'
+  curl --silent -L "$KEYS_URL" >> $TMP/keys
+else
+  echo 'no KEYS_URL given'
+fi
+
 mkdir -p /root/.ssh
 chmod 700 /root/.ssh
 ssh-keygen  -N "" -t ed25519 -f /root/.ssh/id_ed25519
@@ -43,31 +50,26 @@ chown -R root. /root/.ssh
 ls -lh /root/.ssh
 #cat /root/.ssh/authorized_keys
 
-useradd -s /bin/bash $K8S_SU_USER
-groupadd -rf docker
-gpasswd -a $K8S_SU_USER docker
-groupadd -rf sudo
-gpasswd -a $K8S_SU_USER sudo
 chmod 777 $TMP
 mkdir -p /home/$K8S_SU_USER/.ssh
 cp -a /root/.ssh /home/$K8S_SU_USER/
 chmod 600 /home/$K8S_SU_USER/.ssh/authorized_keys
 chmod 700 /home/$K8S_SU_USER/.ssh
 echo 'PATH=/usr/local/bin:$PATH' >> /home/$K8S_SU_USER/.bash_profile
-chown -R $K8S_SU_USER. /home/$K8S_SU_USER
-chown -R $K8S_SU_USER. /home/$K8S_SU_USER/.ssh
+chown -R $K8S_SU_USER: /home/$K8S_SU_USER/.ssh
 
-if [ -e /bin/zsh ]; then
-#chsh -s /bin/zsh
-chsh -s /bin/zsh $K8S_SU_USER
-else
-#chsh -s /usr/bin/zsh
-chsh -s /usr/bin/zsh $K8S_SU_USER
-fi
+# get oh my zsh install script
+curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o  $TMP/ohmyzsh.sh
+# install oh-my-zsh
+sh $TMP/ohmyzsh.sh "" --unattended
+sudo cp -a /home/vagrant/.oh-my-zsh /home/$K8S_SU_USER/
+sudo cp -a /home/vagrant/.oh-my-zsh /root/
+sudo cp -a /home/vagrant/.zshrc /home/$K8S_SU_USER/
+sudo cp -a /home/vagrant/.zshrc /root/
+sudo chown --quiet -R $K8S_SU_USER: /home/$K8S_SU_USER
+sudo chown --quiet -R root: /root
+rm $TMP/ohmyzsh.sh
 
-#curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -o $TMP/ohmyzsh.sh
-#bash $TMP/ohmyzsh.sh
-#sudo -i -u $K8S_SU_USER bash $TMP/ohmyzsh.sh
-#rm $TMP/ohmyzsh.sh
-
-rm -Rf $TMP
+# change shell to zsh
+sudo chsh -s $(which zsh) root
+sudo chsh -s $(which zsh) $K8S_SU_USER

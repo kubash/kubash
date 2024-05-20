@@ -54,10 +54,10 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 
 # Istio
-$(eval ISTIO_VERSION := "1.14.2")
+$(eval ISTIO_VERSION := "1.19.3")
 
 # K9S
-$(eval K9S_VERSION := "v0.23.10")
+$(eval K9S_VERSION := "v0.27.4")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.15.3")
@@ -128,7 +128,7 @@ $(KUBASH_BIN)/k9s:
 	@echo 'Installing k9s'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_x86_64.tar.gz |tar zxf -
+	curl -L https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz |tar zxf -
 	mv $(TMP)/k9s $(KUBASH_DIR)/bin/
 	rm -Rf $(TMP)
 
@@ -224,7 +224,7 @@ go-build-docker:
 	@echo 'Installing packer'
 	$(eval TMP := $(shell mktemp -d --suffix=GOTMP))
 	cd $(TMP) \
-	go get github.com/hashicorp/packer
+	go install github.com/hashicorp/packer@latest
 	rmdir $(TMP)
 
 
@@ -476,12 +476,12 @@ submodules/openebs:
 	cd submodules; git clone https://github.com/openebs/openebs.git
 
 cfssl: $(GOPATH)/bin/cfssl
-	go get github.com/cloudflare/cfssl/cmd/cfssl-certinfo
+	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@latest
 
 $(GOPATH)/bin/cfssl:
-	go get github.com/cloudflare/cfssl/cmd/cfssl
-	go get github.com/cloudflare/cfssl/cmd/cfssljson
-	go get github.com/cloudflare/cfssl/cmd/cfssl-certinfo
+	go install github.com/cloudflare/cfssl/cmd/cfssl@latest
+	go install github.com/cloudflare/cfssl/cmd/cfssljson@latest
+	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@latest
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh
@@ -710,7 +710,7 @@ $(KUBASH_BIN)/velero:
 	cd $(TMP) && curl -sL https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERS}/velero-${VELERO_VERS}-linux-amd64.tar.gz | tar zxf -
 	#cd $(TMP) && ls -alh $(TMP)/velero-${VELERO_VERS}-linux-amd64
 	chmod +x $(TMP)/velero-${VELERO_VERS}-linux-amd64/velero
-	sudo install -v -m511 ${TMP}/velero-${VELERO_VERS}-linux-amd64/velero $(KUBASH_BIN)/velero
+	sudo install -v -m555 ${TMP}/velero-${VELERO_VERS}-linux-amd64/velero $(KUBASH_BIN)/velero
 	rm -Rf $(TMP)
 
 ceph: $(KUBASH_BIN)/ceph

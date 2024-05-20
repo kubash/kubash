@@ -22,6 +22,3 @@
 [submodule "submodules/nomad-on-kubernetes"]
 	path = submodules/nomad-on-kubernetes
 	url = https://github.com/joshuacox/nomad-on-kubernetes.git
-[submodule "submodules/nomad-on-kubernetes"]
-	path = submodules/nomad-on-kubernetes
-	url = https://github.com/joshuacox/nomad-on-kubernetes.git

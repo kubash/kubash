@@ -838,10 +838,15 @@ determine_api_version () {
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta1"
       kubeadm_cfg_kind=ClusterConfiguration
-    elif [[ $KUBE_MINOR_VER -ge 16 ]]; then
+    elif [[ $KUBE_MINOR_VER -lt 27 ]]; then
       squawk 20 "Minor version = $KUBE_MINOR_VER,  Version greater than or equal 16"
       squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta2"
+      kubeadm_cfg_kind=ClusterConfiguration
+    elif [[ $KUBE_MINOR_VER -ge 27 ]]; then
+      squawk 20 "Minor version = $KUBE_MINOR_VER,  Version greater than or equal 16"
+      squawk 75 kubeadm_apiVersion="kubeadm.k8s.io/v1beta3"
+      export kubeadm_apiVersion="kubeadm.k8s.io/v1beta3"
       kubeadm_cfg_kind=ClusterConfiguration
     else
       croak 3  "$KUBE_MINOR_VER not supported yet"
@@ -990,6 +995,7 @@ EOF"
     # break indentation
     command2run='cat << EOF > /var/lib/kubelet/config.yaml
 kind: KubeletConfiguration
+serverTLSBootstrap: true
 apiVersion: kubelet.config.k8s.io/v1beta1
 address: 127.0.0.1
 staticpodpath: /etc/kubernetes/manifests
@@ -1107,6 +1113,11 @@ etcd:
 $endpoints_line
 networking:
   podSubnet: $my_KUBE_CIDR
+---
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
 EOF
     command2run='systemctl daemon-reload'
     squawk 53 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -1480,6 +1491,7 @@ EOF"
     # break indentation
     command2run='cat << EOF > /var/lib/kubelet/config.yaml
 kind: KubeletConfiguration
+serverTLSBootstrap: true
 apiVersion: kubelet.config.k8s.io/v1beta1
 address: 127.0.0.1
 staticpodpath: /etc/kubernetes/manifests
@@ -1584,6 +1596,11 @@ etcd:
 $endpoints_line
 networking:
   podSubnet: $my_KUBE_CIDR
+---
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
 EOF
     command2run='systemctl daemon-reload'
     squawk 53 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -1926,6 +1943,7 @@ EOF"
     # break indentation
     command2run='cat << EOF > /var/lib/kubelet/config.yaml
 kind: KubeletConfiguration
+serverTLSBootstrap: true
 apiVersion: kubelet.config.k8s.io/v1beta1
 address: 127.0.0.1
 staticpodpath: /etc/kubernetes/manifests
@@ -2030,6 +2048,11 @@ etcd:
 $endpoints_line
 networking:
   podSubnet: $my_KUBE_CIDR
+---
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
 EOF
     command2run='systemctl daemon-reload'
     squawk 55 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -2352,6 +2375,11 @@ $initial_cluster_line
             initial-cluster-state: $INITIAL_CLUSTER_STATE
 networking:
   podSubnet: $my_KUBE_CIDR
+---
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
 EOF
     rsync $KUBASH_RSYNC_OPTS "ssh -p ${MASTERPORTS[$i]}" $etcd_stacked_tmp/${HOST}/kubeadmcfg.yaml $STACKED_USER@$HOST:/tmp/
     command2run='mkdir -p /etc/kubernetes/'
@@ -2494,6 +2522,11 @@ $api_server_cert_sans_line
 controlPlaneEndpoint: "${MASTERHOSTS[0]}:6443"
 networking:
   podSubnet: $my_KUBE_CIDR
+---
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
 EOF
     rsync $KUBASH_RSYNC_OPTS "ssh -p ${MASTERPORTS[$i]}" $etcd_stacked_tmp/${HOST}/kubeadmcfg.yaml $STACKED_USER@$HOST:/tmp/
     command2run='mkdir -p /etc/kubernetes/'

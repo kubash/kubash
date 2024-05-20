@@ -3,7 +3,7 @@ THIS_CWD=$(pwd)
 
 cd $THIS_CWD/istio
 git fetch --all
-git checkout release-1.14
+git checkout release-1.19
 git pull
 
 cd $THIS_CWD/kubeadm2ha
@@ -13,7 +13,7 @@ git pull
 
 cd $THIS_CWD/kubespray
 git fetch --all
-git checkout release-2.19
+git checkout release-2.23
 git pull
 
 cd $THIS_CWD/nomad-on-kubernetes
@@ -28,7 +28,7 @@ git pull
 
 cd $THIS_CWD/openshift-ansible
 git fetch --all
-git checkout release-4.13
+git checkout release-4.16
 git pull
 
 cd $THIS_CWD/pupernetes
@@ -38,5 +38,5 @@ git pull
 
 cd $THIS_CWD/rook
 git fetch --all
-git checkout release-1.9
+git checkout release-1.12
 git pull

@@ -40,54 +40,6 @@ jobs: # basic units of work in a run
           curl -sL https://golang.org/dl/go1.17.2.linux-amd64.tar.gz | sudo tar -C /usr/local -xzf -
           echo 'PATH=/usr/local/bin:$PATH'|sudo tee -a /root/.bashrc
           go version
-    - run:
-        name: DL pupernetes
-        command: sudo curl -Lf https://github.com/DataDog/pupernetes/releases/download/v0.12.0/pupernetes
-          -o /usr/local/bin/pupernetes && sudo chmod +x /usr/local/bin/pupernetes
-    - run:
-        name: pupernetes
-        command: echo sudo /usr/local/bin/pupernetes daemon run sandbox/ --job-type systemd
-          --kubectl-link /usr/local/bin/kubectl --kubeconfig-path $HOME/.kube/config
-          --hyperkube-version=1.18
-          --dns-check
-    - run:
-        name: kubectl get all
-        command: kubectl get all
-    - run:
-        name: kubectl config
-        command: cat $HOME/.kube/config
-    - run:
-        name: Setup helm
-        command: |
-          curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo update
-          helm install bitnami/mysql --generate-name
-          helm ls
-    - run:
-        name: Upgrade Pip
-        command: |
-          echo skip pip install --upgrade pip
-    - run:
-        name: version Go
-        command: |
-          go version
-    - run:
-        name: Boostrap Kubash
-        command: |
-          export PATH=$(pwd)/bin:${HOME}/.kubash/bin:${HOME}/.local/bin:/usr/local/bi:${PATH}
-          echo bash bootstrap -y
-          #bash scripts/test_bootstrap.sh
-    - run:
-        name: Test Kubash yaml2cluster
-        command: |
-          export TERM=dumb
-          #bash scripts/test_yaml2cluster.sh
-    - run:
-        name: Run Bash Automated Testing Suite
-        command: |
-          export TERM=dumb
-          echo disabled "bash scripts/test_bats.sh $HOME/.kubash"
 workflows:
   version: 2
   build-workflow:

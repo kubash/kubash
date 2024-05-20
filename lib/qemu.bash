@@ -207,7 +207,6 @@ qemu-provisioner () {
     --name $K8S_node \
     --ram $K8S_Memory \
     --vcpus $K8S_cpuCount \
-    --os-type=linux \
     --os-variant=$K8S_kvm_os_variant \
     --noautoconsole \
     --accelerate \
@@ -226,7 +225,6 @@ qemu-provisioner () {
     --name $K8S_node \
     --ram $K8S_Memory \
     --vcpus $K8S_cpuCount \
-    --os-type=linux \
     --os-variant=$K8S_kvm_os_variant \
     --noautoconsole \
     --accelerate \

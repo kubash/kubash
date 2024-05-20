@@ -586,7 +586,7 @@ do_decom () {
 }
 
 do_metallb () {
-    if [[ METALLB_INSTALLATION_METHOD = 'helm' ]]; then
+    if [[ METALLB_INSTALLATION_METHOD == 'helm' ]]; then
       echo "This method is deprecated by upstream"
       exit 1
       KUBECONFIG=$KUBECONFIG \
@@ -597,6 +597,16 @@ do_metallb () {
       kubectl --kubeconfig=$KUBECONFIG \
         apply -f \
         https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml
+      metallb_ns_created=0
+      metallb_counter=0
+      while [[ $metallb_ns_created < 1 ]]; do
+        sleep 1
+        metallb_ns_created=$(kubectl get ns|grep metallb-system|wc -l)
+        ((++metallb_counter))
+        if [[ $metallb_counter > 10 ]]; then
+          break
+        fi
+      done
       kubectl --kubeconfig=$KUBECONFIG \
         create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
     fi
