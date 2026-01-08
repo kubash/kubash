@@ -87,3 +87,35 @@ w8_node () {
   squawk 3  "."
   squawk 3  "kubectl commands are now able to interact with the kubernetes node"
 }
+
+w8_ingress () {
+  ingress_name=$1
+  squawk 3 "Wait on the K8S ingress $ingress_name to become available"
+  sleep 5
+  # while loop
+  countone_w8_ingress=1
+  countlimit_w8_ingress=151
+  # timeout for 15 minutes
+  set +e
+  while [[ "$countone_w8_ingress" -lt "$countlimit_w8_ingress" ]]; do
+    squawk 1 '.' -n
+    if [[ "$VERBOSITY" -gt "11" ]] ; then
+      squawk 105  "kubectl --kubeconfig=$KUBECONFIG get ingress $ingress_name"
+      kubectl --kubeconfig=$KUBECONFIG get ingress $ingress_name
+    fi
+    result=$(kubectl --kubeconfig=$KUBECONFIG get ingress $ingress_name | grep -v NotReady | grep Ready)
+    squawk 133 "Result is $result"
+    if [[ "$result" ]]; then
+      squawk 5 "Result nailed $result"
+      ((++countone_w8_ingress))
+      break
+    fi
+    ((++countone_w8_ingress))
+    squawk 209 "$countone_w8_ingress"
+    sleep 3
+  done
+  set -e
+  squawk 3  "."
+  squawk 3  "kubernetes ingress $ingress_name is up"
+}
+
