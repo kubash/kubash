@@ -57,7 +57,7 @@ $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
 $(eval ISTIO_VERSION := "1.19.3")
 
 # K9S
-$(eval K9S_VERSION := "v0.27.4")
+$(eval K9S_VERSION := "v0.32.5")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.15.3")

@@ -154,7 +154,7 @@ checks () {
   check_cmd uname
   check_cmd envsubst
   check_cmd ct
-  check_cmd jinja2
+  #check_cmd jinja2
   check_cmd yaml2json
   check_cmd jq
   check_cmd rlwrap
