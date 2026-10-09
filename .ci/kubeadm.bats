@@ -63,6 +63,28 @@ patch_for() {
   done
 }
 
+@test "etcd_extra_arg emits list style for v1beta4 and map style before" {
+  awk '/^etcd_extra_arg \(\)/,/^}/' \
+    "$KUBASH_ROOT/lib/yaml.bash" > "$BATS_TEST_TMPDIR/extraarg.inc"
+  [ -s "$BATS_TEST_TMPDIR/extraarg.inc" ]
+  cat > "$BATS_TEST_TMPDIR/run-extraarg.bash" <<'EOF'
+#!/usr/bin/env bash
+TAB_2='    '
+TAB_3='      '
+source "$1"
+ETCD_EXTRAARGS_LIST="$2"
+etcd_extra_arg "$3" initial-cluster-state new
+EOF
+  run bash "$BATS_TEST_TMPDIR/run-extraarg.bash" "$BATS_TEST_TMPDIR/extraarg.inc" true "$BATS_TEST_TMPDIR/list.out"
+  [ "$output" = "" ]
+  run cat "$BATS_TEST_TMPDIR/list.out"
+  [ "$output" = "    - name: initial-cluster-state
+      value: new" ]
+  run bash "$BATS_TEST_TMPDIR/run-extraarg.bash" "$BATS_TEST_TMPDIR/extraarg.inc" false "$BATS_TEST_TMPDIR/map.out"
+  run cat "$BATS_TEST_TMPDIR/map.out"
+  [ "$output" = "      initial-cluster-state: new" ]
+}
+
 @test "determine_api_version maps minor 31+ to v1beta4" {
   awk '/^determine_api_version \(\)/,/^}/' \
     "$KUBASH_ROOT/lib/kinit.bash" > "$BATS_TEST_TMPDIR/determine.inc"

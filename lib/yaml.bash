@@ -128,6 +128,20 @@ CERT_ORG_UNIT: \(.CERT_ORG_UNIT)"' \
   $MV_CMD $json2cluster_tmp $KUBASH_DIR/clusters/$KUBASH_CLUSTER_NAME
 }
 
+# kubeadm v1beta4 (Kubernetes >= 1.31) wants etcd extraArgs as a list
+# of name/value pairs; v1beta3 and earlier want a plain map. do_etcd's
+# fragment writer (write_kubeadmcfg_yaml) sets ETCD_EXTRAARGS_LIST
+# from the cluster's Kubernetes version before calling this.
+etcd_extra_arg () {
+  # $1 = file, $2 = key, $3 = value
+  if [[ "$ETCD_EXTRAARGS_LIST" == 'true' ]]; then
+    echo "${TAB_2}- name: $2" >> "$1"
+    echo "${TAB_3}value: $3" >> "$1"
+  else
+    echo "${TAB_3}$2: $3" >> "$1"
+  fi
+}
+
 write_kubeadmcfg_yaml () {
   squawk 3 " write kubeadmcfg.yaml files"
   do_etcd_tmp_para=$(mktemp -d --suffix='.para.tmp' 2>/dev/null || mktemp -d -t '.para.tmp')
@@ -188,8 +202,25 @@ write_kubeadmcfg_yaml () {
     fi
   done <<< "$kubash_hosts_csv_slurped"
 
+  # Decide the etcd extraArgs format from the cluster's Kubernetes
+  # version: v1beta4 (>= 1.31) uses name/value lists, older uses a map.
+  ETCD_EXTRAARGS_LIST=false
+  if [[ -e $KUBASH_CLUSTER_DIR/kubernetes_version ]]; then
+    cluster_kube_version=$(cat $KUBASH_CLUSTER_DIR/kubernetes_version)
+  else
+    cluster_kube_version=$KUBERNETES_VERSION
+  fi
+  cluster_minor=$(echo "$cluster_kube_version" | sed -e 's/^v//' | cut -d. -f2)
+  if [[ $cluster_minor =~ ^[0-9]+$ ]] && [[ $cluster_minor -ge 31 ]]; then
+    ETCD_EXTRAARGS_LIST=true
+  fi
   echo "${TAB_2}extraArgs:" > $do_etcd_tmp_para/extraargs.head
-  echo -n "${TAB_3}initial-cluster: " > $do_etcd_tmp_para/initial-cluster.head
+  if [[ "$ETCD_EXTRAARGS_LIST" == 'true' ]]; then
+    echo "${TAB_2}- name: initial-cluster" > $do_etcd_tmp_para/initial-cluster.head
+    echo -n "${TAB_3}value: " >> $do_etcd_tmp_para/initial-cluster.head
+  else
+    echo -n "${TAB_3}initial-cluster: " > $do_etcd_tmp_para/initial-cluster.head
+  fi
   count_etcd=0
   countetcdnodes=0
   while IFS="," read -r $csv_columns
@@ -242,9 +273,9 @@ write_kubeadmcfg_yaml () {
         #echo "${TAB_2}peerCertSANS:"   >> $do_etcd_tmp_para/${K8S_node}etcd.line
         #echo "${TAB_2}- '$K8S_ip1'"    >> $do_etcd_tmp_para/${K8S_node}etcd.line
         #printf " \n" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}initial-cluster-state: new" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}name: $K8S_node"            >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}listen-peer-urls: https://${K8S_ip1}:2380"    >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line initial-cluster-state new
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line name $K8S_node
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line listen-peer-urls https://${K8S_ip1}:2380
       fi
     else
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'primary_etcd' ]]; then
@@ -254,9 +285,9 @@ write_kubeadmcfg_yaml () {
         #echo "${TAB_2}peerCertSANS:"   >> $do_etcd_tmp_para/${K8S_node}etcd.line
         #echo "${TAB_2}- '$K8S_ip1'"    >> $do_etcd_tmp_para/${K8S_node}etcd.line
         #printf " \n" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}initial-cluster-state: new" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}name: $K8S_node"       >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "${TAB_3}listen-peer-urls: https://${K8S_ip1}:2380"    >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line initial-cluster-state new
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line name $K8S_node
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line listen-peer-urls https://${K8S_ip1}:2380
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -265,13 +296,11 @@ write_kubeadmcfg_yaml () {
   do
     if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
-        echo -n "${TAB_3}listen-client-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "https://${K8S_ip1}:2379"     >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line listen-client-urls https://${K8S_ip1}:2379
       fi
     else
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'primary_etcd' ]]; then
-        echo -n "${TAB_3}listen-client-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo "https://${K8S_ip1}:2379"     >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line listen-client-urls https://${K8S_ip1}:2379
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -280,13 +309,11 @@ write_kubeadmcfg_yaml () {
   do
     if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
-        echo -n "${TAB_3}advertise-client-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo  "https://${K8S_ip1}:2379" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line advertise-client-urls https://${K8S_ip1}:2379
       fi
     else
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'primary_etcd' ]]; then
-        echo -n "${TAB_3}advertise-client-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo  "https://${K8S_ip1}:2379" >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line advertise-client-urls https://${K8S_ip1}:2379
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -295,13 +322,11 @@ write_kubeadmcfg_yaml () {
   do
     if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
-        echo -n "${TAB_3}initial-advertise-peer-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo  "https://${K8S_ip1}:2380"             >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line initial-advertise-peer-urls https://${K8S_ip1}:2380
       fi
     else
       if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'primary_etcd' ]]; then
-        echo -n "${TAB_3}initial-advertise-peer-urls: " >> $do_etcd_tmp_para/${K8S_node}extraargs.line
-        echo  "https://${K8S_ip1}:2380"             >> $do_etcd_tmp_para/${K8S_node}extraargs.line
+        etcd_extra_arg $do_etcd_tmp_para/${K8S_node}extraargs.line initial-advertise-peer-urls https://${K8S_ip1}:2380
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
