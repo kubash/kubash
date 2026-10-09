@@ -792,6 +792,13 @@ parse_opts () {
         target_build=bullseye$build_num-11.2-amd64
         packer_create_pax_dir 'bullseye' $build_num
       fi
+    elif [[ "$target_os" =~ 'trixie' ]]; then
+      if [[ -z "$target_build" ]]; then
+        echo "matching $target_os"
+        build_num=$(echo $target_os | sed 's/trixie//')
+        target_build=trixie$build_num-13-amd64
+        packer_create_pax_dir 'trixie' $build_num
+      fi
     elif [[ "$target_os" =~ 'ubuntu' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"

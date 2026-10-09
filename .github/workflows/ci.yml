@@ -69,6 +69,7 @@ jobs:
           export PATH="$HOME/.kubash/bin:$PATH"
           cd "$HOME/.kubash"
           bats .ci/.tests.bats
+          bats .ci/trixie.bats
 
   bootstrap-smoke:
     name: Bootstrap smoke (${{ matrix.image }})
