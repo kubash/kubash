@@ -2,13 +2,7 @@
 
 Build, provision, initialize, add common components, and tear down a cluster PDQ.
 
-[![Build Status](https://travis-ci.org/kubash/kubash.svg?branch=master)](https://travis-ci.org/kubash/kubash)
-[![Waffle.io - Columns and their card count](https://badge.waffle.io/kubash/kubash.svg?columns=all)](https://waffle.io/kubash/kubash)
-
-old waffle (still has quite a backlog)
-[![Waffle.io - Columns and their card count](https://badge.waffle.io/joshuacox/kubash.svg?columns=all)](https://waffle.io/joshuacox/kubash)
-
-Dev [![Build Status](https://travis-ci.org/joshuacox/kubash.svg?branch=master)](https://travis-ci.org/joshuacox/kubash)
+[![CI](https://github.com/kubash/kubash/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/kubash/kubash/actions/workflows/ci.yml)
 
 Build production ready clusters using a variety of technologies along the way.
 
@@ -22,7 +16,7 @@ Then initialize them using kubeadm, and install charts using helm.
 Install with one easy line:
 
 ```
-curl -L git.io/kubash|bash
+curl -L https://raw.githubusercontent.com/kubash/kubash/master/bootstrap|bash
 ```
 
 Get started by making the example clusters:
