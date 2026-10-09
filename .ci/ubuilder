@@ -1,7 +1,7 @@
 #!/bin/bash -l
 . .ci/header
 . ~/.bashrc
-echo ubuilder $@
+echo ubuilder "$@"
 whoami
 printenv|grep KEYS
 echo $PATH
@@ -19,4 +19,4 @@ main () {
   kubash build -y --target-os $1 --verbosity=100
 }
 
-time main $@
+time main "$@"

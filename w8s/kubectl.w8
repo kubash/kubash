@@ -11,7 +11,7 @@ TARGET_POD=$1
 TARGET_NAMESPACE=$2
 : ${VERBOSITY:=0}
 
-if [[ $VERBOSITY > 1 ]]; then
+if [[ $VERBOSITY -gt 1 ]]; then
   echo -n "wait on $TARGET_POD to become available"
 fi
 set -eu
@@ -40,12 +40,12 @@ kubectl_native_wait () {
   kubectl wait --namespace $TARGET_NAMESPACE --for=condition=ready pod $TARGET_POD --timeout=120s
 }
 
-if [[ $VERBOSITY > 1 ]]; then
+if [[ $VERBOSITY -gt 1 ]]; then
   while_loop_wait
 fi
 
 kubectl_native_wait
 
-if [[ $VERBOSITY > 1 ]]; then
+if [[ $VERBOSITY -gt 1 ]]; then
   echo "$TARGET_POD is now up and running"
 fi

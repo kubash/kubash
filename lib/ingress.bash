@@ -18,7 +18,7 @@ do_nginx_ingress () {
 }
 
 taint_ingress () {
-  squawk 1 " taint_ingress $@"
+  squawk 1 " taint_ingress $*"
   count_ingress=0
   for ingress_node in "$@"
   do
@@ -34,7 +34,7 @@ taint_ingress () {
 }
 
 taint_all_ingress () {
-  squawk 1 " taint_all_ingress $@"
+  squawk 1 " taint_all_ingress $*"
   count_all_ingress=0
   nodes_to_taint=' '
   while IFS="," read -r $csv_columns
@@ -60,7 +60,7 @@ taint_all_ingress () {
 }
 
 mark_ingress () {
-  squawk 1 " mark_ingress $@"
+  squawk 1 " mark_ingress $*"
   count_ingress=0
   for ingress_node in "$@"
   do
@@ -74,7 +74,7 @@ mark_ingress () {
 }
 
 mark_all_ingress () {
-  squawk 1 " mark_all_ingress $@"
+  squawk 1 " mark_all_ingress $*"
   count_all_ingress=0
   nodes_to_mark=' '
   while IFS="," read -r $csv_columns

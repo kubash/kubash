@@ -5,4 +5,4 @@ build_all () {
  kubash build -y --target-os ubuntu1.15.0 --verbosity=100 
  kubash build --builder coreos --target-os coreos 
 }
-time build_all $@
+time build_all "$@"

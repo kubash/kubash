@@ -157,6 +157,9 @@ main () {
       DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
       apt_runner
       upgrade_go
+    elif [[ "$VERSION_CODENAME" == "bookworm" || "$VERSION_CODENAME" == "trixie" ]]; then
+      DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-clients libvirt-daemon-system net-tools dnsutils'
+      apt_runner
     elif [[ "$UBUNTU_CODENAME" == "xenial" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
       apt_runner
@@ -168,7 +171,7 @@ main () {
       DEB_PKG_GET='sudo jq git build-essential unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
       apt_runner
       upgrade_go
-    elif [[ "$UBUNTU_CODENAME" == "jammy" ]]; then
+    elif [[ "$UBUNTU_CODENAME" == "jammy" || "$UBUNTU_CODENAME" == "noble" ]]; then
       DEB_PKG_GET='sudo jq git build-essential golang unzip curl wget parallel ansible rlwrap rsync nmap python3-pip virtinst qemu-kvm libvirt-daemon-system net-tools dnsutils'
       apt_runner
     else
@@ -224,6 +227,11 @@ main () {
   check_cmd 'sed'
 
   flight_checks
+
+  if [[ "$BOOTSTRAP_ONLY_DEPS" == "1" ]]; then
+    echo 'BOOTSTRAP_ONLY_DEPS=1: system dependencies installed and verified; stopping before the kubash clone and tool installation phases'
+    return 0
+  fi
 
   if [[ "$CIRCLECI" == true ]]; then
     echo 'in CircleCI skipping git clone'

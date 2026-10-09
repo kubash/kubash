@@ -102,7 +102,7 @@ provision_nomad_node_worker () {
   cd $NOMAD_ON_KUBERNETES
   # Provision Node Worker
   # Lot's of cat EOF  in here leaving unindented
-  squawk 5 "provision_nomad_node_worker $@"
+  squawk 5 "provision_nomad_node_worker $*"
   THIS_NOMAD_WORKER=$1
   THIS_NOMAD_USER=$2
   THIS_NOMAD_PORT=$3

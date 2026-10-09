@@ -43,4 +43,4 @@ main () {
   check_if_line_exists || add_line_to
 }
 
-main $@
+main "$@"

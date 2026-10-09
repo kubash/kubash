@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 vbox-provisioner () {
-  squawk 1 "vbox-provisioner $@"
+  squawk 1 "vbox-provisioner $*"
 
   K8S_node=$1
   K8S_role=$2

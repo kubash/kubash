@@ -3,7 +3,7 @@ default:
 
 # Reactionetes Makefile
 # define various versions
-$(eval CT_VERSION := "v0.9.0")
+$(eval CT_VERSION := v0.9.0)
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.3")
 $(eval PACKER_VERSION := "1.7.0")

@@ -29,7 +29,7 @@ parse_opts () {
 
   opt_loop_count=1
   while true; do
-    squawk 5 "$opt_loop_count $@"
+    squawk 5 "$opt_loop_count $*"
     ((++opt_loop_count))
     case "$1" in
       -h|--help)
@@ -381,7 +381,7 @@ parse_opts () {
       exit 1
     fi
     if [ "$provisioner" = 'gke' ]; then
-      gke-provisioner $@
+      gke-provisioner "$@"
     else
       copy_image_to_all_provisioning_hosts
       provisioner
@@ -435,7 +435,7 @@ parse_opts () {
       usage
       exit 1
     fi
-    kubash_interactive $@
+    kubash_interactive "$@"
   elif [[ $RAISON == "masters" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -506,14 +506,14 @@ parse_opts () {
       usage
       exit 1
     fi
-    yaml2cluster $@
+    yaml2cluster "$@"
   elif [[ $RAISON == "json2cluster" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    json2cluster $@
+    json2cluster "$@"
   elif [[ $RAISON == "searchlight" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -527,14 +527,14 @@ parse_opts () {
       usage
       exit 1
     fi
-    taint_all_ingress $@
+    taint_all_ingress "$@"
   elif [[ $RAISON == "mark_ingress" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    mark_all_ingress $@
+    mark_all_ingress "$@"
   elif [[ $RAISON == "dashboard" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -681,14 +681,14 @@ parse_opts () {
       usage
       exit 1
     fi
-    copy_known_hosts $@
+    copy_known_hosts "$@"
   elif [[ $RAISON == "prepetcd" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
       usage
       exit 1
     fi
-    prep_etcd $@
+    prep_etcd "$@"
   elif [[ $RAISON == "copy" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -960,8 +960,8 @@ parse_opts () {
       usage
       exit 1
     fi
-    squawk 5 "kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@"
-    kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $@
+    squawk 5 "kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON $*"
+    kubectl -n $KUBASH_CLUSTER_NAME --kubeconfig=$KUBASH_CLUSTER_DIR/config $RAISON "$@"
   fi
 
   if [[ $print_help == "true" ]]; then

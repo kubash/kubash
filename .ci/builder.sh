@@ -8,4 +8,4 @@ main () {
   kubash build -y --target-os coreos --builder coreos 
 }
 
-time main $@
+time main "$@"
