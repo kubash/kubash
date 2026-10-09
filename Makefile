@@ -6,8 +6,8 @@ default:
 $(eval CT_VERSION := v0.9.0)
 $(eval CNI_VERSION := "v0.8.5")
 $(eval NVM_VERSION := "v0.35.3")
-$(eval PACKER_VERSION := "1.7.0")
-$(eval CRICTL_VERSION := "v1.18.0")
+$(eval PACKER_VERSION := 1.16.1)
+$(eval CRICTL_VERSION := v1.36.0)
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
@@ -22,7 +22,8 @@ $(eval MONITORING_NAMESPACE := monitoring)
 $(eval MINIKUBE_CPU := 2)
 $(eval MINIKUBE_MEMORY := 3333)
 $(eval MINIKUBE_DRIVER := virtualbox)
-$(eval MY_KUBE_VERSION := v1.9.4)
+$(eval MY_KUBE_VERSION := v1.36.5)
+$(eval KUBECTL_VERSION := v1.36.5)
 $(eval CHANGE_MINIKUBE_NONE_USER := true)
 $(eval KUBECONFIG := $(HOME)/.kube/config)
 $(eval MINIKUBE_WANTREPORTERRORPROMPT := false)
@@ -74,7 +75,7 @@ $(eval VELERO_VERS := v1.7.1)
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
-extras: arkade bats cfssl crictl ct helm istioctl k9s kind kompose kubebuilder kubecfg kubectl kubectl-cert_manager kubedb kubeprod kustomize minikube nomad oc opctl packer rke talosctl terraform tiller velero nomad consul vault kubectl-minio mc minio 
+extras: arkade bats cfssl crictl ct helm istioctl k9s kind kompose kubebuilder kubecfg kubectl kubectl-cert_manager kubedb kubeprod kustomize minikube nomad oc opctl packer rke talosctl terraform velero nomad consul vault kubectl-minio mc minio 
 
 reqs: linuxreqs
 
@@ -139,12 +140,13 @@ kubectl: $(KUBASH_BIN)
 $(KUBASH_BIN)/kubectl:
 	@echo 'Installing kubectl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
-	$(eval KUBECTL_STABLE := $(shell curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt))
 	cd $(TMP) \
-	&& curl -sLO https://storage.googleapis.com/kubernetes-release/release/$(KUBECTL_STABLE)/bin/linux/amd64/kubectl \
+	&& curl -fsSL -o kubectl https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/linux/amd64/kubectl \
+	&& curl -fsSL -o kubectl.sha256 https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/linux/amd64/kubectl.sha256 \
+	&& echo "$$(cat kubectl.sha256)  kubectl" | sha256sum --check \
 	&& chmod +x kubectl \
-	&& sudo mv -v kubectl $(KUBASH_BIN)/
-	rmdir $(TMP)
+	&& mv kubectl $(KUBASH_BIN)/
+	rm -Rf $(TMP)
 
 kubedb: $(KUBASH_BIN)
 	@scripts/kubashnstaller kubedb
@@ -180,7 +182,14 @@ crictl: $(KUBASH_BIN)
 $(KUBASH_BIN)/crictl: SHELL:=/bin/bash
 $(KUBASH_BIN)/crictl:
 	@echo 'Installing cri-tools'
-	curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C $(KUBASH_BIN) -xz
+	$(eval TMP := $(shell mktemp -d --suffix=CRICTLTMP))
+	cd $(TMP) \
+	&& curl -fsSL -o crictl.tar.gz https://github.com/kubernetes-sigs/cri-tools/releases/download/$(CRICTL_VERSION)/crictl-$(CRICTL_VERSION)-linux-amd64.tar.gz \
+	&& curl -fsSL -o crictl.tar.gz.sha256 https://github.com/kubernetes-sigs/cri-tools/releases/download/$(CRICTL_VERSION)/crictl-$(CRICTL_VERSION)-linux-amd64.tar.gz.sha256 \
+	&& echo "$$(cat crictl.tar.gz.sha256)  crictl.tar.gz" | sha256sum --check \
+	&& tar -xzf crictl.tar.gz \
+	&& mv crictl $(KUBASH_BIN)/
+	rm -Rf $(TMP)
 
 cni: $(KUBASH_BIN)
 	@scripts/kubashnstaller cni
@@ -210,13 +219,18 @@ $(KUBASH_BIN)/packer:
 	@echo 'Installing packer'
 	$(eval TMP := $(shell mktemp -d --suffix=GOTMP))
 	cd $(TMP) \
-	&& wget -c \
-	https://releases.hashicorp.com/packer/$(PACKER_VERSION)/packer_$(PACKER_VERSION)_linux_amd64.zip
-	cd $(TMP) \
-	&& unzip packer_$(PACKER_VERSION)_linux_amd64.zip
-	rm $(TMP)/packer_$(PACKER_VERSION)_linux_amd64.zip
-	mv $(TMP)/packer $(KUBASH_BIN)/packer 
-	rmdir $(TMP)
+	&& curl -fsSL -o packer_$(PACKER_VERSION)_linux_amd64.zip https://releases.hashicorp.com/packer/$(PACKER_VERSION)/packer_$(PACKER_VERSION)_linux_amd64.zip \
+	&& curl -fsSL -o packer_$(PACKER_VERSION)_SHA256SUMS https://releases.hashicorp.com/packer/$(PACKER_VERSION)/packer_$(PACKER_VERSION)_SHA256SUMS \
+	&& grep linux_amd64.zip packer_$(PACKER_VERSION)_SHA256SUMS | sha256sum --check - \
+	&& unzip packer_$(PACKER_VERSION)_linux_amd64.zip \
+	&& mv packer $(KUBASH_BIN)/packer
+	@echo 'Installing packer plugins (builders are external plugins since Packer 1.10)'
+	$(KUBASH_BIN)/packer plugins install github.com/hashicorp/qemu
+	$(KUBASH_BIN)/packer plugins install github.com/hashicorp/virtualbox
+	$(KUBASH_BIN)/packer plugins install github.com/hashicorp/vmware
+	$(KUBASH_BIN)/packer plugins install github.com/hashicorp/parallels
+	$(KUBASH_BIN)/packer plugins install github.com/hashicorp/vagrant
+	rm -Rf $(TMP)
 
 go-build-docker:
 	@echo 'Installing packer'
