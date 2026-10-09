@@ -173,9 +173,6 @@ $(KUBASH_BIN)/minikube:
 	&& curl -sLo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube $(KUBASH_BIN)/
 	rmdir $(TMP)
 
-vanity:
-	curl -i https://git.io -F "url=https://raw.githubusercontent.com/joshuacox/kubash/master/bootstrap" -F "code=kubash"
-
 crictl: $(KUBASH_BIN)
 	@scripts/kubashnstaller crictl
 
