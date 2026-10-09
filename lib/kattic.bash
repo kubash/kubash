@@ -101,25 +101,16 @@ do_dashboard () {
     https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.1/aio/deploy/recommended.yaml
 }
 
-do_tiller () {
-  squawk 1 " do_tiller"
-  echo 'This is not how helm works anymore!'
-  exit 1
-  #kubectl --kubeconfig=$KUBECONFIG create serviceaccount tiller --namespace kube-system
-  kubectl --kubeconfig=$KUBECONFIG create -f $KUBASH_DIR/tiller/rbac-tiller-config.yaml
-  sleep 5
-  KUBECONFIG=$KUBECONFIG \
-   helm init --service-account tiller
-  KUBECONFIG=$KUBECONFIG \
-  $KUBASH_DIR/w8s/tiller.w8
-}
-
 helm_three () {
+  # Install the pinned Helm 3 release (keep in sync with HELM_VERSION in
+  # the Makefile), verifying the download against its published sha256.
   helmthreeTMP=$(mktemp -d)
   cd $helmthreeTMP
-  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-  chmod 700 get_helm.sh
-  ./get_helm.sh
+  curl -fsSL -o helm-v3.22.0-linux-amd64.tar.gz https://get.helm.sh/helm-v3.22.0-linux-amd64.tar.gz
+  curl -fsSL -o helm-v3.22.0-linux-amd64.tar.gz.sha256sum https://get.helm.sh/helm-v3.22.0-linux-amd64.tar.gz.sha256sum
+  sha256sum --check helm-v3.22.0-linux-amd64.tar.gz.sha256sum
+  tar -xzf helm-v3.22.0-linux-amd64.tar.gz
+  install -m 0755 linux-amd64/helm ${KUBASH_BIN:-$KUBASH_DIR/bin}/helm
   cd
   rm -Rf $helmthreeTMP
 }
