@@ -64,12 +64,21 @@ jobs:
           touch "$HOME/.kube/config"
       - name: Fetch ct into ~/.kubash/bin (kubash's checks require it)
         run: make -C "$HOME/.kubash" ct
+      - name: Install kubeadm for config validation
+        run: |
+          cd "$HOME/.kubash/bin"
+          curl -fsSL -o kubeadm https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubeadm
+          curl -fsSL -o kubeadm.sha256 https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubeadm.sha256
+          echo "$(cat kubeadm.sha256)  kubeadm" | sha256sum --check
+          chmod +x kubeadm
+          rm kubeadm.sha256
       - name: Run the bats suite
         run: |
           export PATH="$HOME/.kubash/bin:$PATH"
           cd "$HOME/.kubash"
           bats .ci/.tests.bats
           bats .ci/trixie.bats
+          bats .ci/kubeadm.bats
 
   bootstrap-smoke:
     name: Bootstrap smoke (${{ matrix.image }})

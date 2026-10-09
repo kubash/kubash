@@ -22,9 +22,9 @@ find_defaults
 # e.g.
 # export ISTIO_PROFILE=preview && kubash ...
 # it is best to export it as kubash is re-entrant
-#: ${KUBERNETES_VERSION:='v1.15.3'}
+#: ${KUBERNETES_VERSION:='v1.36.5'}
 #: ${KUBE_MAJOR_VER:=1}
-#: ${KUBE_MINOR_VER:=15}
+#: ${KUBE_MINOR_VER:=36}
 : ${NAMESPACE:=default}
 : ${KUBASH_CLUSTER_NAME:=default}
 : ${KUBASH_HISTORY:=$KUBASH_DIR/.kubash_history}
