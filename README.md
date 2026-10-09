@@ -2,9 +2,7 @@
 
 Build, provision, initialize, add common components, interact and tear down a cluster PDQ.
 
-[![Kubash](https://circleci.com/gh/kubash/kubash.svg?style=svg)](https://app.circleci.com/pipelines/github/kubash/kubash)
-
-[![Build Status](https://travis-ci.com/kubash/kubash.svg?branch=master)](https://travis-ci.com/kubash/kubash)
+[![CI](https://github.com/kubash/kubash/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/kubash/kubash/actions/workflows/ci.yml)
 
 Build production ready clusters using a variety of technologies along the way.
 
@@ -18,7 +16,7 @@ Then initialize them using kubeadm, and install charts using helm.
 Install with one easy line:
 
 ```
-curl -L git.io/kubash|bash
+curl -L https://raw.githubusercontent.com/kubash/kubash/master/bootstrap|bash
 ```
 
 Get started by making the example:
@@ -28,7 +26,7 @@ kubash -n example yaml2cluster examples/example-cluster.yaml
 ls -l clusters/example
 ```
 
-Now build an image `kubash build --target-os bionic1.20.1` where bionic is the OS and 1.20.1 is the K8S version
+Now build an image `kubash build --target-os bullseye1.28.0` where bullseye is the OS and 1.28.0 is the K8S version
 
 [![asciicast](https://asciinema.org/a/164070.png)](https://asciinema.org/a/164070)
 
@@ -98,7 +96,8 @@ Right now you can build these OSs as your base image:
 1. CoreOS
 
 Packer will build ubuntu, debian, and centos. And
-there is also a basic downloader for the CoreOS images.
+there is also a basic downloader for the CoreOS images
+(CoreOS itself is end-of-life, and its kubash support is deprecated).
 
 ### Initializers
 

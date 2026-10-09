@@ -18,7 +18,7 @@ jobs:
     name: Bash syntax
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: bash -n every shell file
         run: |
           fail=0
@@ -36,7 +36,7 @@ jobs:
     name: ShellCheck (error severity)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install ShellCheck v0.10.0 (pinned)
         run: |
           curl -sL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | tar -xJ -C /tmp
@@ -49,7 +49,7 @@ jobs:
     name: bats (yaml2cluster)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install test dependencies
         run: |
           sudo apt-get update -qq
@@ -78,7 +78,7 @@ jobs:
       matrix:
         image: [debian:trixie, ubuntu:24.04]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Bootstrap dependency phase inside ${{ matrix.image }}
         run: |
           docker run --rm \
