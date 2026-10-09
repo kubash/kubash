@@ -453,7 +453,7 @@ do_masters_in_parallel () {
 }
 
 do_provision_test () {
-  squawk 3 " do_provision_test $@"
+  squawk 3 " do_provision_test $*"
   if [[ -z "$kubash_provision_csv_slurped" ]]; then
     provision_csv_slurp
   fi
@@ -500,7 +500,7 @@ K8S_iscsihost=$K8S_iscsihost"
 }
 
 do_test () {
-  squawk 3 " do_test $@"
+  squawk 3 " do_test $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -557,7 +557,7 @@ prep () {
 }
 
 preppy () {
-  squawk 7 "preppy $@"
+  squawk 7 "preppy $*"
   node_name=$1
   node_ip=$2
   node_port=$3
@@ -599,11 +599,11 @@ do_metallb () {
         https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml
       metallb_ns_created=0
       metallb_counter=0
-      while [[ $metallb_ns_created < 1 ]]; do
+      while [[ $metallb_ns_created -lt 1 ]]; do
         sleep 1
         metallb_ns_created=$(kubectl get ns|grep metallb-system|wc -l)
         ((++metallb_counter))
-        if [[ $metallb_counter > 10 ]]; then
+        if [[ $metallb_counter -gt 10 ]]; then
           break
         fi
       done

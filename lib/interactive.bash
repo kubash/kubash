@@ -58,11 +58,11 @@ kubash_interactive () {
 }
 
 kubectl_passthru () {
-    squawk 5 "kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@"
-    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $@
+    squawk 5 "kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config $*"
+    kubectl --kubeconfig=$KUBASH_CLUSTER_DIR/config "$@"
 }
 
 helm_passthru () {
-    squawk 5 "KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm $@"
-    KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm $@
+    squawk 5 "KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm $*"
+    KUBECONFIG=$KUBASH_CLUSTER_DIR/config helm "$@"
 }

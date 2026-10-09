@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 mount_all_iscsi_targets () {
-  squawk 1 "mount all iscsi targets $@"
+  squawk 1 "mount all iscsi targets $*"
   while IFS="," read -r $csv_columns
   do
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
-    squawk 3 "initializing iscsi node $@"
+    squawk 3 "initializing iscsi node $*"
     squawk 33 "${K8S_iscsihost} ${K8S_iscsitarget} $K8S_iscsichapusername"
     if [[ "$K8S_iscsitarget" != "null" ]]; then
       squawk 3 "K8S_iscsitarget=$K8S_iscsitarget"
@@ -64,11 +64,11 @@ lvm_extend_run () {
 }
 
 mount_all_other_targets () {
-  squawk 1 "mount all other targets $@"
+  squawk 1 "mount all other targets $*"
   while IFS="," read -r $csv_columns
   do
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
-    squawk 3 "initializing storage node $@"
+    squawk 3 "initializing storage node $*"
     squawk 3 "$K8S_storagePath $K8S_storageType $K8S_storageSize $K8S_storageTarget $K8S_storageMountPath $K8S_storageUUID"
 
     squawk 3 "${K8S_storagePath} ${K8S_storageType} ${K8S_storageSize} ${K8S_storageTarget} ${K8S_storageMountPath} ${K8S_storageUUID}"
@@ -243,12 +243,16 @@ mount_all_other_targets () {
 }
 
 # The dynamic variable names is breaking this one, will revisit in the future for an iterative mounter
+# Known-broken and uncalled: its ${K8S_*${storage_iterator}} pseudo-indirection is a
+# bad substitution on modern bash. Kept for reference until the storage rework;
+# the SC2082 exclusion is scoped to this function only.
+# shellcheck disable=SC2082
 BROKEN_mount_all_other_targets () {
-  squawk 1 "mount all other targets $@"
+  squawk 1 "mount all other targets $*"
   while IFS="," read -r $csv_columns
   do
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
-    squawk 3 "initializing borken storage node $@"
+    squawk 3 "initializing borken storage node $*"
     squawk 3 "$K8S_storagePath $K8S_storageType $K8S_storageSize $K8S_storageTarget $K8S_storageMountPath $K8S_storageUUID"
     for storage_iteration in {0..3}
     do
@@ -300,7 +304,7 @@ BROKEN_mount_all_other_targets () {
 }
 
 taint_storage () {
-  squawk 1 " taint_storage $@"
+  squawk 1 " taint_storage $*"
   count_storage=0
   for storage_node in "$@"
   do
@@ -316,7 +320,7 @@ taint_storage () {
 }
 
 taint_all_storage () {
-  squawk 1 " taint_all_storage $@"
+  squawk 1 " taint_all_storage $*"
   count_all_storage=0
   nodes_to_taint=' '
   while IFS="," read -r $csv_columns

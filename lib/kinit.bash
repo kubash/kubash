@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 master_join () {
-  squawk 1 " master_join $@"
+  squawk 1 " master_join $*"
   my_node_name=$1
   my_node_ip=$2
   my_node_user=$3
@@ -20,7 +20,7 @@ master_join () {
 }
 
 master_init_join () {
-  squawk 1 " master_init_join $@"
+  squawk 1 " master_init_join $*"
   my_master_name=$1
   my_master_ip=$2
   my_master_user=$3
@@ -71,7 +71,7 @@ master_init_join () {
 
     MASTER_OR_BACKUP=BACKUP \
     PRIORITY=100 \
-    INTERFACE_NET=$INTERFACE_NET \ 
+    INTERFACE_NET=$INTERFACE_NET \
     MASTER_VIP=$my_master_ip \
     envsubst < $KUBASH_DIR/templates/keepalived.conf
     > $setup_keepalived_tmp/keepalived.conf
@@ -81,7 +81,7 @@ master_init_join () {
     # Then let's overwrite that on our primary master
     MASTER_OR_BACKUP=MASTER \
     PRIORITY=101 \
-    INTERFACE_NET=$INTERFACE_NET \ 
+    INTERFACE_NET=$INTERFACE_NET \
     MASTER_VIP=$my_master_ip \
     envsubst < $KUBASH_DIR/templates/keepalived.conf
     > $setup_keepalived_tmp/keepalived.conf
@@ -158,7 +158,7 @@ master_init_join () {
 }
 
 master_grab_kube_config () {
-  squawk 33 "master_grab_kube_config $@"
+  squawk 33 "master_grab_kube_config $*"
   my_master_name=$1
   my_master_ip=$2
   my_master_user=$3
@@ -243,11 +243,11 @@ node_join () {
 }
 
 finish_pki_for_masters () {
-  squawk 5 "finish_pki_for_masters $@"
+  squawk 5 "finish_pki_for_masters $*"
   if [[ $# -ne 4 ]]; then
     kubash_interactive
     echo 'Arguments does not equal 4!'
-    croak 3  "Arguments: $@"
+    croak 3  "Arguments: $*"
   fi
   this_user=$1
   this_host=$2
@@ -261,7 +261,7 @@ finish_pki_for_masters () {
 }
 
 finish_etcd () {
-  squawk 5 "finish_etcd $@"
+  squawk 5 "finish_etcd $*"
   this_user=$1
   this_host=$2
   this_name=$3
@@ -283,7 +283,7 @@ finish_etcd () {
 }
 
 finish_etcd_kubelet_download () {
-  squawk 5 "finish_etcd_kubelet_download $@"
+  squawk 5 "finish_etcd_kubelet_download $*"
   this_user=$1
   this_host=$2
   this_name=$3
@@ -291,7 +291,7 @@ finish_etcd_kubelet_download () {
 }
 
 finish_etcd_direct_download () {
-  squawk 5 "finish_etcd_direct_download $@"
+  squawk 5 "finish_etcd_direct_download $*"
   this_user=$1
   this_host=$2
   this_name=$3
@@ -402,7 +402,7 @@ kubeadm_reset () {
 }
 
 prep_init_etcd () {
-  squawk 5 "prep_init_etcd args: '$@'"
+  squawk 5 "prep_init_etcd args: '$*'"
   prep_init_etcd_user=$1
   prep_init_etcd_host=$2
   prep_init_etcd_name=$3
@@ -620,7 +620,7 @@ prep_init_etcd_classic () {
 }
 
 prep_etcd () {
-  squawk 5 "prep_etcd args: '$@'"
+  squawk 5 "prep_etcd args: '$*'"
   this_user=$1
   this_host=$2
   this_name=$3
@@ -781,7 +781,7 @@ EOF'
 }
 
 push_pki_ext_etcd_method () {
-  squawk 25 "push_pki_ext_etcd_method $@"
+  squawk 25 "push_pki_ext_etcd_method $*"
   push_pki_ext_etcd_USER=$1
   push_pki_ext_etcd_HOST=$2
   push_pki_ext_etcd_PORT=$3
@@ -2607,7 +2607,7 @@ EOF
 }
 
 scanner () {
-  squawk 17 "scanner $@"
+  squawk 17 "scanner $*"
   node_ip=$1
   node_port=$2
   removestalekeys $node_ip

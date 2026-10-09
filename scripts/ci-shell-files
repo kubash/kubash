@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Print kubash's shell files, one per line, repo-relative: every
+# *.bash/*.sh/*.bats file plus extensionless files with a shell shebang.
+# Used by the GitHub Actions syntax and shellcheck jobs so CI and local
+# runs lint exactly the same file set.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+find . -path ./.git -prune -o -path ./submodules -prune -o -type f -print |
+while IFS= read -r f; do
+  case "$f" in
+    *.bash|*.sh|*.bats)
+      echo "$f"
+      ;;
+    *)
+      if head -n 1 "$f" 2>/dev/null | grep -qE '^#!.*(bash|sh|bats)'; then
+        echo "$f"
+      fi
+      ;;
+  esac
+done |
+sort -u |
+sed 's|^\./||'

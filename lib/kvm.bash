@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 kvm-decommer () {
-  squawk 5 "kvm-decommer-remote $@"
+  squawk 5 "kvm-decommer-remote $*"
   REBASED_NODE=$1
   THRU_USER=$2
   THRU_HOST=$3

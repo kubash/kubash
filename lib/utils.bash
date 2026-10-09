@@ -134,7 +134,7 @@ set_name () {
 }
 
 rolero () {
-  squawk 2 "rolero $@"
+  squawk 2 "rolero $*"
   node_name=$1
   NODE_ROLE=$2
 
@@ -236,7 +236,7 @@ kubash_context () {
 }
 
 removestalekeys () {
-  squawk 1 " removestalekeys $@"
+  squawk 1 " removestalekeys $*"
   node_ip=$1
   ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$node_ip"
 }
@@ -348,7 +348,7 @@ do_command_in_parallel () {
   do_command_tmp_para=$(mktemp -d)
   command2run=$1
   touch $do_command_tmp_para/hopper
-  squawk 3 " do_command_in_parallel $@"
+  squawk 3 " do_command_in_parallel $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     squawk 219 'slurp empty'
     hosts_csv_slurp
@@ -379,9 +379,9 @@ do_command_in_parallel () {
 }
 
 do_command () {
-  squawk 3 " do_command $@"
+  squawk 3 " do_command $*"
   if [[ ! $# -eq 4 ]]; then
-    croak 3  "do_command $@ <--- arguments does not equal 4!!!"
+    croak 3  "do_command $* <--- arguments does not equal 4!!!"
   fi
   do_command_port=$1
   do_command_user=$2
@@ -398,7 +398,7 @@ do_command () {
 
 sudo_command () {
   if [[ ! $# -eq 4 ]]; then
-    echo "sudo_command $@"
+    echo "sudo_command $*"
     printf '%s arguments does not equal 4!!!\nexample usage:\nsudo_command PORT USER HOST COMMAND\ne.g.\nsudo_command 22 root 10.0.0.10 "echo test"' $#
     exit 1
   fi
@@ -430,7 +430,7 @@ copy_in_parallel_to_all () {
   file2copy=$(realpath $1)
   destination=$2
   touch $copy_in_to_all_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_all $@"
+  squawk 3 " copy_in_parallel_to_all $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -459,7 +459,7 @@ copy_in_parallel_to_role () {
   file2copy=$(realpath $2)
   destination=$3
   touch $copy_in_to_role_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_role $@"
+  squawk 3 " copy_in_parallel_to_role $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -491,7 +491,7 @@ copy_in_parallel_to_os () {
   file2copy=$(realpath $2)
   destination=$3
   touch $copy_in_to_os_tmp_para/hopper
-  squawk 3 " copy_in_parallel_to_os $@"
+  squawk 3 " copy_in_parallel_to_os $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -522,7 +522,7 @@ do_command_in_parallel_on_role () {
   role2runiton=$1
   command2run=$2
   touch $do_command_on_role_tmp_para/hopper
-  squawk 3 " do_command_in_parallel_on_role $@"
+  squawk 3 " do_command_in_parallel_on_role $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi
@@ -553,7 +553,7 @@ do_command_in_parallel_on_os () {
   os2runiton=$1
   command2run=$2
   touch $do_command_on_os_tmp_para/hopper
-  squawk 3 " do_command_in_parallel $@"
+  squawk 3 " do_command_in_parallel $*"
   if [[ -z "$kubash_hosts_csv_slurped" ]]; then
     hosts_csv_slurp
   fi

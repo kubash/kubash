@@ -256,4 +256,4 @@ main () {
   join_node
 }
 
-main $@
+main "$@"

@@ -153,7 +153,7 @@ gke_gcloud_provision () {
 }
 
 gke-provisioner () {
-  squawk 1 "gke-provisioner $@"
+  squawk 1 "gke-provisioner $*"
 
   if [[ -z "$1" ]]; then
     croak 3  'gke-provisioner requires an argument'

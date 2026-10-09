@@ -1,0 +1,87 @@
+name: CI
+
+# Phase 0 safety net: one GitHub Actions workflow replacing the retired
+# CircleCI (.circleci/), Travis (.travis.yml) and GitLab (.gitlab-ci.yml)
+# configurations. Jobs gate at error severity / hard failures only;
+# shellcheck warnings are a tracked burn-down backlog, not a gate yet.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    name: Bash syntax
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash -n every shell file
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            # .bats files are not plain bash; the bats job parses them.
+            case "$f" in *.bats) continue ;; esac
+            if ! bash -n "$f"; then
+              echo "syntax error: $f"
+              fail=1
+            fi
+          done < <(scripts/ci-shell-files)
+          exit $fail
+
+  shellcheck:
+    name: ShellCheck (error severity)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck v0.10.0 (pinned)
+        run: |
+          curl -sL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | tar -xJ -C /tmp
+          sudo install -m 0755 /tmp/shellcheck-v0.10.0/shellcheck /usr/local/bin/shellcheck
+          shellcheck --version
+      - name: ShellCheck at error severity
+        run: scripts/ci-shell-files | xargs shellcheck --severity=error
+
+  bats:
+    name: bats (yaml2cluster)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq ansible netcat-openbsd rsync nmap gettext-base rlwrap openssh-client jq bats
+          sudo npm i -g yaml2json
+      - name: Install the checkout as ~/.kubash
+        run: |
+          mkdir -p "$HOME/.kubash"
+          rsync -a --exclude=.git ./ "$HOME/.kubash/"
+          # the pupernetes test copies an existing kubeconfig around
+          mkdir -p "$HOME/.kube"
+          touch "$HOME/.kube/config"
+      - name: Fetch ct into ~/.kubash/bin (kubash's checks require it)
+        run: make -C "$HOME/.kubash" ct
+      - name: Run the bats suite
+        run: |
+          export PATH="$HOME/.kubash/bin:$PATH"
+          cd "$HOME/.kubash"
+          bats .ci/.tests.bats
+
+  bootstrap-smoke:
+    name: Bootstrap smoke (${{ matrix.image }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [debian:trixie, ubuntu:24.04]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bootstrap dependency phase inside ${{ matrix.image }}
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/src" -w /src \
+            -e BOOTSTRAP_ONLY_DEPS=1 -e DEBIAN_FRONTEND=noninteractive \
+            ${{ matrix.image }} ./bootstrap -y

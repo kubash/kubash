@@ -1,2 +1,0 @@
-#!/bin/bash
-circleci local execute --job check

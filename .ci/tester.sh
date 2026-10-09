@@ -20,4 +20,4 @@ main () {
 }
 
 cleanup
-time main $@
+time main "$@"

@@ -2,7 +2,7 @@
 
 #image_creator this_storage_target=$1 this_storage_target_type=$2 this_storage_target_size=$3 this_storage_target_preallocation=$4
 image_creator () {
-  squawk 50 "image_creator $@"
+  squawk 50 "image_creator $*"
   this_storage_target=$1
   this_storage_target_type=$2
   this_storage_target_size=$3
@@ -82,7 +82,7 @@ virsh_disk_attach () {
 }
 
 qemu-provisioner () {
-  squawk 1 "qemu-provisioner $@"
+  squawk 1 "qemu-provisioner $*"
 
   export K8S_node=$1
   export K8S_role=$2

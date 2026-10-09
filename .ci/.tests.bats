@@ -182,7 +182,7 @@ setup () {
 }
 
 # 24 K8S_subnetmask2
-@test "yaml2cluster subnetmask1" {
+@test "yaml2cluster subnetmask2" {
   cd $HOME/.kubash
   result="$(cut -f24 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
   [ "$result" = '255.255.0.0' ]
@@ -238,7 +238,7 @@ setup () {
 }
 
 # 32 K8S_broadcast3
-@test "yaml2cluster broadcast2" {
+@test "yaml2cluster broadcast3" {
   cd $HOME/.kubash
   result="$(cut -f32 -d, clusters/$MY_TMP/provision.csv|tail -n1)"
   [ "$result" = '10.3.3.255' ]
