@@ -167,8 +167,6 @@ parse_opts () {
     kubash searchlight \
       -n $KUBASH_CLUSTER_NAME
     sleep 10
-    kubash tiller  \
-      -n $KUBASH_CLUSTER_NAME
     squawk 1 "Full auto finished"
     exit 0
   elif [[ $RAISON == "grab" ]]; then
@@ -493,13 +491,6 @@ parse_opts () {
       kubeadm2ha_initialize
       exit 0
     fi
-  elif [[ $RAISON == "extras" ]]; then
-    if [[ $print_help == "true" ]]; then
-      horizontal_rule
-      init_usage
-      exit 1
-    fi
-    do_tiller
   elif [[ $RAISON == "yaml2cluster" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule
@@ -640,13 +631,6 @@ parse_opts () {
       exit 1
     fi
     inst_kubedb_helm
-  elif [[ $RAISON == "tiller" ]]; then
-    if [[ $print_help == "true" ]]; then
-      horizontal_rule
-      usage
-      exit 1
-    fi
-    do_tiller
   elif [[ $RAISON == "cert_manager" ]]; then
     if [[ $print_help == "true" ]]; then
       horizontal_rule

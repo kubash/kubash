@@ -33,7 +33,6 @@ rm $TMP/cluster.yaml
 set -e
 kubash -n $this_test -y provision
 kubash -n $this_test --verbosity=105 init
-kubash -n $this_test --verbosity=105 tiller
 kubash -n $this_test --verbosity=105 rook
 
 #remove temp

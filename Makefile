@@ -52,6 +52,7 @@ $(eval PROMETHEUS_ALERTMANAGER_PERSISTENTVOLUME_SUBPATH := "")
 
 # Helm settings
 $(eval HELM_INSTALL_DIR := "$(KUBASH_BIN)")
+$(eval HELM_VERSION := v3.22.0)
 
 # Istio
 $(eval ISTIO_VERSION := "1.19.3")
@@ -101,13 +102,13 @@ $(KUBASH_BIN)/helm: SHELL:=/bin/bash
 $(KUBASH_BIN)/helm:
 	@echo 'Installing helm'
 	$(eval TMP := $(shell mktemp -d --suffix=HELMTMP))
-	curl -fsSL -o $(TMP)/get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-	chmod 700 $(TMP)/get_helm.sh
-	cd $(TMP); \
-	HELM_INSTALL_DIR=$(HELM_INSTALL_DIR) \
-	bash $(TMP)/get_helm.sh
-	rm $(TMP)/get_helm.sh
-	rmdir $(TMP)
+	cd $(TMP) \
+	&& curl -fsSL -o helm-$(HELM_VERSION)-linux-amd64.tar.gz https://get.helm.sh/helm-$(HELM_VERSION)-linux-amd64.tar.gz \
+	&& curl -fsSL -o helm-$(HELM_VERSION)-linux-amd64.tar.gz.sha256sum https://get.helm.sh/helm-$(HELM_VERSION)-linux-amd64.tar.gz.sha256sum \
+	&& sha256sum --check helm-$(HELM_VERSION)-linux-amd64.tar.gz.sha256sum \
+	&& tar -xzf helm-$(HELM_VERSION)-linux-amd64.tar.gz \
+	&& mv linux-amd64/helm $(KUBASH_BIN)/helm
+	rm -Rf $(TMP)
 
 istioctl: $(KUBASH_BIN)
 	@scripts/kubashnstaller istioctl
@@ -355,8 +356,6 @@ extended_tests:
 		$(MINIKUBE_OPTS) \
 		start
 	@sh ./w8s/kubectl.w8
-	helm init
-	@sh ./w8s/tiller.w8
 	@sh ./w8s/kube-dns.w8
 	date -I > .minikube.made
 

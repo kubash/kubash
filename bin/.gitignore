@@ -28,7 +28,6 @@ ptp
 rke
 talosctl
 terraform
-tiller
 velero
 nomad
 consul
