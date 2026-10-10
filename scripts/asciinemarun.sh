@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eux
-TARGET_OS=bionic
+TARGET_OS=bullseye
 TARGET_VERSION=1.21.2
 CLUSTER_NAME=kubash_test123
 TMP=$(mktemp -d --suffix=.dir /tmp/AsciinemaRun.XXXXX)
