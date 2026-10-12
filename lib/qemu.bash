@@ -178,7 +178,7 @@ qemu-provisioner () {
       K8S_node=$K8S_node \
       envsubst < $KUBASH_DIR/templates/user_data \
       > $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node/user_data
-    elif [[ "$K8S_ip2" -ne 'null' && "$K8S_ip3" == 'null' ]]; then
+    elif [[ "$K8S_ip2" != 'null' && "$K8S_ip3" == 'null' ]]; then
       K8S_mac2=$K8S_mac2 \
       K8S_ip2=$K8S_ip2 \
       SSH_AUTHORIZED_KEYS=$SSH_AUTHORIZED_KEYS \

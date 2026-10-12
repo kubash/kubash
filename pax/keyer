@@ -71,5 +71,5 @@ sudo chown --quiet -R root: /root
 rm $TMP/ohmyzsh.sh
 
 # change shell to zsh
-sudo chsh -s $(which zsh) root
-sudo chsh -s $(which zsh) $K8S_SU_USER
+sudo chsh -s "$(which zsh)" root
+sudo chsh -s "$(which zsh)" $K8S_SU_USER

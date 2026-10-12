@@ -1,4 +1,4 @@
-#!/bin/sh -eux
+#!/bin/bash -eux
 # https://docs.docker.com/install/linux/docker-ce/centos/
 # https://github.com/cookeem/kubeadm-ha
 TMP=$(mktemp -d)

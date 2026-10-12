@@ -12,7 +12,7 @@ if type "$TARGET" > /dev/null; then
     echo "$TARGET found in path"
   fi
   if [ ! -e $KUBASH_BIN/$TARGET ]; then
-    ln -s $(which $TARGET) $KUBASH_BIN/$TARGET
+    ln -s "$(which $TARGET)" $KUBASH_BIN/$TARGET
     if [ $VERBOSITY -gt '0' ]; then
       ls -al $KUBASH_BIN/$TARGET
     fi

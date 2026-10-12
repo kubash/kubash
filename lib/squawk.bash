@@ -9,7 +9,7 @@ squawk () {
   # and pad it with # to let you now how verbose that message was
   squawk_lvl="$1"
   shift
-  squawk="$@"
+  squawk="$*"
 
   if [[ "$VERBOSITY" -ge "$squawk_lvl" ]] ; then
     if [[ "$squawk_lvl" -le 20 ]] ; then

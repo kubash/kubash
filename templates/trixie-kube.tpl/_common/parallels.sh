@@ -6,7 +6,7 @@ HOME_DIR="${HOME_DIR:-/home/vagrant}";
 case "$PACKER_BUILDER_TYPE" in
 parallels-iso|parallels-pvm)
     mkdir -p /tmp/parallels;
-    if [ `uname -m` = "aarch64" ] ; then
+    if [ "$(uname -m)" = "aarch64" ] ; then
         mount -o loop $HOME_DIR/prl-tools-lin-arm.iso /tmp/parallels;
     else
         mount -o loop $HOME_DIR/prl-tools-lin.iso /tmp/parallels;
@@ -31,7 +31,7 @@ parallels-iso|parallels-pvm)
     # https://github.com/Parallels/vagrant-parallels/issues/325#issuecomment-418727113
     auto_mount_script='/usr/bin/prlfsmountd'
     if [ -f "${auto_mount_script}" ]; then
-        echo -e '#!/bin/sh\n'\
+        printf '#!/bin/sh\n %s\n' \
         '# Shared folders auto-mount is disabled by Vagrant ' \
         > "${auto_mount_script}"
     fi

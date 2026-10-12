@@ -7,7 +7,7 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-echo -n "wait on $1 in disks to become available"
+printf '%s' "wait on $1 in disks to become available"
 sleep 1
 
 # while loop
@@ -15,7 +15,7 @@ countone=1
 # timeout for 15 minutes
 while [ $countone -lt 151 ]
 do
-  echo -n '.'
+  printf '%s' '.'
   RESULT=$(kubectl get disks | grep $1)
   if [ "$RESULT" ]; then
       echo '.'

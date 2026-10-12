@@ -11,4 +11,4 @@ dnf -y remove linux-firmware
 rm -f /tmp/chef*rpm
 
 # delete any logs that have built up during the install
-find /var/log/ -name *.log -exec rm -f {} \;
+find /var/log/ -name '*.log' -exec rm -f {} \;

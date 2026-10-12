@@ -9,7 +9,7 @@ parse_opts () {
 
   squawk 5 'parse opts'
 
-  ORIGINAL_OPTS=$@
+  ORIGINAL_OPTS=$*
   # Execute getopt on the arguments passed to this program, identified by the special character $@
   short_opts="c:hvyn:"
   long_opts="version,oidc,clustername:,initializer:,csv:,help,yes,verbose,verbosity:,target-os:,target-build:,build-virt:,node-join-name:,node-join-user:,node-join-ip:,node-join-port:,node-join-role:,parallel:,builder:,debug,provisioner:"

@@ -149,7 +149,7 @@ gke_gcloud_provision () {
   KUBECONFIG=$KUBECONFIG \
   kubectl create clusterrolebinding cluster-admin-binding \
     --clusterrole cluster-admin \
-    --user $(gcloud config get-value account)
+    --user "$(gcloud config get-value account)"
 }
 
 gke-provisioner () {

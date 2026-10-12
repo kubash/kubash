@@ -9,7 +9,7 @@ croak () {
   # and pad it with # to let you now how verbose that message was
   croak_lvl="$1"
   shift
-  croak="$@"
+  croak="$*"
 
   if [[ -z $error_report_log ]]; then
     horizontal_rule
