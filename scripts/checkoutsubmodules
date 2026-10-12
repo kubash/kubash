@@ -4,7 +4,7 @@ this_pwd=$(pwd)
 submodules='istio kubeadm2ha kubespray openshift-ansible rook'
 
 checkmodule () {
-  cd $this_pwd/submodules/$1
+  cd $this_pwd/submodules/$1 || exit 1
   pwd
   git fetch --all
   if [[ $1 == 'istio' ]]; then

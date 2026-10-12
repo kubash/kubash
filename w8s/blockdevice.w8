@@ -9,7 +9,7 @@ fi
 blockstring=$1
 namespace=$2
 
-echo -n "wait on $blockstring in blockdevices to become available in the namespace $namespace"
+printf '%s' "wait on $blockstring in blockdevices to become available in the namespace $namespace"
 sleep 1
 
 # while loop
@@ -17,7 +17,7 @@ countone=1
 # timeout for 15 minutes
 while [ $countone -lt 151 ]
 do
-  echo -n '.'
+  printf '%s' '.'
   RESULT=$(kubectl get -n $namespace blockdevice | grep $blockstring)
   if [ "$RESULT" ]; then
       echo '.'

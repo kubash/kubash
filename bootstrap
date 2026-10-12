@@ -37,7 +37,7 @@ squawk () {
   shift
   squawk=$1
   shift
-  squawk_opt=$@
+  squawk_opt=$*
 
   if [[ "$VERBOSITY" -ge "$squawk_lvl" ]] ; then
   count_squawk=0
@@ -84,12 +84,12 @@ flight_checks () {
     if [[ $VERBOSITY -gt '1' ]]; then
       squawk 10 " $UNAME is a Supported OS"
     fi
-  elif [ "$UNAME" == "Darwin" -o "$UNAME" == "FreeBSD" ] ; then
+  elif [ "$UNAME" == "Darwin" ] || [ "$UNAME" == "FreeBSD" ] ; then
     if [[ $VERBOSITY -gt '1' ]]; then
       echo " $UNAME is not a Supported OS"
       exit 1
     fi
-  elif [ "$UNAME" ">" "MINGW" -a "$UNAME" "<" "MINGX" ] ; then
+  elif [ "$UNAME" ">" "MINGW" ] && [ "$UNAME" "<" "MINGX" ] ; then
     if [[ $VERBOSITY -gt '1' ]]; then
       echo " $UNAME is not a Supported OS"
       exit 1

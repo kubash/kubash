@@ -66,17 +66,20 @@ demo_istio () {
   PRE_CWD=$(pwd)
   istioctl install --set profile=demo -y
   kubectl label namespace default istio-injection=enabled
-  cd $KUBASH_DIR/submodules/istio
+  cd $KUBASH_DIR/submodules/istio || return 1
   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
   kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
-  export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
-  export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+  INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  export INGRESS_HOST
+  INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+  export INGRESS_PORT
+  SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+  export SECURE_INGRESS_PORT
   export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
   echo "$GATEWAY_URL"
   echo "http://$GATEWAY_URL/productpage"
   kubectl apply -f samples/addons
   kubectl rollout status deployment/kiali -n istio-system
   echo "Info: https://istio.io/latest/docs/setup/getting-started/"
-  cd ${PRE_CWD}
+  cd ${PRE_CWD} || return 1
 }

@@ -28,7 +28,7 @@ init_nomad_dir () {
 
 init_hashi_keys () {
   NOMAD_ON_KUBERNETES="$KUBASH_CLUSTER_DIR/nomad-on-kubernetes"
-  cd $NOMAD_ON_KUBERNETES
+  cd $NOMAD_ON_KUBERNETES || return 1
   if [[ -f  $NOMAD_ON_KUBERNETES/vault-combined.pem ]]; then
     echo 'certs already made'
   else
@@ -99,7 +99,7 @@ init_hashi_keys () {
 
 provision_nomad_node_worker () {
   NOMAD_ON_KUBERNETES="$KUBASH_CLUSTER_DIR/nomad-on-kubernetes"
-  cd $NOMAD_ON_KUBERNETES
+  cd $NOMAD_ON_KUBERNETES || return 1
   # Provision Node Worker
   # Lot's of cat EOF  in here leaving unindented
   squawk 5 "provision_nomad_node_worker $*"
@@ -112,7 +112,7 @@ provision_nomad_node_worker () {
   #scp $(which nomad) -P $THIS_NOMAD_PORT $THIS_NOMAD_USER@$THIS_NOMAD_WORKER:/usr/local/bin/
 
   TMP=$(mktemp -d)
-  cd $TMP
+  cd $TMP || return 1
 
   pwd
   ls -alh
@@ -211,7 +211,7 @@ EOF
 init_nomad_in_kubernetes () {
   NOMAD_ON_KUBERNETES="$KUBASH_CLUSTER_DIR/nomad-on-kubernetes"
   init_nomad_dir
-  cd $NOMAD_ON_KUBERNETES
+  cd $NOMAD_ON_KUBERNETES || return 1
   kubectl apply -f services
   kubectl get services
   get_hashi_ips
@@ -248,13 +248,13 @@ EOF
   if [[ ! -f $KUBASH_CLUSTER_DIR/.vault.init ]]; then
     vault operator init &> $NOMAD_ON_KUBERNETES/unseal_keys
     sleep 1
-    vault operator unseal $(grep 'Unseal Key 1' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')
+    vault operator unseal "$(grep 'Unseal Key 1' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')"
     sleep 1
-    vault operator unseal $(grep 'Unseal Key 2' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')
+    vault operator unseal "$(grep 'Unseal Key 2' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')"
     sleep 1
-    vault operator unseal $(grep 'Unseal Key 3' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')
+    vault operator unseal "$(grep 'Unseal Key 3' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')"
     sleep 3
-    vault login $(grep 'Initial Root Token' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')
+    vault login "$(grep 'Initial Root Token' $NOMAD_ON_KUBERNETES/unseal_keys|awk '{print $4}')"
     vault policy write nomad-server nomad-server-policy.hcl
     vault write /auth/token/roles/nomad-cluster @nomad-cluster-role.json
     date -I >> $KUBASH_CLUSTER_DIR/.vault.init

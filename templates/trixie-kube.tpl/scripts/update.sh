@@ -25,4 +25,4 @@ EOF
 apt-get update;
 
 apt-get -y upgrade linux-image-$arch;
-apt-get -y install linux-headers-`uname -r`;
+apt-get -y install linux-headers-"$(uname -r)";

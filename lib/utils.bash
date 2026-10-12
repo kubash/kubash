@@ -109,7 +109,8 @@ set_name () {
   export KUBASH_USERS_CSV=$KUBASH_CLUSTER_DIR/users.csv
   export KUBASH_CSV_VER_FILE=$KUBASH_CLUSTER_DIR/csv_version
   if [[ -f "$KUBASH_CLUSTER_DIR/kubernetes_version" ]]; then
-    export KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version)
+    KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version)
+    export KUBERNETES_VERSION
   fi
   net_set
   if [[ -e $KUBASH_CLUSTER_DIR/csv_version ]]; then
@@ -219,8 +220,10 @@ get_major_minor_kube_version () {
   TEST_KUBEADM_VER=$(echo $TEST_KUBEADM_VER_STEP_2 | sed 's/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/' )
   squawk 91 "get_major_minor_kube_version step 3 output=$TEST_KUBEADM_VER"
   squawk 91 "get_major_minor_kube_version exports"
-  export KUBE_MAJOR_VER=$(echo $TEST_KUBEADM_VER|cut -f1 -d,)
-  export KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER|cut -f2 -d,)
+  KUBE_MAJOR_VER=$(echo $TEST_KUBEADM_VER|cut -f1 -d,)
+  export KUBE_MAJOR_VER
+  KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER|cut -f2 -d,)
+  export KUBE_MINOR_VER
   squawk 95 "kube major: $KUBE_MAJOR_VER kube minor: $KUBE_MINOR_VER"
   set -e
   squawk 95 "exiting get_major_minor_kube_version user=$1 host=$2 name=$3 port=$4"

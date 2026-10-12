@@ -58,7 +58,7 @@ master_init_join () {
     croak 3  'no load balancer ip'
   fi
 
-  if [[ "DO_KEEPALIVED" == 'true' ]]; then
+  if [[ "$DO_KEEPALIVED" == 'true' ]]; then
     #keepalived
     setup_keepalived_tmp=$(mktemp -d)
 
@@ -73,7 +73,7 @@ master_init_join () {
     PRIORITY=100 \
     INTERFACE_NET=$INTERFACE_NET \
     MASTER_VIP=$my_master_ip \
-    envsubst < $KUBASH_DIR/templates/keepalived.conf
+    envsubst < $KUBASH_DIR/templates/keepalived.conf \
     > $setup_keepalived_tmp/keepalived.conf
     copy_in_parallel_to_role master $setup_keepalived_tmp/keepalived.conf "/tmp/"
     command2run='sudo  mv /tmp/keepalived.conf /etc/keepalived/'
@@ -83,7 +83,7 @@ master_init_join () {
     PRIORITY=101 \
     INTERFACE_NET=$INTERFACE_NET \
     MASTER_VIP=$my_master_ip \
-    envsubst < $KUBASH_DIR/templates/keepalived.conf
+    envsubst < $KUBASH_DIR/templates/keepalived.conf \
     > $setup_keepalived_tmp/keepalived.conf
     rsync $KUBASH_RSYNC_OPTS "ssh -p $my_master_port" $setup_keepalived_tmp/keepalived.conf $my_master_user@$my_master_ip:/tmp/keepalived.conf
     command2run='sudo  mv /tmp/keepalived.conf /etc/keepalived/'
@@ -924,7 +924,7 @@ etcd_kubernetes_12_ext_etcd_method () {
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
-  echo $ETCDHOSTS
+  echo "${ETCDHOSTS[@]}"
   sleep 33
   squawk 11 "866~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
@@ -1434,7 +1434,7 @@ etcd_kubernetes_13_ext_etcd_method () {
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
-  echo $ETCDHOSTS
+  echo "${ETCDHOSTS[@]}"
   sleep 33
   squawk 11 "1361~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
@@ -1895,7 +1895,7 @@ etcd_kubernetes_13_ext_etcd_method () {
       fi
     fi
   done <<< "$kubash_hosts_csv_slurped"
-  echo $ETCDHOSTS
+  echo "${ETCDHOSTS[@]}"
   sleep 33
   squawk 11 "1807~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
@@ -2332,7 +2332,7 @@ etcd_kubernetes_12_docs_stacked_method () {
       ((++node_count_zero))
     fi
   done <<< "$kubash_hosts_csv_slurped"
-  echo $ETCDHOSTS
+  echo "${ETCDHOSTS[@]}"
   sleep 33
   squawk 11 "2229~ get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}"
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}

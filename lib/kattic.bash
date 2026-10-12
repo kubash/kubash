@@ -13,24 +13,24 @@ demo () {
 }
 
 do_binupdate () {
-  cd $KUBASH_DIR
+  cd $KUBASH_DIR || return 1
   rm -f bin/kubectl; make kubectl
   rm -f bin/helm; make helm
 }
 
 do_redis () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/redis
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/redis || return 1
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    redis-statefulset.yml
 }
 
 do_postgres () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/crunchy-postgres
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/crunchy-postgres || return 1
   KUBECONFIG=$KUBECONFIG bash run.sh
 }
 
 do_rabbitmq () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/rabbitmq
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/rabbitmq || return 1
   KUBECONFIG=$KUBECONFIG bash run.sh
 }
 
@@ -52,25 +52,25 @@ do_percona () {
 }
 
 do_jupyter () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jupyter
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jupyter || return 1
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    demo-jupyter-openebs.yaml
 }
 
 do_mongodb () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/mongodb
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/mongodb || return 1
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    mongo-statefulset.yml
 }
 
 do_jenkins () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jenkins
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/jenkins || return 1
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    jenkins.yml
 }
 
 do_minio () {
-  cd $KUBASH_DIR/submodules/openebs/k8s/demo/minio
+  cd $KUBASH_DIR/submodules/openebs/k8s/demo/minio || return 1
   kubectl --kubeconfig=$KUBECONFIG apply -f \
    minio.yaml
 }
@@ -105,13 +105,13 @@ helm_three () {
   # Install the pinned Helm 3 release (keep in sync with HELM_VERSION in
   # the Makefile), verifying the download against its published sha256.
   helmthreeTMP=$(mktemp -d)
-  cd $helmthreeTMP
+  cd $helmthreeTMP || return 1
   curl -fsSL -o helm-v3.22.0-linux-amd64.tar.gz https://get.helm.sh/helm-v3.22.0-linux-amd64.tar.gz
   curl -fsSL -o helm-v3.22.0-linux-amd64.tar.gz.sha256sum https://get.helm.sh/helm-v3.22.0-linux-amd64.tar.gz.sha256sum
   sha256sum --check helm-v3.22.0-linux-amd64.tar.gz.sha256sum
   tar -xzf helm-v3.22.0-linux-amd64.tar.gz
   install -m 0755 linux-amd64/helm ${KUBASH_BIN:-$KUBASH_DIR/bin}/helm
-  cd
+  cd || return 1
   rm -Rf $helmthreeTMP
 }
 
@@ -577,7 +577,7 @@ do_decom () {
 }
 
 do_metallb () {
-    if [[ METALLB_INSTALLATION_METHOD == 'helm' ]]; then
+    if [[ $METALLB_INSTALLATION_METHOD == 'helm' ]]; then
       echo "This method is deprecated by upstream"
       exit 1
       KUBECONFIG=$KUBECONFIG \
@@ -604,7 +604,7 @@ do_metallb () {
 }
 
 do_efk () {
-    cd $KUBASH_DIR/submodules/openebs/k8s/demo/efk
+    cd $KUBASH_DIR/submodules/openebs/k8s/demo/efk || return 1
     kubectl --kubeconfig=$KUBECONFIG apply -f \
       es
     kubectl --kubeconfig=$KUBECONFIG apply -f \
@@ -653,7 +653,7 @@ do_rook () {
 }
 
 do_openebs () {
-    if [[ OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
+    if [[ $OPENEBS_INSTALLATION_METHOD = 'helm' ]]; then
       kubectl create ns openebs
       helm repo add openebs https://openebs.github.io/charts
       helm repo update
@@ -672,7 +672,7 @@ do_openebs () {
 
 activate_monitoring () {
   # Prometheus
-  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring/configs
+  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring/configs || return 1
   kubectl --kubeconfig=$KUBECONFIG create -f \
     prometheus-config.yaml
   kubectl --kubeconfig=$KUBECONFIG create -f \
@@ -683,7 +683,7 @@ activate_monitoring () {
     alertmanager-templates.yaml
   kubectl --kubeconfig=$KUBECONFIG create -f \
     alertmanager-config.yaml
-  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring
+  cd $KUBASH_DIR/submodules/openebs/k8s/openebs-monitoring || return 1
   kubectl --kubeconfig=$KUBECONFIG create -f \
     prometheus-operator.yaml
   kubectl --kubeconfig=$KUBECONFIG create -f \
@@ -703,7 +703,7 @@ do_openunison () {
 
 do_portieris () {
   TMP=$(mktemp -d)
-  cd $TMP
+  cd $TMP || return 1
   PORTIERIS_VERS=v0.10.0
   wget https://github.com/IBM/portieris/releases/download/${PORTIERIS_VERS}/portieris-${PORTIERIS_VERS}.tgz
   tar zxvf portieris-${PORTIERIS_VERS}.tgz
