@@ -863,6 +863,18 @@ determine_api_version () {
   fi
 }
 
+kinit_etcd_arg_lines() {
+  # Prints one etcd extraArgs entry at the indentation the kinit
+  # heredocs use, in the style the cluster's kubeadm API version
+  # requires: a plain map entry before v1beta4, a name/value list
+  # entry from v1beta4 on (map-style extraArgs are rejected there).
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+    printf '            - name: %s\n              value: %s\n' "$1" "$2"
+  else
+    printf '            %s: %s\n' "$1" "$2"
+  fi
+}
+
 etcd_kubernetes_ext_etcd_method () {
   etcd_kubernetes_13_ext_etcd_method
 }
@@ -918,7 +930,11 @@ etcd_kubernetes_12_ext_etcd_method () {
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
-  echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+    printf '            - name: initial-cluster\n              value: ' > $etcd_test_tmp/initial-cluster.head
+  else
+    echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  fi
   count_etcd=0
   countetcdnodes=0
   while IFS="," read -r $csv_columns
@@ -1038,6 +1054,8 @@ EOF'
   for i in "${!ETCDHOSTS[@]}"; do
     HOST=${ETCDHOSTS[$i]}
     NAME=${ETCDNAMES[$i]}
+    initial_cluster_state_line=$(kinit_etcd_arg_lines initial-cluster-state new)
+    etcd_name_line=$(kinit_etcd_arg_lines name ${NAME})
     cat << EOF > $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: "$kubeadm_apiVersion"
 kind: $kubeadm_cfg_kind
@@ -1050,28 +1068,31 @@ etcd:
         - "${HOST}"
         extraArgs:
 $initial_cluster_line
-            initial-cluster-state: new
-            name: ${NAME}
+$initial_cluster_state_line
+$etcd_name_line
 EOF
   if [[ "$ETCD_TLS" == 'true' ]]; then
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   elif [[ "$ETCD_TLS" == 'calamazoo' ]]; then
     # neutered
-    echo "            listen-peer-urls: http://${HOST}:2380
-            listen-client-urls: http://${HOST}:2379
-            advertise-client-urls: http://${HOST}:2379
-            initial-advertise-peer-urls: http://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "http://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "http://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   else
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   fi
     command2run='systemctl daemon-reload'
     squawk 53 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -1419,7 +1440,11 @@ etcd_kubernetes_13_ext_etcd_method () {
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
-  echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+    printf '            - name: initial-cluster\n              value: ' > $etcd_test_tmp/initial-cluster.head
+  else
+    echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  fi
   count_etcd=0
   countetcdnodes=0
   while IFS="," read -r $csv_columns
@@ -1521,6 +1546,8 @@ EOF'
   for i in "${!ETCDHOSTS[@]}"; do
     HOST=${ETCDHOSTS[$i]}
     NAME=${ETCDNAMES[$i]}
+    initial_cluster_state_line=$(kinit_etcd_arg_lines initial-cluster-state new)
+    etcd_name_line=$(kinit_etcd_arg_lines name ${NAME})
     cat << EOF > $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: "$kubeadm_apiVersion"
 kind: $kubeadm_cfg_kind
@@ -1533,28 +1560,31 @@ etcd:
         - "${HOST}"
         extraArgs:
 $initial_cluster_line
-            initial-cluster-state: new
-            name: ${NAME}
+$initial_cluster_state_line
+$etcd_name_line
 EOF
   if [[ "$ETCD_TLS" == 'true' ]]; then
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   elif [[ "$ETCD_TLS" == 'calamazoo' ]]; then
     # neutered
-    echo "            listen-peer-urls: http://${HOST}:2380
-            listen-client-urls: http://${HOST}:2379
-            advertise-client-urls: http://${HOST}:2379
-            initial-advertise-peer-urls: http://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "http://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "http://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   else
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   fi
     command2run='systemctl daemon-reload'
     squawk 53 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -1871,7 +1901,11 @@ etcd_kubernetes_13_ext_etcd_method () {
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
-  echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+    printf '            - name: initial-cluster\n              value: ' > $etcd_test_tmp/initial-cluster.head
+  else
+    echo -n "            initial-cluster: " > $etcd_test_tmp/initial-cluster.head
+  fi
   count_etcd=0
   countetcdnodes=0
   while IFS="," read -r $csv_columns
@@ -1973,6 +2007,8 @@ EOF'
   for i in "${!ETCDHOSTS[@]}"; do
     HOST=${ETCDHOSTS[$i]}
     NAME=${ETCDNAMES[$i]}
+    initial_cluster_state_line=$(kinit_etcd_arg_lines initial-cluster-state new)
+    etcd_name_line=$(kinit_etcd_arg_lines name ${NAME})
     cat << EOF > $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: "$kubeadm_apiVersion"
 kind: $kubeadm_cfg_kind
@@ -1985,28 +2021,31 @@ etcd:
         - "${HOST}"
         extraArgs:
 $initial_cluster_line
-            initial-cluster-state: new
-            name: ${NAME}
+$initial_cluster_state_line
+$etcd_name_line
 EOF
   if [[ "$ETCD_TLS" == 'true' ]]; then
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   elif [[ "$ETCD_TLS" == 'calamazoo' ]]; then
     # neutered
-    echo "            listen-peer-urls: http://${HOST}:2380
-            listen-client-urls: http://${HOST}:2379
-            advertise-client-urls: http://${HOST}:2379
-            initial-advertise-peer-urls: http://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "http://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "http://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "http://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   else
-    echo "            listen-peer-urls: https://${HOST}:2380
-            listen-client-urls: https://${HOST}:2379
-            advertise-client-urls: https://${HOST}:2379
-            initial-advertise-peer-urls: https://${HOST}:2380" \
-     >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
+    {
+      kinit_etcd_arg_lines listen-peer-urls "https://${HOST}:2380"
+      kinit_etcd_arg_lines listen-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines advertise-client-urls "https://${HOST}:2379"
+      kinit_etcd_arg_lines initial-advertise-peer-urls "https://${HOST}:2380"
+    } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   fi
     command2run='systemctl daemon-reload'
     squawk 55 "ssh ${INIT_USER}@${HOST} $command2run"
@@ -2299,11 +2338,23 @@ etcd_kubernetes_12_docs_stacked_method () {
   get_major_minor_kube_version $K8S_user ${MASTERHOSTS[0]} ${MASTERNAMES[0]} ${MASTERPORTS[0]}
   determine_api_version
 
-  echo -n '            initial-cluster: "' > $etcd_stacked_tmp/initial-cluster.head
-  if [[ "$ETCD_TLS" == 'true' ]]; then
-    echo -n '            listen-client-urls: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+    printf '            - name: initial-cluster\n              value: "' > $etcd_stacked_tmp/initial-cluster.head
   else
-    echo -n '            listen-client-urls: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+    echo -n '            initial-cluster: "' > $etcd_stacked_tmp/initial-cluster.head
+  fi
+  if [[ "$ETCD_TLS" == 'true' ]]; then
+    if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+      printf '            - name: listen-client-urls\n              value: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+    else
+      echo -n '            listen-client-urls: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+    fi
+  else
+    if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta4' ]]; then
+      printf '            - name: listen-client-urls\n              value: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+    else
+      echo -n '            listen-client-urls: "https://127.0.0.1:2379,' > $etcd_stacked_tmp/listen-client_urls.head
+    fi
   fi
   count_etcd=0
   countetcdnodes=0
@@ -2355,6 +2406,10 @@ etcd_kubernetes_12_docs_stacked_method () {
     else
       INITIAL_CLUSTER_STATE=existing
     fi
+    advertise_client_urls_line=$(kinit_etcd_arg_lines advertise-client-urls "\"https://${HOST}:2379\"")
+    listen_peer_urls_line=$(kinit_etcd_arg_lines listen-peer-urls "\"https://${HOST}:2380\"")
+    initial_advertise_peer_urls_line=$(kinit_etcd_arg_lines initial-advertise-peer-urls "\"https://${HOST}:2380\"")
+    initial_cluster_state_line=$(kinit_etcd_arg_lines initial-cluster-state $INITIAL_CLUSTER_STATE)
     cat << EOF > $etcd_stacked_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: $kubeadm_apiVersion
 kind: $kubeadm_cfg_kind
@@ -2373,11 +2428,11 @@ etcd:
         - "${NAME}"
         extraArgs:
 $listen_client_urls_line
-            advertise-client-urls: "https://${HOST}:2379"
-            listen-peer-urls: "https://${HOST}:2380"
-            initial-advertise-peer-urls: "https://${HOST}:2380"
+$advertise_client_urls_line
+$listen_peer_urls_line
+$initial_advertise_peer_urls_line
 $initial_cluster_line
-            initial-cluster-state: $INITIAL_CLUSTER_STATE
+$initial_cluster_state_line
 networking:
   podSubnet: $my_KUBE_CIDR
 ---
