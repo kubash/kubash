@@ -1,0 +1,24 @@
+# Kubash is built as one shell: bin/kubash sources every lib/*.bash
+# file, and cluster state lives in globals that are assigned in one
+# file and consumed in another. Four ShellCheck warnings are
+# inherent to that design and are disabled project-wide so that the
+# remaining warning output stays a useful signal. Everything else
+# is left enabled.
+
+# SC2154: variable referenced here but assigned in a different
+# sourced file (or by the cluster YAML/CSV loading path).
+disable=SC2154
+
+# SC2034: variable assigned here and used by a different sourced
+# file; from a single file's perspective it looks unused.
+disable=SC2034
+
+# SC2229: 'read -r $csv_columns' is kubash's core idiom - the CSV
+# column list is itself a variable, expanded at read time to name
+# the destination variables.
+disable=SC2229
+
+# SC1090: kubash sources files through non-constant paths
+# ($KUBASH_DIR, a config file passed as an argument, ~/.bashrc in
+# legacy CI helpers); ShellCheck cannot follow them.
+disable=SC1090
