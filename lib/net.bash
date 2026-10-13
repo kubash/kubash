@@ -27,6 +27,9 @@ configure_secondary_network_interfaces () {
         else
           squawk 7 "network2 is static setting"
           #sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+          # reset the envsubst inputs: a 'null' field must render
+          # empty, not inherit the previous interface's value (#67)
+          unset this_ip this_netmask this_network this_broadcast this_gateway
           if [ ! "$K8S_ip2" = 'null' ]; then
             export this_ip="address $K8S_ip2"
           fi
@@ -68,6 +71,9 @@ configure_secondary_network_interfaces () {
           sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
         else
           #sudo_command $K8S_sshPort $K8S_SU_USER $K8S_ip1 "$command2run"
+          # reset the envsubst inputs: a 'null' field must render
+          # empty, not inherit the previous interface's value (#67)
+          unset this_ip this_netmask this_network this_broadcast this_gateway
           if [ ! "$K8S_ip3" = 'null' ]; then
             export this_ip="address $K8S_ip3"
           fi
