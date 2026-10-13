@@ -26,7 +26,7 @@ kubash -n example yaml2cluster examples/example-cluster.yaml
 ls -l clusters/example
 ```
 
-Now build an image `kubash build --target-os bullseye1.28.0` where bullseye is the OS and 1.28.0 is the K8S version
+Now build an image `kubash build --target-os trixie1.36.0` where trixie is the OS and 1.36.0 is the K8S version
 
 [![asciicast](https://asciinema.org/a/164070.png)](https://asciinema.org/a/164070)
 
