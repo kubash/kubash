@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Verify every live template's ISO URL still resolves and, where the
+# publisher ships a SHA256SUMS file beside the ISO, that the
+# template's pinned checksum matches it. This catches silent
+# upstream point-release rolls: Debian's cdimage /release/ tree
+# keeps only the current point release, so a pinned URL went 404
+# when 13.3 shipped even though nothing in this repo changed.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+fail=0
+for json in templates/trixie-kube.tpl/*.json templates/noble-kube.tpl/*.json; do
+  mirror=$(jq -r .variables.mirror "$json")
+  dir=$(jq -r .variables.mirror_directory "$json")
+  iso=$(jq -r .variables.iso_name "$json")
+  want=$(jq -r .variables.iso_checksum "$json")
+  url="$mirror/$dir/$iso"
+  code=$(curl -sIL -o /dev/null -w '%{http_code}' "$url")
+  if [[ "$code" != "200" ]]; then
+    echo "FAIL $url -> HTTP $code"
+    fail=1
+  else
+    echo "OK   $url"
+  fi
+  sums=$(curl -sL "$mirror/$dir/SHA256SUMS" || true)
+  got=$(printf '%s\n' "$sums" | awk -v f="$iso" '$2 == f || $2 == "*" f {print $1}')
+  if [[ -n "$got" && "$got" != "$want" ]]; then
+    echo "FAIL checksum $iso: template pins $want, publisher says $got"
+    fail=1
+  fi
+done
+exit $fail
