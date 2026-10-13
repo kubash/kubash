@@ -16,7 +16,6 @@ $(eval GOPATH := $(HOME)/.go)
 
 # Namespaces
 $(eval KUBASH_NAMESPACE := kubash)
-$(eval MONITORING_NAMESPACE := monitoring)
 
 # Minikube settings
 $(eval MINIKUBE_CPU := 2)
@@ -332,7 +331,7 @@ $(KUBASH_BIN)/bats:
 
 ci: chown reqs
 
-ci-next: extended_tests monitoring
+ci-next: extended_tests
 
 chown:
 	sudo chown -R $(USER) /usr/local
@@ -372,57 +371,6 @@ extended_tests:
 	@sh ./w8s/kubectl.w8
 	@sh ./w8s/kube-dns.w8
 	date -I > .minikube.made
-
-## Monitoring
-monitoring: .monitoring.ns .prometheus.rn
-
-view-monitoring:
-		kubectl \
-			--namespace=$(MONITORING_NAMESPACE) \
-			get pods
-
-### Prometheus
-prometheus: .prometheus.rn view-monitoring
-
-# https://itnext.io/kubernetes-monitoring-with-prometheus-in-15-minutes-8e54d1de2e13
-.prometheus.rn: .monitoring.ns
-	helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/
-	git submodule update --init
-	cd submodules/prometheus-operator \
-		&& kubectl apply -f scripts/minikube-rbac.yaml \
-		&& helm install --name prometheus-operator \
-			--set rbacEnable=true \
-			--namespace=$(MONITORING_NAMESPACE) \
-			helm/prometheus-operator \
-		&& helm install --name prometheus \
-			--set serviceMonitorsSelector.app=prometheus \
-			--set ruleSelector.app=prometheus \
-			--namespace=$(MONITORING_NAMESPACE) \
-			helm/prometheus \
-		&& helm install --name alertmanager \
-			--namespace=$(MONITORING_NAMESPACE) \
-			helm/alertmanager \
-		&& helm install --name grafana \
-			--namespace=$(MONITORING_NAMESPACE) \
-			helm/grafana
-	cd submodules/prometheus-operator/helm/kube-prometheus \
-		&& helm dep update
-	cd submodules/prometheus-operator \
-		&& helm install --name kube-prometheus \
-			--namespace=$(MONITORING_NAMESPACE) \
-			helm/kube-prometheus
-	@sh ./w8s/generic.w8 prometheus-operator $(MONITORING_NAMESPACE)
-	@sh ./w8s/generic.w8 alertmanager-kube-prometheus $(MONITORING_NAMESPACE)
-	@sh ./w8s/generic.w8 kube-prometheus-exporter-kube-state $(MONITORING_NAMESPACE)
-	@sh ./w8s/generic.w8 kube-prometheus-exporter-node $(MONITORING_NAMESPACE)
-	@sh ./w8s/generic.w8 kube-prometheus-grafana $(MONITORING_NAMESPACE)
-	@sh ./w8s/generic.w8 prometheus-kube-prometheus $(MONITORING_NAMESPACE)
-	-@echo $(PROMETHEUS_NAME) > .prometheus.rn
-
-# Namespaces
-.monitoring.ns:
-	kubectl create ns monitoring
-	date -I > .monitoring.ns
 
 t: tests
 

@@ -875,6 +875,30 @@ kinit_etcd_arg_lines() {
   fi
 }
 
+kinit_api_server_cert_sans_block() {
+  # Prints the apiServer certSANs block (header plus entries) in
+  # the form the cluster's kubeadm API version requires: the
+  # top-level apiServerCertSANs field before v1beta2, the nested
+  # apiServer.certSANs form from v1beta2 on - modern kubeadm
+  # rejects the top-level field as unknown. Takes the collected
+  # SAN entries (one '- "ip"' line each) as its argument; in the
+  # nested form the entries are indented to sit under certSANs.
+  if [[ "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1alpha1' ||
+        "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1alpha2' ||
+        "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1alpha3' ||
+        "$kubeadm_apiVersion" == 'kubeadm.k8s.io/v1beta1' ]]; then
+    printf 'apiServerCertSANs:\n- "127.0.0.1"\n'
+    if [[ -n "$1" ]]; then
+      printf '%s\n' "$1"
+    fi
+  else
+    printf 'apiServer:\n  certSANs:\n  - "127.0.0.1"\n'
+    if [[ -n "$1" ]]; then
+      printf '%s\n' "$1" | sed 's/^- /  - /'
+    fi
+  fi
+}
+
 etcd_kubernetes_ext_etcd_method () {
   etcd_kubernetes_13_ext_etcd_method
 }
@@ -1125,13 +1149,12 @@ EOF
       fi
      fi
    fi
+    api_server_cert_sans_block=$(kinit_api_server_cert_sans_block "$api_server_cert_sans_line")
     cat << EOF >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: $kubeadm_apiVersion
 kind: $kubeadm_cfg_kind
 kubernetesVersion: $KUBERNETES_VERSION
-apiServerCertSANs:
-- "127.0.0.1"
-$api_server_cert_sans_line
+$api_server_cert_sans_block
 controlPlaneEndpoint: "${MASTERHOSTS[0]}:6443"
 etcd:
   external:
@@ -1617,13 +1640,12 @@ EOF
       fi
      fi
    fi
+    api_server_cert_sans_block=$(kinit_api_server_cert_sans_block "$api_server_cert_sans_line")
     cat << EOF >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: $kubeadm_apiVersion
 kind: $kubeadm_cfg_kind
 kubernetesVersion: $KUBERNETES_VERSION
-apiServerCertSANs:
-- "127.0.0.1"
-$api_server_cert_sans_line
+$api_server_cert_sans_block
 controlPlaneEndpoint: "${MASTERHOSTS[0]}:6443"
 etcd:
   external:
@@ -2078,13 +2100,12 @@ EOF
       fi
      fi
    fi
+    api_server_cert_sans_block=$(kinit_api_server_cert_sans_block "$api_server_cert_sans_line")
     cat << EOF >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: $kubeadm_apiVersion
 kind: $kubeadm_cfg_kind
 kubernetesVersion: $KUBERNETES_VERSION
-apiServerCertSANs:
-- "127.0.0.1"
-$api_server_cert_sans_line
+$api_server_cert_sans_block
 controlPlaneEndpoint: "${MASTERHOSTS[0]}:6443"
 etcd:
   external:
@@ -2410,13 +2431,12 @@ etcd_kubernetes_12_docs_stacked_method () {
     listen_peer_urls_line=$(kinit_etcd_arg_lines listen-peer-urls "\"https://${HOST}:2380\"")
     initial_advertise_peer_urls_line=$(kinit_etcd_arg_lines initial-advertise-peer-urls "\"https://${HOST}:2380\"")
     initial_cluster_state_line=$(kinit_etcd_arg_lines initial-cluster-state $INITIAL_CLUSTER_STATE)
+    api_server_cert_sans_block=$(kinit_api_server_cert_sans_block "$api_server_cert_sans_line")
     cat << EOF > $etcd_stacked_tmp/${HOST}/kubeadmcfg.yaml
 apiVersion: $kubeadm_apiVersion
 kind: $kubeadm_cfg_kind
 kubernetesVersion: $KUBERNETES_VERSION
-apiServerCertSANs:
-- "127.0.0.1"
-$api_server_cert_sans_line
+$api_server_cert_sans_block
 controlPlaneEndpoint: "${MASTERHOSTS[0]}:6443"
 etcd:
     local:

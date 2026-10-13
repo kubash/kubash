@@ -25,6 +25,30 @@ setup() {
   [ "${lines[1]}" = '              value: https://10.0.0.9:2380' ]
 }
 
+@test "kinit_api_server_cert_sans_block top-level form before v1beta2" {
+  eval "$(sed -n '/^kinit_api_server_cert_sans_block()/,/^}/p' "$KUBASH_ROOT/lib/kinit.bash")"
+  kubeadm_apiVersion='kubeadm.k8s.io/v1beta1'
+  run kinit_api_server_cert_sans_block '- "10.0.0.11"'
+  [ "$status" -eq 0 ]
+  [ "${lines[0]}" = 'apiServerCertSANs:' ]
+  [ "${lines[1]}" = '- "127.0.0.1"' ]
+  [ "${lines[2]}" = '- "10.0.0.11"' ]
+}
+
+@test "kinit_api_server_cert_sans_block nested form from v1beta2 on" {
+  eval "$(sed -n '/^kinit_api_server_cert_sans_block()/,/^}/p' "$KUBASH_ROOT/lib/kinit.bash")"
+  kubeadm_apiVersion='kubeadm.k8s.io/v1beta2'
+  run kinit_api_server_cert_sans_block '- "10.0.0.11"'
+  [ "${lines[0]}" = 'apiServer:' ]
+  [ "${lines[1]}" = '  certSANs:' ]
+  [ "${lines[2]}" = '  - "127.0.0.1"' ]
+  [ "${lines[3]}" = '  - "10.0.0.11"' ]
+  kubeadm_apiVersion='kubeadm.k8s.io/v1beta4'
+  run kinit_api_server_cert_sans_block '- "10.0.0.11"'
+  [ "${lines[0]}" = 'apiServer:' ]
+  [ "${lines[1]}" = '  certSANs:' ]
+}
+
 @test "kinit_etcd_arg_lines preserves quoted values" {
   kubeadm_apiVersion='kubeadm.k8s.io/v1beta3'
   run kinit_etcd_arg_lines advertise-client-urls '"https://10.0.0.9:2379"'
