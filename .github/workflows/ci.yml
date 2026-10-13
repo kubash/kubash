@@ -78,6 +78,7 @@ jobs:
           cd "$HOME/.kubash"
           bats .ci/.tests.bats
           bats .ci/trixie.bats
+          bats .ci/noble.bats
           bats .ci/kubeadm.bats
           bats .ci/kinit.bats
 

@@ -785,12 +785,12 @@ parse_opts () {
         target_build=trixie$build_num-13-amd64
         packer_create_pax_dir 'trixie' $build_num
       fi
-    elif [[ "$target_os" =~ 'ubuntu' ]]; then
+    elif [[ "$target_os" =~ 'noble' ]]; then
       if [[ -z "$target_build" ]]; then
         echo "matching $target_os"
-        build_num=$(echo $target_os | sed 's/ubuntu//')
-        target_build=ubuntu$build_num-16.04-amd64
-        packer_create_pax_dir 'ubuntu' $build_num
+        build_num=$(echo $target_os | sed 's/noble//')
+        target_build=noble$build_num-24.04-amd64
+        packer_create_pax_dir 'noble' $build_num
       fi
     elif [[ "$target_os" == "coreos" ]]; then
       #override packer atm
@@ -805,7 +805,7 @@ parse_opts () {
       fi
     fi
     if [[ -z "$target_build" ]]; then
-      target_build=ubuntu-16.04-amd64
+      target_build=noble-24.04-amd64
     fi
     #build_usage
     if [[ -z "$build_virt" ]]; then
