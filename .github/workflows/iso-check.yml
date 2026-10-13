@@ -1,0 +1,25 @@
+name: ISO check
+
+# Weekly guard against upstream ISO drift: publishers move or
+# retire point-release ISOs without notice (Debian cdimage keeps
+# only the current point in /release/), which silently breaks
+# `kubash build` at the download step. This job HEAD-checks every
+# live template's ISO URL and cross-checks the pinned sha256
+# against the publisher's SHA256SUMS where one exists.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  iso-check:
+    name: Template ISO URLs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify template ISO URLs and checksums
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq jq
+          scripts/ci-iso-check

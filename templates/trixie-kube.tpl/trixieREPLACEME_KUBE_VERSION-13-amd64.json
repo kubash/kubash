@@ -218,7 +218,7 @@
     }
   ],
   "variables": {
-    "box_basename": "kubash-trixie-13.2",
+    "box_basename": "kubash-trixie-13.7",
     "keys_to_add": "{{ env `KEYS_TO_ADD`}}",
     "keys_url": "{{ env `KEYS_URL`}}",
     "root_password_to_set": "{{ env `KUBASH_SET_ROOT_PW`}}",
@@ -243,16 +243,16 @@
     "http_directory": "{{template_dir}}/http",
     "http_proxy": "{{env `http_proxy`}}",
     "https_proxy": "{{env `https_proxy`}}",
-    "iso_checksum": "677c4d57aa034dc192b5191870141057574c1b05df2b9569c0ee08aa4e32125d",
-    "iso_name": "debian-13.2.0-amd64-netinst.iso",
+    "iso_checksum": "a7ef94ac2fb9a7fec454552abd629b7cc9d5155c886165a45649f5ce6167e355",
+    "iso_name": "debian-13.7.0-amd64-netinst.iso",
     "memory": "2048",
     "mirror": "http://cdimage.debian.org/cdimage/release",
-    "mirror_directory": "13.2.0/amd64/iso-cd",
+    "mirror_directory": "13.7.0/amd64/iso-cd",
     "name": "kubash-REPLACEME_KUBE_VERSION-13.2",
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "debian-13/preseed.cfg",
     "qemu_display": "none",
-    "template": "bullseyeREPLACEME_KUBE_VERSION-13.2-amd64",
+    "template": "trixieREPLACEME_KUBE_VERSION-13.7-amd64",
     "version": "TIMESTAMP"
   }
 }
