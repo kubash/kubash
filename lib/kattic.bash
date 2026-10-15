@@ -374,13 +374,10 @@ do_masters_in_parallel () {
   if [[ -e "$KUBASH_CLUSTER_DIR/endpoints.line" ]]; then
     if [[ $KUBE_MAJOR_VER -eq 1 ]]; then
       squawk 20 'Major Version 1'
-      if [[ $KUBE_MINOR_VER -lt 9 ]]; then
-        squawk 9 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too old may not ever be supported"
+      if [[ $KUBE_MINOR_VER -lt 35 ]]; then
+        squawk 9 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too old and is not supported (kubash supports Kubernetes 1.35 and later)"
         exit 1
-      elif [[ $KUBE_MINOR_VER -gt 18 ]]; then
-        squawk 9 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER is too new and is not supported yet"
-        exit 1
-      elif [[ $KUBE_MINOR_VER -eq 12 ]]; then
+      else
         squawk 12 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
         kubeadmin_config_tmp=$(mktemp)
         my_master_ip=$my_master_ip \
@@ -388,17 +385,7 @@ do_masters_in_parallel () {
         load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
         my_KUBE_CIDR=$my_KUBE_CIDR \
         ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
-        envsubst  < $KUBASH_DIR/templates/kubeadm-config-1.12.yaml \
-          > $kubeadmin_config_tmp
-      elif [[ $KUBE_MINOR_VER -gt 15 ]]; then
-        squawk 12 "$KUBE_MAJOR_VER.$KUBE_MINOR_VER supported"
-        kubeadmin_config_tmp=$(mktemp)
-        my_master_ip=$my_master_ip \
-        KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-        load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
-        my_KUBE_CIDR=$my_KUBE_CIDR \
-        ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
-        envsubst  < $KUBASH_DIR/templates/kubeadm-config-1.16.yaml \
+        envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
           > $kubeadmin_config_tmp
       fi
     elif [[ $MAJOR_VER -eq 0 ]]; then
