@@ -5,7 +5,18 @@ default:
 # define various versions
 $(eval CT_VERSION := v0.9.0)
 $(eval CNI_VERSION := "v0.8.5")
-$(eval NVM_VERSION := "v0.35.3")
+$(eval NVM_VERSION := v0.40.8)
+$(eval NVM_INSTALL_SHA256 := 48a0eee9a60e07422dce0eb5774754c83889570ca1ee2566c516acbe8af03a9e)
+$(eval GCLOUD_VERSION := 589.0.0)
+$(eval GCLOUD_SHA256 := f865da648f6fdae2015abb5b32eaa0eb10520e88f0ca735cfb33795868c8d26f)
+$(eval AWSCLI_VERSION := 2.31.0)
+$(eval AWSCLI_SHA256 := f5fbb3304307ce008756356fadf7855d377b4342da9911728669265ec1ec36dc)
+$(eval EKSCTL_VERSION := v0.231.0)
+$(eval KUSTOMIZE_VERSION := v5.8.3)
+$(eval OPCTL_VERSION := v0.1.76)
+$(eval OPCTL_SHA256 := a9a1e6f985a4c4f87e2e88e5d0c06fb9da6e04fdb632dc7b0f31849804a771cb)
+$(eval MINIKUBE_VERSION := v1.39.0)
+$(eval TALOS_VERSION := v1.14.2)
 $(eval PACKER_VERSION := 1.16.1)
 $(eval CRICTL_VERSION := v1.36.0)
 
@@ -74,7 +85,7 @@ $(eval VELERO_VERS := v1.7.1)
 
 all: $(KUBASH_BIN)/kush $(KUBASH_BIN)/kzsh $(KUBASH_BIN)/kudash reqs anaconda nvm
 
-extras: arkade bats cfssl crictl ct helm istioctl k9s kind kompose kubebuilder kubecfg kubectl kubectl-cert_manager kubedb kubeprod kustomize minikube nomad oc opctl packer rke talosctl terraform velero nomad consul vault kubectl-minio mc minio 
+extras: arkade bats cfssl crictl ct helm istioctl k9s kind kompose kubebuilder kubecfg kubectl kubectl-cert_manager kubedb kustomize minikube nomad oc opctl packer rke talosctl terraform velero nomad consul vault kubectl-minio mc minio 
 
 reqs: linuxreqs
 
@@ -172,8 +183,11 @@ $(KUBASH_BIN)/minikube:
 	mkdir $(HOME)/.kube || true
 	touch $(HOME)/.kube/config
 	cd $(TMP) \
-	&& curl -sLo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube $(KUBASH_BIN)/
-	rmdir $(TMP)
+	&& curl -sLO https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64 \
+	&& curl -sLO https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64.sha256 \
+	&& echo "$$(cat minikube-linux-amd64.sha256)  minikube-linux-amd64" | sha256sum -c - \
+	&& chmod +x minikube-linux-amd64 && sudo mv minikube-linux-amd64 $(KUBASH_BIN)/minikube
+	rm -Rf $(TMP)
 
 crictl: $(KUBASH_BIN)
 	@scripts/kubashnstaller crictl
@@ -398,23 +412,39 @@ opctl: $(KUBASH_BIN)/opctl
 $(KUBASH_BIN)/opctl:
 	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
 	cd $(TMP) \
-	&& curl -sLO https://github.com/onepanelio/core/releases/latest/download/opctl-linux-amd64 \
-	&& chmod +x opctl-linux-amd64 \
-	&& mv -v opctl-linux-amd64 $(KUBASH_BIN)/opctl
+	&& curl -sLO https://github.com/opctl/opctl/releases/download/${OPCTL_VERSION}/opctl-linux-amd64.tgz \
+	&& echo "${OPCTL_SHA256}  opctl-linux-amd64.tgz" | sha256sum -c - \
+	&& tar xzf opctl-linux-amd64.tgz \
+	&& install -m755 opctl $(KUBASH_BIN)/opctl
 	rm -Rf $(TMP)
 
 gcloud:
-	curl https://sdk.cloud.google.com | bash
+	$(eval TMP := $(shell mktemp -d --suffix=gcloudTMP))
+	cd $(TMP) \
+	&& curl -sLO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz \
+	&& echo "${GCLOUD_SHA256}  google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | sha256sum -c - \
+	&& tar xzf google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz -C $(HOME) \
+	&& $(HOME)/google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=false --command-completion=false
+	rm -Rf $(TMP)
+	$(HOME)/google-cloud-sdk/bin/gcloud --version
 
 az:
-	curl -L https://aka.ms/InstallAzureCli | bash
+	sudo apt-get update -qq
+	sudo apt-get install -yqq ca-certificates curl apt-transport-https lsb-release gnupg
+	sudo mkdir -p /etc/apt/keyrings
+	curl -sL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/microsoft.gpg
+	echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $$(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+	sudo apt-get update -qq
+	sudo apt-get install -yqq azure-cli
+	az --version
 
 aws: $(KUBASH_BIN)/aws
 
 $(KUBASH_BIN)/aws:
 	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
 	cd $(TMP) \
-	&& curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+	&& curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip" -o "awscliv2.zip" \
+	&& echo "${AWSCLI_SHA256}  awscliv2.zip" | sha256sum -c - \
 	&& unzip awscliv2.zip \
 	&& sudo ./aws/install -b $(KUBASH_BIN) --update
 	aws --version
@@ -425,7 +455,11 @@ eksctl: $(KUBASH_BIN)/eksctl
 $(KUBASH_BIN)/eksctl:
 	$(eval TMP := $(shell mktemp -d --suffix=CTTMP))
 	$(eval UNAME_S := $(shell uname -s))
-	curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_${UNAME_S}_amd64.tar.gz" | tar xz -C $(TMP)
+	cd $(TMP) \
+	&& curl --silent --location -O "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_${UNAME_S}_amd64.tar.gz" \
+	&& curl --silent --location -O "https://github.com/weaveworks/eksctl/releases/download/${EKSCTL_VERSION}/eksctl_checksums.txt" \
+	&& awk -v f="eksctl_${UNAME_S}_amd64.tar.gz" '$$2 == f' eksctl_checksums.txt | sha256sum -c - \
+	&& tar --no-same-owner -xzf "eksctl_${UNAME_S}_amd64.tar.gz"
 	install -m511 $(TMP)/eksctl $(KUBASH_BIN)/eksctl
 	rm -Rf $(TMP)
 	eksctl version
@@ -448,7 +482,12 @@ $(KUBASH_BIN)/Anaconda.sh:
 	wget -c -O $(KUBASH_BIN)/Anaconda.sh https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
 
 nvm:
-	curl --silent -o- https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh | bash
+	$(eval TMP := $(shell mktemp -d --suffix=nvmTMP))
+	cd $(TMP) \
+	&& curl --silent -o install.sh https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh \
+	&& echo "${NVM_INSTALL_SHA256}  install.sh" | sha256sum -c - \
+	&& bash install.sh
+	rm -Rf $(TMP)
 
 coreos_key:
 	$(eval TMP := $(shell mktemp -d --suffix=CKTMP))
@@ -468,8 +507,11 @@ kustomize: $(KUBASH_BIN)/kustomize
 $(KUBASH_BIN)/kustomize:
 	$(eval TMP := $(shell mktemp -d --suffix=kustomizeTMP))
 	cd $(TMP) \
-  && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-	mv -v  $(TMP)/kustomize $(KUBASH_BIN)/
+	&& curl -sLO "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
+	&& curl -sLO "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/checksums.txt" \
+	&& awk -v f="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" '$$2 == f' checksums.txt | sha256sum -c - \
+	&& tar --no-same-owner -xzf kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz
+	mv -v $(TMP)/kustomize $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 kubectl-cert_manager: $(KUBASH_BIN)/kubectl-cert_manager
@@ -480,18 +522,6 @@ $(KUBASH_BIN)/kubectl-cert_manager:
 	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/v1.0.4/kubectl-cert_manager-linux-amd64.tar.gz \
 	&& tar xzf kubectl-cert-manager.tar.gz \
 	&& sudo mv kubectl-cert_manager $(KUBASH_BIN)/
-	rm -Rf $(TMP)
-
-kubeprod: $(KUBASH_BIN)/kubeprod
-
-$(KUBASH_BIN)/kubeprod:
-	$(eval BKPR_VERSION := $(shell curl --silent "https://api.github.com/repos/bitnami/kube-prod-runtime/releases/latest" | jq -r '.tag_name'))
-	$(eval TMP := $(shell mktemp -d --suffix=prodTMP))
-	cd $(TMP) \
-	&& curl -LO https://github.com/bitnami/kube-prod-runtime/releases/download/${BKPR_VERSION}/bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
-	&& tar zxf bkpr-${BKPR_VERSION}-linux-amd64.tar.gz \
-	&& chmod +x bkpr-${BKPR_VERSION}/kubeprod \
-	&& sudo mv -v bkpr-${BKPR_VERSION}/kubeprod $(KUBASH_BIN)/
 	rm -Rf $(TMP)
 
 kubecfg: $(KUBASH_BIN)/kubecfg
@@ -555,11 +585,13 @@ $(KUBASH_BIN)/rke:
 talosctl: $(KUBASH_BIN)/talosctl
 
 $(KUBASH_BIN)/talosctl:
-	# https://talos.sigs.k8s.io/docs/user/quick-start/
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	curl -Lo $(TMP)/talosctl https://github.com/talos-systems/talos/releases/latest/download/talosctl-$(uname -s | tr "[:upper:]" "[:lower:]")-amd64
-	chmod +x $(TMP)/talosctl
-	sudo install -v -m511 ${TMP}/talosctl $(KUBASH_BIN)/talosctl
+	cd $(TMP) \
+	&& curl -sLO https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/talosctl-linux-amd64 \
+	&& curl -sLO https://github.com/siderolabs/talos/releases/download/${TALOS_VERSION}/sha256sum.txt \
+	&& awk -v f="talosctl-linux-amd64" '$$2 == f' sha256sum.txt | sha256sum -c - \
+	&& chmod +x talosctl-linux-amd64
+	sudo install -v -m511 $(TMP)/talosctl-linux-amd64 $(KUBASH_BIN)/talosctl
 	rm -Rf $(TMP)
 
 arkade: /usr/local/bin/arkade
