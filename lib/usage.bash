@@ -164,7 +164,7 @@ This initializes the cluster
 options:
 
  -h --help - Print usage
- --initializer - Choose the initialization method (kubeadm,kubespray,openshift)
+ --initializer - Choose the initialization method (kubeadm,kubespray)
  -n --clustername - use a particular cluster by name
 '
 }

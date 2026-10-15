@@ -52,7 +52,7 @@ EOF"
   else
     echo $run_join > $finalize_master_tmp/join.sh
     echo $run_join > $finalize_master_tmp/node_join.sh
-    sed -i 's/$/ --experimental-control-plane/' $finalize_master_tmp/join.sh
+    sed -i 's/$/ --control-plane/' $finalize_master_tmp/join.sh
     sed -i 's/$/ --ignore-preflight-errors=FileAvailable--etc-kubernetes-pki-ca.crt/' $finalize_master_tmp/node_join.sh
     echo $join_token > $finalize_master_tmp/join_token
   fi

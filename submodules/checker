@@ -21,21 +21,6 @@ git fetch --all
 git checkout master
 git pull
 
-cd $THIS_CWD/opensearch-devops
-git fetch --all
-git checkout main
-git pull
-
-cd $THIS_CWD/openshift-ansible
-git fetch --all
-git checkout release-4.16
-git pull
-
-cd $THIS_CWD/pupernetes
-git fetch --all
-git checkout v0.11.0
-git pull
-
 cd $THIS_CWD/rook
 git fetch --all
 git checkout release-1.12
