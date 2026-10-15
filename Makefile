@@ -256,7 +256,6 @@ go-build-docker:
 all-examples:
 	make example
 	cd $(KUBASH_DIR)/clusters; \
-	rsync -av example/ openshift; \
 	rsync -av example/ kubeadm2ha; \
 	rsync -av example/ kubespray; \
 	rsync -av example/ centos; \
@@ -265,11 +264,6 @@ all-examples:
 	rsync -av example/ coreos; \
 	rsync -av example/ kubeadm196; \
 	rsync -av example/ ubuntu196;
-	sed -i 's/kubeadm/openshift/' $(KUBASH_DIR)/clusters/openshift/provision.csv
-	sed -i 's/master0/openshiftm0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
-	sed -i 's/node0/openshiftn0/' $(KUBASH_DIR)/clusters/openshift/provision.csv
-	sed -i 's/8a/aa/g' $(KUBASH_DIR)/clusters/openshift/provision.csv
-	sed -i 's/^my-/openshift-/' $(KUBASH_DIR)/clusters/openshift/provision.csv
 	sed -i 's/kubeadm/kubespray/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
 	sed -i 's/master0/kubespraym0/' $(KUBASH_DIR)/clusters/kubespray/provision.csv
 	sed -i 's/node0/kubesprayn0/' $(KUBASH_DIR)/clusters/kubespray/provision.csv

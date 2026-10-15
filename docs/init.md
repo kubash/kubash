@@ -10,7 +10,7 @@ This initializes the cluster
 
  -h --help - Print usage
 
- --initializer - Choose the initialization method (kubeadm,kubespray,openshift)
+ --initializer - Choose the initialization method (kubeadm,kubespray)
 
 ### Asciinema example run
 

@@ -51,7 +51,7 @@ build_all_in_parallel () {
   $PSEUDO rm -Rf $KVM_builderDir
   build_all_tmp_para=$(mktemp -d --suffix='.para.tmp')
   touch $build_all_tmp_para/hopper
-  OS_LIST=(centos kubeadm kubeadm2ha kubespray openshift ubuntu debian coreos)
+  OS_LIST=(centos kubeadm kubeadm2ha kubespray ubuntu debian coreos)
   build_count=0
   while [ "x${OS_LIST[build_count]}" != "x" ]
   do

@@ -44,8 +44,6 @@ with the addition of prepping for the kubeadm2ha ansible playbook
 `--target-os kubespray` This will build centos images
 with the addition of prepping for the kubespray ansible playbook
 
-`--target-os openshift` This will build centos images
-with the addition of prepping for the openshift ansible playbook
 
 ### Target build
 
