@@ -17,7 +17,7 @@ jobs:
     name: Template ISO URLs
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Verify template ISO URLs and checksums
         run: |
           sudo apt-get update -qq
