@@ -53,7 +53,6 @@ print_help=no
 . $KUBASH_LIB/provision.bash
 . $KUBASH_LIB/interactive.bash
 . $KUBASH_LIB/kubeadm2ha.bash
-. $KUBASH_LIB/openshift.bash
 . $KUBASH_LIB/kubespray.bash
 . $KUBASH_LIB/ansible.bash
 . $KUBASH_LIB/istio.bash

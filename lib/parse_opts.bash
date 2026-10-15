@@ -482,10 +482,6 @@ parse_opts () {
       squawk 5 "Kubespray Initialize"
       kubespray_initialize
       exit 0
-    elif [[ "$initializer" == "openshift" ]]; then
-      squawk 5 "Openshift Initialize"
-      openshift_initialize
-      exit 0
     elif [[ "$initializer" == "kubeadm2ha" ]]; then
       squawk 5 "Kubeadm2ha Initialize"
       kubeadm2ha_initialize
@@ -731,12 +727,6 @@ parse_opts () {
     elif [[ "$target_os" == "centos" ]]; then
       if [[ -z "$target_build" ]]; then
         target_build=centos-7.4-x86_64
-      fi
-      build_usage
-      croak 3  'support removed request repair :('
-    elif [[ "$target_os" == "openshift" ]]; then
-      if [[ -z "$target_build" ]]; then
-        target_build=openshift-7.5-x86_64
       fi
       build_usage
       croak 3  'support removed request repair :('

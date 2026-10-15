@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eux
 this_pwd=$(pwd)
-submodules='istio kubeadm2ha kubespray openshift-ansible rook'
+submodules='istio kubeadm2ha kubespray rook'
 
 upmodule () {
   cd $this_pwd/submodules/$1

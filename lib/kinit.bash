@@ -2934,21 +2934,6 @@ kubespray_initialize () {
     $KUBASH_DIR/submodules/kubespray/cluster.yml
 }
 
-openshift_initialize () {
-  squawk 1 "openshift initialize"
-  check_csv
-  if [[ -e "$KUBASH_ANSIBLE_HOSTS" ]]; then
-    squawk 1 'Hosts file found, not overwriting'
-  else
-    write_ansible_openshift_hosts
-  fi
-  ansible-playbook \
-    -i $KUBASH_ANSIBLE_HOSTS \
-    $KUBASH_DIR/submodules/openshift-ansible/playbooks/prerequisites.yml
-  ansible-playbook \
-    -i $KUBASH_ANSIBLE_HOSTS \
-    $KUBASH_DIR/submodules/openshift-ansible/playbooks/deploy_cluster.yml
-}
 
 do_coreos_initialization () {
   CNI_VERSION="v0.7.5"
