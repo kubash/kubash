@@ -98,13 +98,16 @@ I intend to add virtualbox, vmware, etc builders and provisioners in the future.
 
 Right now you can build these OSs as your base image:
 
-1. Ubuntu
-1. Debian
-1. Centos
-1. CoreOS
+| Target OS | Version | Kubernetes |
+|---|---|---|
+| Debian (trixie) | 13 | 1.35 - 1.37 |
+| Ubuntu (noble) | 24.04 | 1.35 - 1.37 |
 
-Packer will build ubuntu, debian, and centos. And
-there is also a basic downloader for the CoreOS images.
+Packer builds trixie and noble images for the qemu, vmware,
+virtualbox, and parallels builders. Older targets (Debian
+bullseye and older, CentOS, CoreOS) and pre-1.35 Kubernetes
+support were pruned in the 2026 modernization - see
+CHANGELOG.md..
 
 ### Initializers
 
