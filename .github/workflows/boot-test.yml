@@ -1,0 +1,186 @@
+name: Boot test (trixie/qemu)
+
+# Phase 4g: the end-to-end smoke for this project - build the
+# trixie qemu image with Packer on a GitHub-hosted runner
+# (KVM), boot it, kubeadm-init a single-node cluster, and
+# assert the node reaches Ready. A green run takes ~13
+# minutes; the first-ever green run was 38776334697.
+#
+# Manual dispatch only: it is long and it exercises the full
+# build, so it runs when someone asks for it, not per push.
+# The build drives kubash's own machinery - the pax render
+# (scripts/trixie) and the exact `packer build -only=qemu`
+# command lib/packer.bash runs on a builder host.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boot-test:
+    name: Build, boot, and kubeadm-init trixie
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      KUBASH_DIR: ${{ github.workspace }}/.kubash-home
+      KUBE_VERSION: "1.36.0"
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - name: Enable KVM for the runner user
+        run: |
+          # /dev/kvm exists on hosted runners but is root:kvm
+          # 0660 with the runner user outside the kvm group (the
+          # 4g spike). The standard remedy (udev rule + trigger)
+          # makes the device generally accessible.
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm && echo '/dev/kvm usable'
+
+      - name: Install qemu
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 qemu-utils sshpass vncsnapshot
+          qemu-system-x86_64 --version | head -1
+
+      - uses: actions/checkout@v7
+
+      - name: Lay out kubash home and install packer
+        env:
+          # packer plugins install queries the GitHub API; the
+          # anonymous quota on shared runner IPs rate-limits it.
+          # The workflow token raises it.
+          PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$KUBASH_DIR"
+          tar --exclude=.git -cf - . | tar -xf - -C "$KUBASH_DIR"
+          cd "$KUBASH_DIR"
+          make packer
+          ls -l "$KUBASH_DIR/bin" | grep -i packer || true
+          export PATH="$KUBASH_DIR/bin:$PATH"
+          packer version
+
+      - name: Render the pax template (scripts/trixie)
+        working-directory: ${{ env.KUBASH_DIR }}
+        run: |
+          export KUBASH_DIR
+          ./scripts/trixie "$KUBE_VERSION"
+          ls -l "pax/trixie${KUBE_VERSION}/"
+
+      - name: Packer build (qemu, trixie)
+        working-directory: ${{ env.KUBASH_DIR }}/pax/trixie${{ env.KUBE_VERSION }}
+        env:
+          KEYS_TO_ADD: ""
+          KEYS_URL: ""
+          PACKER_LOG: "1"
+        run: |
+          set -o pipefail
+          export PATH="$KUBASH_DIR/bin:$PATH"
+          # Screenshot the guest's VNC display every minute so a
+          # stalled installer is visible in the artifacts instead
+          # of silent: without this, a guest parked on a d-i error
+          # dialog looks identical to a slow install. (The
+          # preseed early_command halt was found exactly this
+          # way.) Every attempt is logged; rfbshot.py is a
+          # stdlib fallback for vncsnapshot.
+          mkdir -p "$GITHUB_WORKSPACE/shots"
+          ( set +e
+            n=0
+            while true; do
+              n=$((n+1))
+              base="$GITHUB_WORKSPACE/shots/shot-$(printf %03d $n)"
+              echo "attempt $n $(date -u +%H:%M:%S)" >> "$GITHUB_WORKSPACE/shots/loop.log"
+              # Packer randomizes its HTTP and VNC ports per
+              # run; discover the live ones from the log it is
+              # writing rather than assuming fixed values.
+              HTTPPORT=$(grep -o 'Starting HTTP server on port [0-9]*' \
+                "$GITHUB_WORKSPACE/packer-build.log" 2>/dev/null | tail -1 | grep -o '[0-9]*$')
+              VNCDISP=$(grep -oE 'vnc.{0,6}127\.0\.0\.1:[0-9]+' \
+                "$GITHUB_WORKSPACE/packer-build.log" 2>/dev/null | tail -1 | grep -o '[0-9]*$')
+              echo "ports: http=${HTTPPORT:-?} vnc-display=${VNCDISP:-?}" \
+                >> "$GITHUB_WORKSPACE/shots/loop.log"
+              if [ -n "$VNCDISP" ]; then
+                vncsnapshot -quiet "127.0.0.1:$VNCDISP" "$base.jpg" \
+                  >> "$GITHUB_WORKSPACE/shots/loop.log" 2>&1
+                echo "vncsnapshot rc=$?" >> "$GITHUB_WORKSPACE/shots/loop.log"
+                python3 "$GITHUB_WORKSPACE/.github/scripts/rfbshot.py" \
+                  127.0.0.1 $((5900 + VNCDISP)) "$base.ppm" \
+                  >> "$GITHUB_WORKSPACE/shots/loop.log" 2>&1
+                echo "rfbshot rc=$?" >> "$GITHUB_WORKSPACE/shots/loop.log"
+              fi
+              if [ -n "$HTTPPORT" ]; then
+                curl -s -o /dev/null -w 'host-side preseed fetch: %{http_code}\n' \
+                  "http://127.0.0.1:$HTTPPORT/debian-13/preseed.cfg" \
+                  >> "$GITHUB_WORKSPACE/shots/loop.log" 2>&1 || true
+              fi
+              sleep 60
+            done ) &
+          SHOTPID=$!
+          # Fail fast at 40 minutes: a healthy install+provision
+          # takes ~10; the template's own ssh_timeout (10000s)
+          # is far too long to discover a hang by.
+          timeout --signal=TERM 2400 \
+            packer build -only=qemu "trixie${KUBE_VERSION}-13-amd64.json" \
+            2>&1 | tee "$GITHUB_WORKSPACE/packer-build.log"
+          RC=$?
+          kill $SHOTPID 2>/dev/null || true
+          echo "packer exit: $RC"
+          find "$KUBASH_DIR/pax/builds" -type f | head
+          exit $RC
+
+      - name: Boot the built image
+        run: |
+          IMG=$(find "$KUBASH_DIR/pax/builds" -type f -name "trixie${KUBE_VERSION}-13.7-amd64" | head -1)
+          echo "image: $IMG"
+          test -n "$IMG"
+          qemu-system-x86_64 -accel kvm -m 4096 -smp 2 \
+            -drive "file=$IMG,format=qcow2,if=virtio" \
+            -netdev "user,id=net0,hostfwd=tcp::2222-:22" \
+            -device virtio-net-pci,netdev=net0 \
+            -display none -daemonize \
+            -pidfile /tmp/qemu.pid -serial "file:/tmp/qemu-serial.log"
+          echo 'waiting for ssh...'
+          for i in $(seq 1 60); do
+            if sshpass -p vagrant ssh -o StrictHostKeyChecking=no \
+                 -o ConnectTimeout=5 -p 2222 vagrant@127.0.0.1 'echo guest-up' 2>/dev/null; then
+              echo "ssh up after ~$((i*10))s"
+              break
+            fi
+            sleep 10
+          done
+          sshpass -p vagrant ssh -o StrictHostKeyChecking=no -p 2222 vagrant@127.0.0.1 \
+            'uname -a; kubeadm version; sudo systemctl is-active containerd'
+
+      - name: kubeadm init and assert Ready
+        run: |
+          SSH="sshpass -p vagrant ssh -o StrictHostKeyChecking=no -p 2222 vagrant@127.0.0.1"
+          $SSH 'sudo kubeadm init --pod-network-cidr=10.244.0.0/16' \
+            | tee "$GITHUB_WORKSPACE/kubeadm-init.log"
+          $SSH 'mkdir -p $HOME/.kube && sudo cp /etc/kubernetes/admin.conf $HOME/.kube/config && sudo chown $(id -u):$(id -g) $HOME/.kube/config'
+          $SSH 'kubectl apply -f https://github.com/flannel-io/flannel/releases/download/v0.26.7/kube-flannel.yml'
+          echo 'waiting for the node to become Ready...'
+          for i in $(seq 1 30); do
+            if $SSH 'kubectl get nodes | grep -E " Ready "' ; then
+              echo 'NODE READY'
+              break
+            fi
+            sleep 20
+          done
+          $SSH 'kubectl get nodes -o wide'
+          $SSH 'kubectl get nodes | grep -E " Ready "'
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-test-logs
+          path: |
+            packer-build.log
+            kubeadm-init.log
+            shots/
+            /tmp/qemu-serial.log
+          if-no-files-found: ignore
