@@ -3,7 +3,14 @@ set -ex
 TMP=$(mktemp -d)
 sed 's/^/export /' /etc/os-release > /tmp/os-release
 . /tmp/os-release
-: ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool keepalived open-iscsi tgt software-properties-common'}
+# software-properties-common is deliberately NOT in this list: nothing
+# in packstrap calls add-apt-repository (the Kubernetes repo is added
+# with a dearmored key + signed-by entry below), and the package no
+# longer exists in Debian trixie - listing it made apt fail the whole
+# install (found by the 4g boot test, run 9). gnupg IS in the list:
+# prep_kubernetes_key pipes the pkgs.k8s.io key through gpg --dearmor,
+# and trixie's base install has no gpg (boot test run 11).
+: ${DEB_PRE_PACKAGES_TO_INSTALL:='jq apt-transport-https ca-certificates curl ebtables ethtool gnupg keepalived open-iscsi tgt'}
 # this one is for customization
 : ${ADDITIONAL_DEB_PACKAGES_TO_INSTALL:='NIL'}
 : ${DOCKER_CGROUP_DRIVER:='systemd'}
@@ -340,9 +347,17 @@ EOF
 }
 
 install_pips () {
-  sudo -H pip install --upgrade pip
-  sudo -H pip install --upgrade jinja2-cli jinja2 ceph-deploy
-  sudo -H pip install --upgrade 'docker<3.0'
+  # --break-system-packages: trixie/noble mark the system Python
+  # externally managed (PEP 668) and bare pip refuses to install
+  # anything. These images are purpose-built and disposable, and
+  # the tools below are expected on the system path (found by
+  # the 4g boot test, run 12). There is deliberately no
+  # 'pip install --upgrade pip' self-upgrade: on distro-managed
+  # Python it fails outright - apt's pip has no RECORD file, so
+  # pip cannot uninstall itself (boot test run 13) - and the
+  # distro pip (25.x on trixie) needs no upgrading.
+  sudo -H pip install --break-system-packages --upgrade jinja2-cli jinja2 ceph-deploy
+  sudo -H pip install --break-system-packages --upgrade 'docker<3.0'
 }
 
 install_docker_compose () {
@@ -562,7 +577,10 @@ official_docker_install () {
 
 prep_kubernetes_key () {
   # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
-  sudo mkdir -m 755 /etc/apt/keyrings
+  # -p: /etc/apt/keyrings already exists on modern Debian (trixie
+  # ships it), and a bare mkdir exits 1 under the provisioner's
+  # sh -e (found by the 4g boot test, run 10).
+  sudo mkdir -p -m 755 /etc/apt/keyrings
   curl -fsSL https://pkgs.k8s.io/core:/stable:/v${SHORT_KUBEPKG_VERSION}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
   echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${SHORT_KUBEPKG_VERSION}/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 }
