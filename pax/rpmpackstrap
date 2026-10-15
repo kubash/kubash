@@ -267,11 +267,7 @@ install_docker_compose () {
 
 echo "kubeadm install is $KUBEADM_INSTALL"
 
-if [ "$KUBEADM_INSTALL" = "openshift" ]; then
-  echo 'Sticking to default centos'
-  #install_default_docker
-  #yum install -y centos-release-openshift-origin origin-clients
-elif [ "$KUBEADM_INSTALL" = "kubespray" ]; then
+if [ "$KUBEADM_INSTALL" = "kubespray" ]; then
   # leaving clean for now, let ansible initialize
   echo 'Sticking to default centos'
   #install_default_docker
