@@ -1,0 +1,34 @@
+name: KVM probe (spike)
+
+# Phase 4g spike (D6 option A): can a GitHub-hosted runner expose
+# /dev/kvm to a kubash Packer qemu build? Push-triggered on this
+# spike branch only; delete the branch when the spike concludes.
+
+on:
+  push:
+    branches: [spike/kvm-probe]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04]
+    steps:
+      - name: Probe /dev/kvm
+        run: |
+          echo "runner: $(uname -a)"
+          echo "cpu flags (vmx/svm): $(grep -m1 -o 'vmx\|svm' /proc/cpuinfo || echo none)"
+          ls -l /dev/kvm || echo '/dev/kvm ABSENT'
+          if [ -e /dev/kvm ]; then
+            test -r /dev/kvm && echo 'readable: yes' || echo 'readable: no'
+            test -w /dev/kvm && echo 'writable: yes' || echo 'writable: no'
+            stat -c 'owner=%U group=%G mode=%a' /dev/kvm
+            id
+          fi
+          lsmod | grep -i kvm || echo 'no kvm module listed'
