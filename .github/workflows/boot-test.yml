@@ -47,7 +47,7 @@ jobs:
           sudo apt-get install -y -qq qemu-system-x86 qemu-utils sshpass vncsnapshot
           qemu-system-x86_64 --version | head -1
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Lay out kubash home and install packer
         env:
