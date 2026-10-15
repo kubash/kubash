@@ -19,19 +19,11 @@ export KEYS_URL='https://raw.githubusercontent.com/myorg/keys/master/keys'
 
 `--builder packer` This will build images using packer
 
-`--builder coreos` This will download the official coreos images
-
 ### OS options
 
-`--target-os ubuntu` This will build ubuntu images
+`--target-os trixie` This will build Debian 13 images
 
-`--target-os debian` This will build debian images
-
-`--target-os fedora` This will build fedora images
-
-`--target-os centos` This will build centos images
-
-`--target-os coreos` This will build coreos images (* no packer build for this*)
+`--target-os noble` This will build Ubuntu 24.04 images
 
 #### Initializer specific options
 
