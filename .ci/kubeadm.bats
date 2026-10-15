@@ -63,7 +63,7 @@ patch_for() {
   done
 }
 
-@test "etcd_extra_arg emits list style for v1beta4 and map style before" {
+@test "etcd_extra_arg emits the v1beta4 list style" {
   awk '/^etcd_extra_arg \(\)/,/^}/' \
     "$KUBASH_ROOT/lib/yaml.bash" > "$BATS_TEST_TMPDIR/extraarg.inc"
   [ -s "$BATS_TEST_TMPDIR/extraarg.inc" ]
@@ -72,20 +72,16 @@ patch_for() {
 TAB_2='    '
 TAB_3='      '
 source "$1"
-ETCD_EXTRAARGS_LIST="$2"
-etcd_extra_arg "$3" initial-cluster-state new
+etcd_extra_arg "$2" initial-cluster-state new
 EOF
-  run bash "$BATS_TEST_TMPDIR/run-extraarg.bash" "$BATS_TEST_TMPDIR/extraarg.inc" true "$BATS_TEST_TMPDIR/list.out"
+  run bash "$BATS_TEST_TMPDIR/run-extraarg.bash" "$BATS_TEST_TMPDIR/extraarg.inc" "$BATS_TEST_TMPDIR/list.out"
   [ "$output" = "" ]
   run cat "$BATS_TEST_TMPDIR/list.out"
   [ "$output" = "    - name: initial-cluster-state
       value: new" ]
-  run bash "$BATS_TEST_TMPDIR/run-extraarg.bash" "$BATS_TEST_TMPDIR/extraarg.inc" false "$BATS_TEST_TMPDIR/map.out"
-  run cat "$BATS_TEST_TMPDIR/map.out"
-  [ "$output" = "      initial-cluster-state: new" ]
 }
 
-@test "determine_api_version maps minor 31+ to v1beta4" {
+@test "determine_api_version maps 1.35+ to v1beta4 and refuses older" {
   awk '/^determine_api_version \(\)/,/^}/' \
     "$KUBASH_ROOT/lib/kinit.bash" > "$BATS_TEST_TMPDIR/determine.inc"
   [ -s "$BATS_TEST_TMPDIR/determine.inc" ]
@@ -99,8 +95,9 @@ echo "$kubeadm_apiVersion"
 EOF
   run bash "$BATS_TEST_TMPDIR/run-mapping.bash" "$BATS_TEST_TMPDIR/determine.inc" 36
   [ "$output" = "kubeadm.k8s.io/v1beta4" ]
-  run bash "$BATS_TEST_TMPDIR/run-mapping.bash" "$BATS_TEST_TMPDIR/determine.inc" 30
-  [ "$output" = "kubeadm.k8s.io/v1beta3" ]
-  run bash "$BATS_TEST_TMPDIR/run-mapping.bash" "$BATS_TEST_TMPDIR/determine.inc" 20
-  [ "$output" = "kubeadm.k8s.io/v1beta2" ]
+  run bash "$BATS_TEST_TMPDIR/run-mapping.bash" "$BATS_TEST_TMPDIR/determine.inc" 35
+  [ "$output" = "kubeadm.k8s.io/v1beta4" ]
+  run bash "$BATS_TEST_TMPDIR/run-mapping.bash" "$BATS_TEST_TMPDIR/determine.inc" 34
+  [ "$status" -eq 3 ]
+  [ "$output" = "" ]
 }
