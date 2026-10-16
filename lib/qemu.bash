@@ -266,7 +266,6 @@ qemu-provisioner () {
     if [[ ! -z $K8S_storageType1 ]]; then virsh_disk_attach_localhost $K8S_storageType1 $K8S_storagePath1 $K8S_storageTarget1 $K8S_storageSize1; fi
     if [[ ! -z $K8S_storageType2 ]]; then virsh_disk_attach_localhost $K8S_storageType2 $K8S_storagePath2 $K8S_storageTarget2 $K8S_storageSize2; fi
     if [[ ! -z $K8S_storageType3 ]]; then virsh_disk_attach_localhost $K8S_storageType3 $K8S_storagePath3 $K8S_storageTarget3 $K8S_storageSize3; fi
-    if [[ ! -z $K8S_storageType4 ]]; then virsh_disk_attach_localhost $K8S_storageType4 $K8S_storagePath4 $K8S_storageTarget4 $K8S_storageSize4; fi
   else
     # not localhost
     squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
@@ -302,6 +301,5 @@ qemu-provisioner () {
     if [[ ! -z $K8S_storageType1 ]]; then virsh_disk_attach $K8S_storageType1 $K8S_storagePath1 $K8S_storageTarget1 $K8S_storageSize1; fi
     if [[ ! -z $K8S_storageType2 ]]; then virsh_disk_attach $K8S_storageType2 $K8S_storagePath2 $K8S_storageTarget2 $K8S_storageSize2; fi
     if [[ ! -z $K8S_storageType3 ]]; then virsh_disk_attach $K8S_storageType3 $K8S_storagePath3 $K8S_storageTarget3 $K8S_storageSize3; fi
-    if [[ ! -z $K8S_storageType4 ]]; then virsh_disk_attach $K8S_storageType4 $K8S_storagePath4 $K8S_storageTarget4 $K8S_storageSize4; fi
   fi
 }
