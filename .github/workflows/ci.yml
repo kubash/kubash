@@ -82,6 +82,7 @@ jobs:
           bats .ci/kubeadm.bats
           bats .ci/kinit.bats
           bats .ci/net.bats
+          bats .ci/storage.bats
 
   bootstrap-smoke:
     name: Bootstrap smoke (${{ matrix.image }})
