@@ -154,8 +154,7 @@ $(KUBASH_BIN)/istioctl:
 	&& sha256sum -c istio-$(ISTIO_VERSION)-linux-amd64.tar.gz.sha256 \
 	&& tar zxf istio-$(ISTIO_VERSION)-linux-amd64.tar.gz
 	mv $(TMP)/istio-$(ISTIO_VERSION)/bin/istioctl $(KUBASH_DIR)/bin/
-	rm -Rf $(TMP)/istio-$(ISTIO_VERSION)
-	rmdir $(TMP)
+	rm -Rf $(TMP)
 
 k9s: $(KUBASH_BIN)
 	@scripts/kubashnstaller k9s
@@ -607,7 +606,7 @@ $(KUBASH_BIN)/rke:
 	cd $(TMP) \
 	&& curl -sLO https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64 \
 	&& curl -sLO https://github.com/rancher/rke/releases/download/${RKE_VERS}/sha256sum.txt \
-	&& awk -v f="rke_linux-amd64" '$$2 == f' sha256sum.txt | sha256sum -c -
+	&& echo "$$(awk -v f="build/bin/rke_linux-amd64" '$$2 == f {print $$1}' sha256sum.txt)  rke_linux-amd64" | sha256sum -c -
 	chmod +x $(TMP)/rke_linux-amd64
 	sudo install -v -m511 ${TMP}/rke_linux-amd64 $(KUBASH_BIN)/rke
 	rm -Rf $(TMP)
