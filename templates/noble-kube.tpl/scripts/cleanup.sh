@@ -23,7 +23,7 @@ echo "remove all development packages"
 dpkg --list \
     | awk '{ print $2 }' \
     | grep -- '-dev\(:[a-z0-9]\+\)\?$' \
-    | xargs apt-get -y purge;
+    | xargs apt-get -y purge || true;
 
 echo "remove X11 libraries"
 apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6;
@@ -35,7 +35,7 @@ echo "remove popularity-contest package"
 apt-get -y purge popularity-contest;
 
 echo "remove installation-report package"
-apt-get -y purge installation-report;
+apt-get -y purge installation-report || true;
 
 echo "autoremoving packages and cleaning apt data"
 apt-get -y autoremove;
