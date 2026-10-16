@@ -63,182 +63,79 @@ lvm_extend_run () {
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
 }
 
+mount_one_storage_target () {
+  # Mounts one storage device on the current host:
+  # $1 storage path, $2 target device, $3 mount path ('lvm'
+  # joins the device to the VG instead), $4 UUID ('null' =
+  # generate one), $5 LVM mode: 'create' for the first
+  # device, 'extend' for additional ones.
+  local storage_target=$2 storage_mount=$3 storage_uuid=$4
+  if [[ $storage_mount == "lvm" ]]; then
+    if [[ $5 == 'create' ]]; then
+      lvm_creation_run $storage_target ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+    else
+      lvm_extend_run $storage_target ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
+    fi
+    return 0
+  fi
+  if [[ $storage_mount == "null" || $storage_target == "null" ]]; then
+    return 0
+  fi
+  check_first_device $storage_target
+  command2run="mkdir -p $storage_mount"
+  sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+  # the UUID applies to this device only: the generated value
+  # must be the one fsck, mkfs and fstab all use (#68)
+  local mkfs_uuid_opt
+  if [[ $storage_uuid != "null" ]]; then
+    command2run="fsck.ext4 -p /dev/${storage_target}"
+    mkfs_uuid_opt="-U ${storage_uuid}"
+  else
+    storage_uuid=$(uuidgen -r)
+    command2run="fsck.ext4 -p UUID=${storage_uuid}"
+    mkfs_uuid_opt="-U ${storage_uuid}"
+  fi
+  # This might fail in which case we'll format
+  set +e
+  sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+  if [[ $? == 0 ]]; then
+    squawk 3 'fsck successful!'
+  else
+    set -e
+    squawk 3 'fsck failed we will attempt to format the device!'
+    command2run="mkfs.ext4 $mkfs_uuid_opt /dev/${storage_target}"
+    sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+  fi
+  set -e
+  fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${storage_uuid} ${storage_mount})"
+  command2run="echo $fstab_line_to_append >> /etc/fstab"
+  sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+  command2run="mount ${storage_mount}"
+  sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
+}
+
 mount_all_other_targets () {
   squawk 1 "mount all other targets $*"
   while IFS="," read -r $csv_columns
   do
     squawk 185 "ROLE $K8S_role $K8S_user $K8S_ip1 $K8S_sshPort"
     squawk 3 "initializing storage node $*"
-    squawk 3 "$K8S_storagePath $K8S_storageType $K8S_storageSize $K8S_storageTarget $K8S_storageMountPath $K8S_storageUUID"
-
-    squawk 3 "${K8S_storagePath} ${K8S_storageType} ${K8S_storageSize} ${K8S_storageTarget} ${K8S_storageMountPath} ${K8S_storageUUID}"
     if [[ ${K8S_storagePath} != "null" ]]; then
-      squawk 3 "K8S_storagePath=$K8S_storagePath"
-      if [[ ${K8S_storageMountPath} == "lvm" ]]; then
-        squawk 3 "K8S_storageMountPath=$K8S_storageMountPath"
-        lvm_creation_run ${K8S_storageTarget} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-      elif [[ ${K8S_storageMountPath} != "null" ]]; then
-        squawk 55 "K8S_storageMountPath=$K8S_storageMountPath"
-        if [[ ${K8S_storageTarget}  != "null" ]]; then
-          squawk 44 "K8S_storageTarget=$K8S_storageTarget"
-          check_first_device $K8S_storageTarget
-          command2run="mkdir -p $K8S_storageMountPath"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ ${K8S_storageUUID} != "null" ]]; then
-            command2run="fsck.ext4 -p /dev/${K8S_storageTarget}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID}"
-          else
-            K8S_storageUUID=$(uuidgen -r)
-            command2run="fsck.ext4 -p UUID=${K8S_storageUUID}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID}"
-          fi
-          # This might fail in which case we'll format
-          set +e
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ $? == 0 ]]; then
-            squawk 3 'fsck successful!'
-          else
-            set -e
-            squawk 3 'fsck failed we will attempt to format the device!'
-            command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/${K8S_storageTarget}"
-            sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          fi
-          set -e
-          fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${K8S_storageUUID} ${K8S_storageMountPath})"
-          command2run="echo $fstab_line_to_append >> /etc/fstab"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          command2run="mount ${K8S_storageMountPath}"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-        fi
-      fi
+      mount_one_storage_target "$K8S_storagePath" "$K8S_storageTarget" \
+        "$K8S_storageMountPath" "$K8S_storageUUID" create
     fi
-
-    squawk 3 "${K8S_storagePath1} ${K8S_storageType1} ${K8S_storageSize1} ${K8S_storageTarget1} ${K8S_storageMountPath1} ${K8S_storageUUID1}"
     if [[ ${K8S_storagePath1} != "null" ]]; then
-      squawk 3 "K8S_storagePath=$K8S_storagePath1"
-      if [[ ${K8S_storageMountPath1} == "lvm" ]]; then
-        squawk 3 "K8S_storageMountPath1=$K8S_storageMountPath1"
-        lvm_extend_run ${K8S_storageTarget1} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-      elif [[ ${K8S_storageMountPath1} != "null" ]]; then
-        if [[ ${K8S_storageTarget1}  != "null" ]]; then
-          if [[ ${K8S_storageTarget1}  == "vda" || ${K8S_storageTarget1}  == "sda" || ${K8S_storageTarget1}  == "hda" ]]; then
-            croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
-          fi
-          command2run="mkdir -p $K8S_storageMountPath1"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ ${K8S_storageUUID1} != "null" ]]; then
-            command2run="fsck.ext4 -p /dev/${K8S_storageTarget1}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID1}"
-          else
-            K8S_storageUUID=$(uuidgen -r)
-            command2run="fsck.ext4 -p UUID=${K8S_storageUUID1}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID1}"
-          fi
-          # This might fail in which case we'll format
-          set +e
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ $? == 0 ]]; then
-            squawk 3 'fsck successful!'
-          else
-            set -e
-            squawk 3 'fsck failed we will attempt to format the device!'
-            command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/${K8S_storageTarget1}"
-            sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          fi
-          set -e
-          fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${K8S_storageUUID1} ${K8S_storageMountPath1})"
-          command2run="echo $fstab_line_to_append >> /etc/fstab"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          command2run="mount ${K8S_storageMountPath1}"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-        fi
-      fi
+      mount_one_storage_target "$K8S_storagePath1" "$K8S_storageTarget1" \
+        "$K8S_storageMountPath1" "$K8S_storageUUID1" extend
     fi
-
-    squawk 3 "${K8S_storagePath2} ${K8S_storageType2} ${K8S_storageSize2} ${K8S_storageTarget2} ${K8S_storageMountPath2} ${K8S_storageUUID2}"
     if [[ ${K8S_storagePath2} != "null" ]]; then
-      squawk 3 "K8S_storagePath=$K8S_storagePath2"
-      if [[ ${K8S_storageMountPath2} == "lvm" ]]; then
-        squawk 3 "K8S_storageMountPath2=$K8S_storageMountPath2"
-        lvm_extend_run ${K8S_storageTarget2} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-      elif [[ ${K8S_storageMountPath2} != "null" ]]; then
-        if [[ ${K8S_storageTarget2}  != "null" ]]; then
-          if [[ ${K8S_storageTarget2}  == "vda" || ${K8S_storageTarget2}  == "sda" || ${K8S_storageTarget2}  == "hda" ]]; then
-            croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
-          fi
-          command2run="mkdir -p $K8S_storageMountPath2"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ ${K8S_storageUUID2} != "null" ]]; then
-            command2run="fsck.ext4 -p /dev/${K8S_storageTarget2}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID2}"
-          else
-            K8S_storageUUID=$(uuidgen -r)
-            command2run="fsck.ext4 -p UUID=${K8S_storageUUID2}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID2}"
-          fi
-          # This might fail in which case we'll format
-          set +e
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ $? == 0 ]]; then
-            squawk 3 'fsck successful!'
-          else
-            set -e
-            squawk 3 'fsck failed we will attempt to format the device!'
-            command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/${K8S_storageTarget2}"
-            sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          fi
-          set -e
-          fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${K8S_storageUUID2} ${K8S_storageMountPath2})"
-          command2run="echo $fstab_line_to_append >> /etc/fstab"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          command2run="mount ${K8S_storageMountPath2}"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-        fi
-      fi
+      mount_one_storage_target "$K8S_storagePath2" "$K8S_storageTarget2" \
+        "$K8S_storageMountPath2" "$K8S_storageUUID2" extend
     fi
-
-    squawk 3 "${K8S_storagePath3} ${K8S_storageType3} ${K8S_storageSize3} ${K8S_storageTarget3} ${K8S_storageMountPath3} ${K8S_storageUUID3}"
     if [[ ${K8S_storagePath3} != "null" ]]; then
-      squawk 3 "K8S_storagePath=$K8S_storagePath3"
-      if [[ ${K8S_storageMountPath3} == "lvm" ]]; then
-        squawk 3 "K8S_storageMountPath3=$K8S_storageMountPath3"
-        lvm_extend_run ${K8S_storageTarget3} ${K8S_sshPort} ${K8S_user} ${K8S_ip1}
-      elif [[ ${K8S_storageMountPath3} != "null" ]]; then
-        if [[ ${K8S_storageTarget3}  != "null" ]]; then
-          if [[ ${K8S_storageTarget3}  == "vda" || ${K8S_storageTarget3}  == "sda" || ${K8S_storageTarget3}  == "hda" ]]; then
-            croak 0 "WARNING! Formatting the first device is most likely a bad idea \n Open a support request at https://github.com/kubash/kubash/issues/new"
-          fi
-          command2run="mkdir -p $K8S_storageMountPath3"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ ${K8S_storageUUID3} != "null" ]]; then
-            command2run="fsck.ext4 -p /dev/${K8S_storageTarget3}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID3}"
-          else
-            K8S_storageUUID=$(uuidgen -r)
-            command2run="fsck.ext4 -p UUID=${K8S_storageUUID3}"
-            K8S_storageMKFS_UUID_OPT="-U ${K8S_storageUUID3}"
-          fi
-          # This might fail in which case we'll format
-          set +e
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          if [[ $? == 0 ]]; then
-            squawk 3 'fsck successful!'
-          else
-            set -e
-            squawk 3 'fsck failed we will attempt to format the device!'
-            command2run="mkfs.ext4 $K8S_storageMKFS_UUID_OPT /dev/${K8S_storageTarget3}"
-            sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          fi
-          set -e
-          fstab_line_to_append="$(printf 'UUID=%s\t%s\text4\trw,relatime\t0 2\n' ${K8S_storageUUID3} ${K8S_storageMountPath3})"
-          command2run="echo $fstab_line_to_append >> /etc/fstab"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-          command2run="mount ${K8S_storageMountPath3}"
-          sudo_command "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$command2run"
-        fi
-      fi
+      mount_one_storage_target "$K8S_storagePath3" "$K8S_storageTarget3" \
+        "$K8S_storageMountPath3" "$K8S_storageUUID3" extend
     fi
-
   done <<< "$kubash_hosts_csv_slurped"
 }
 
