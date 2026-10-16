@@ -19,6 +19,27 @@ $(eval MINIKUBE_VERSION := v1.39.0)
 $(eval TALOS_VERSION := v1.14.2)
 $(eval PACKER_VERSION := 1.16.1)
 $(eval CRICTL_VERSION := v1.36.0)
+$(eval KUBEDB_VERSION := 0.11.0)
+$(eval CERT_MANAGER_VERSION := v1.0.4)
+$(eval OC_VERSION := 4.20.43)
+$(eval ARKADE_VERSION := 0.11.132)
+$(eval MC_VERSION := RELEASE.2025-08-13T08-35-41Z)
+$(eval CFSSL_VERSION := v1.7.1)
+$(eval BATS_VERSION := v1.11.0)
+# TOFU-pinned checksums (4e-2): these upstreams publish no
+# checksum file for the pinned release, so the sha256 of the
+# release artifact is pinned here, gcloud-style.
+$(eval KOMPOSE_SHA256 := 6203d67263886bbd455168f59309496d486fc3a6df330b7ba37823b283bd9ea5)
+$(eval KUBECFG_SHA256 := 380fc9cd5a83e5fc054e8ee9fa4fb35dc6177ed6d966ed2412972311a2987c4b)
+$(eval KUBEDB_SHA256 := 04df82db4c9f48373ee4b681ba5a6f153f0cb1215dd514f2f58f235d707056d4)
+$(eval CERT_MANAGER_SHA256 := e464906439b98e0d0b1c979b9ae5a61c25ebf836f89ef0cdcc7709ca03578cd4)
+$(eval CT_SHA256 := 31f4c3bd2219ba82b743bcbb4afab34a3e11e8a6512cefef407d9b6da0192adb)
+$(eval KIND_SHA256 := 35a640e0ca479192d86a51b6fd31c657403d2cf7338368d62223938771500dc8)
+$(eval KUBECTL_MINIO_VERSION := 4.1.3)
+$(eval KUBECTL_MINIO_SHA256 := 2f1034730531e181fb710eaf8ef6ded392a3983e942fb42e26c4fc45a52cc06f)
+$(eval ANACONDA_SHA256 := 7e6785caad25e33930bc03fac4994a434a21bc8401817b7efa28f53619fa9c29)
+$(eval CEPHADM_COMMIT := 6a585618451421f0744745e4dd3636f10f678397)
+$(eval CEPHADM_SHA256 := c973e113901c702f6e704698a69003c3da0e063771d6aee5719eeee28226ca2d)
 
 # Install location
 $(eval KUBASH_DIR := $(HOME)/.kubash)
@@ -73,7 +94,7 @@ $(eval K9S_VERSION := "v0.32.5")
 
 $(eval KUBECFG_VERSION := "v0.16.0")
 $(eval TERRAFORM_VERSION := "0.15.3")
-$(eval KUBEBUILDER_VERS := latest)
+$(eval KUBEBUILDER_VERS := v4.16.0)
 $(eval KIND_VERS := v0.9.0)
 $(eval RKE_VERS := v1.3.2)
 $(eval KOMPOSE_VERSION := "v1.22.0")
@@ -128,10 +149,12 @@ $(KUBASH_BIN)/istioctl:
 	@echo 'Installing istioctl'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://istio.io/downloadIstio | ISTIO_VERSION=$(ISTIO_VERSION) TARGET_ARCH=x86_64 sh -
+	curl -fsSLO https://github.com/istio/istio/releases/download/$(ISTIO_VERSION)/istio-$(ISTIO_VERSION)-linux-amd64.tar.gz \
+	&& curl -fsSLO https://github.com/istio/istio/releases/download/$(ISTIO_VERSION)/istio-$(ISTIO_VERSION)-linux-amd64.tar.gz.sha256 \
+	&& sha256sum -c istio-$(ISTIO_VERSION)-linux-amd64.tar.gz.sha256 \
+	&& tar zxf istio-$(ISTIO_VERSION)-linux-amd64.tar.gz
 	mv $(TMP)/istio-$(ISTIO_VERSION)/bin/istioctl $(KUBASH_DIR)/bin/
-	rm -Rf $(TMP)/istio-$(ISTIO_VERSION)
-	rmdir $(TMP)
+	rm -Rf $(TMP)
 
 k9s: $(KUBASH_BIN)
 	@scripts/kubashnstaller k9s
@@ -140,7 +163,10 @@ $(KUBASH_BIN)/k9s:
 	@echo 'Installing k9s'
 	$(eval TMP := $(shell mktemp -d --suffix=KUBECTLTMP))
 	cd $(TMP) && \
-	curl -L https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz |tar zxf -
+	curl -fsSLO https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz \
+	&& curl -fsSLO https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/checksums.sha256 \
+	&& awk -v f="k9s_Linux_amd64.tar.gz" '$$2 == f' checksums.sha256 | sha256sum -c - \
+	&& tar zxf k9s_Linux_amd64.tar.gz
 	mv $(TMP)/k9s $(KUBASH_DIR)/bin/
 	rm -Rf $(TMP)
 
@@ -165,7 +191,8 @@ $(KUBASH_BIN)/kubedb:
 	@echo 'Installing kubedb'
 	$(eval TMP := $(shell mktemp -d --suffix=kubedbTMP))
 	cd $(TMP) \
-	&& wget -O kubedb https://github.com/kubedb/cli/releases/download/0.11.0/kubedb-linux-amd64 \
+	&& wget -O kubedb https://github.com/kubedb/cli/releases/download/${KUBEDB_VERSION}/kubedb-linux-amd64 \
+	&& echo "${KUBEDB_SHA256}  kubedb" | sha256sum -c - \
 	&& chmod +x kubedb \
 	&& sudo mv -v kubedb $(KUBASH_BIN)/
 	rmdir $(TMP)
@@ -210,7 +237,13 @@ cni: $(KUBASH_BIN)
 $(KUBASH_BIN)/cni: SHELL:=/bin/bash
 $(KUBASH_BIN)/cni:
 	@echo 'Installing cni'
-	curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C $(KUBASH_BIN) -xz
+	$(eval TMP := $(shell mktemp -d --suffix=CNITMP))
+	cd $(TMP) \
+	&& curl -fsSLO "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz" \
+	&& curl -fsSLO "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz.sha256" \
+	&& sha256sum -c "cni-plugins-linux-amd64-${CNI_VERSION}.tgz.sha256" \
+	&& tar -C $(KUBASH_BIN) -xzf "cni-plugins-linux-amd64-${CNI_VERSION}.tgz"
+	rm -Rf $(TMP)
 
 kompose: $(KUBASH_BIN)
 	@scripts/kubashnstaller kompose
@@ -219,7 +252,8 @@ $(KUBASH_BIN)/kompose: SHELL:=/bin/bash
 $(KUBASH_BIN)/kompose:
 	$(eval TMP := $(shell mktemp -d --suffix=MINIKUBETMP))
 	cd $(TMP) \
-	&& curl -L https://github.com/kubernetes/kompose/releases/download/${KOMPOSE_VERSION}/kompose-linux-amd64 -o kompose
+	&& curl -L https://github.com/kubernetes/kompose/releases/download/${KOMPOSE_VERSION}/kompose-linux-amd64 -o kompose \
+	&& echo "${KOMPOSE_SHA256}  kompose" | sha256sum -c -
 	install -m511 ${TMP}/kompose $(KUBASH_BIN)/
 	rm ${TMP}/kompose
 	rmdir ${TMP}
@@ -319,7 +353,10 @@ oc: $(KUBASH_BIN)
 $(KUBASH_BIN)/oc:
 	$(eval TMP := $(shell mktemp -d --suffix=OCTMP))
 	cd $(TMP) \
-	&& curl -sL https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar zxvf -
+	&& curl -fsSLO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_VERSION}/openshift-client-linux-${OC_VERSION}.tar.gz \
+	&& curl -fsSLO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_VERSION}/sha256sum.txt \
+	&& awk -v f="openshift-client-linux-${OC_VERSION}.tar.gz" '$$2 == f' sha256sum.txt | sha256sum -c - \
+	&& tar zxvf openshift-client-linux-${OC_VERSION}.tar.gz
 	sudo install -v -m511 ${TMP}/oc $(KUBASH_BIN)/oc
 	rm -Rf $(TMP)
 	
@@ -330,7 +367,7 @@ bats: $(KUBASH_BIN)
 $(KUBASH_BIN)/bats:
 	$(eval TMP := $(shell mktemp -d --suffix=BATSTMP))
 	cd $(TMP) \
-	&& git clone --depth=1 https://github.com/sstephenson/bats.git
+	&& git clone --depth=1 --branch ${BATS_VERSION} https://github.com/bats-core/bats-core.git bats
 	ls -lh $(TMP)
 	ls -lh $(TMP)/bats
 	cd $(TMP)/bats \
@@ -397,6 +434,7 @@ $(KUBASH_BIN)/ct:
 	cd $(TMP) \
 	&& curl -sL -o ct \
 	https://github.com/coreos/container-linux-config-transpiler/releases/download/$(CT_VERSION)/ct-$(CT_VERSION)-x86_64-unknown-linux-gnu \
+	&& echo "${CT_SHA256}  ct" | sha256sum -c - \
 	&& chmod +x ct \
 	&& mv ct $(KUBASH_BIN)/
 	rm -Rf $(TMP)
@@ -462,18 +500,19 @@ submodules/openebs:
 	cd submodules; git clone https://github.com/openebs/openebs.git
 
 cfssl: $(GOPATH)/bin/cfssl
-	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@latest
+	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@${CFSSL_VERSION}
 
 $(GOPATH)/bin/cfssl:
-	go install github.com/cloudflare/cfssl/cmd/cfssl@latest
-	go install github.com/cloudflare/cfssl/cmd/cfssljson@latest
-	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@latest
+	go install github.com/cloudflare/cfssl/cmd/cfssl@${CFSSL_VERSION}
+	go install github.com/cloudflare/cfssl/cmd/cfssljson@${CFSSL_VERSION}
+	go install github.com/cloudflare/cfssl/cmd/cfssl-certinfo@${CFSSL_VERSION}
 
 anaconda: $(KUBASH_BIN)/Anaconda.sh
 	bash $(KUBASH_BIN)/Anaconda.sh
 
 $(KUBASH_BIN)/Anaconda.sh:
 	wget -c -O $(KUBASH_BIN)/Anaconda.sh https://repo.continuum.io/archive/Anaconda3-5.1.0-Linux-x86_64.sh
+	echo "${ANACONDA_SHA256}  $(KUBASH_BIN)/Anaconda.sh" | sha256sum -c -
 
 nvm:
 	$(eval TMP := $(shell mktemp -d --suffix=nvmTMP))
@@ -481,12 +520,6 @@ nvm:
 	&& curl --silent -o install.sh https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh \
 	&& echo "${NVM_INSTALL_SHA256}  install.sh" | sha256sum -c - \
 	&& bash install.sh
-	rm -Rf $(TMP)
-
-coreos_key:
-	$(eval TMP := $(shell mktemp -d --suffix=CKTMP))
-	curl -O https://coreos.com/security/image-signing-key/CoreOS_Image_Signing_Key.asc -o $(TMP)/CoreOS_Image_Signing_Key.asc
-	gpg --import --keyid-format LONG CoreOS_Image_Signing_Key.asc
 	rm -Rf $(TMP)
 
 testy:
@@ -513,7 +546,8 @@ kubectl-cert_manager: $(KUBASH_BIN)/kubectl-cert_manager
 $(KUBASH_BIN)/kubectl-cert_manager:
 	$(eval TMP := $(shell mktemp -d --suffix=CTmgrTMP))
 	cd $(TMP) \
-	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/v1.0.4/kubectl-cert_manager-linux-amd64.tar.gz \
+	&& curl -L -o kubectl-cert-manager.tar.gz https://github.com/jetstack/cert-manager/releases/download/${CERT_MANAGER_VERSION}/kubectl-cert_manager-linux-amd64.tar.gz \
+	&& echo "${CERT_MANAGER_SHA256}  kubectl-cert-manager.tar.gz" | sha256sum -c - \
 	&& tar xzf kubectl-cert-manager.tar.gz \
 	&& sudo mv kubectl-cert_manager $(KUBASH_BIN)/
 	rm -Rf $(TMP)
@@ -523,7 +557,8 @@ kubecfg: $(KUBASH_BIN)/kubecfg
 $(KUBASH_BIN)/kubecfg:
 	$(eval TMP := $(shell mktemp -d --suffix=kbTMP))
 	cd $(TMP) \
-	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/${KUBECFG_VERSION}/kubecfg-linux-amd64
+	&& curl -LO https://github.com/bitnami/kubecfg/releases/download/${KUBECFG_VERSION}/kubecfg-linux-amd64 \
+	&& echo "${KUBECFG_SHA256}  kubecfg-linux-amd64" | sha256sum -c -
 	install -m511 $(TMP)/kubecfg-linux-amd64 $(KUBASH_BIN)/kubecfg
 	rm -Rf $(TMP)
 
@@ -533,6 +568,8 @@ $(KUBASH_BIN)/terraform:
 	$(eval TMP := $(shell mktemp -d --suffix=terraformTMP))
 	cd $(TMP) \
 		&& curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+		&& curl -sLO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS \
+		&& grep linux_amd64.zip terraform_${TERRAFORM_VERSION}_SHA256SUMS | sha256sum -c - \
 		&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 	install -m511 $(TMP)/terraform $(KUBASH_BIN)/terraform
 	rm -Rf $(TMP)
@@ -543,18 +580,12 @@ kubebuilder: $(KUBASH_BIN)/kubebuilder
 $(KUBASH_BIN)/kubebuilder:
 	# https://book.kubebuilder.io/quick-start.html#installation
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	#os=$(go env GOOS)
-	$(eval os := $(shell go env GOOS))
-	#arch=$(go env GOARCH)
-	$(eval arch := $(shell go env GOARCH))
-	# download kubebuilder and extract it to tmp
-	curl -L -o ${TMP}/kubebuilder https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${os}/${arch}
-	# move to a long-term location and put it on your path
-	sudo install -m511 ${TMP}/kubebuilder $(KUBASH_BIN)/kubebuilder
-	#export PATH=${PATH}:/usr/local/kubebuilder/bin
-	#rm -Rf $(TMP)
-	rm $(TMP)/kubebuilder
-	rmdir $(TMP)
+	cd $(TMP) \
+	&& curl -fsSLO https://github.com/kubernetes-sigs/kubebuilder/releases/download/${KUBEBUILDER_VERS}/kubebuilder_linux_amd64 \
+	&& curl -fsSLO https://github.com/kubernetes-sigs/kubebuilder/releases/download/${KUBEBUILDER_VERS}/checksums.txt \
+	&& awk -v f="kubebuilder_linux_amd64" '$$2 == f' checksums.txt | sha256sum -c -
+	sudo install -m511 ${TMP}/kubebuilder_linux_amd64 $(KUBASH_BIN)/kubebuilder
+	rm -Rf $(TMP)
 
 kind: $(KUBASH_BIN)/kind
 
@@ -562,6 +593,7 @@ $(KUBASH_BIN)/kind:
 	# https://kind.sigs.k8s.io/docs/user/quick-start/
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	curl -Lo $(TMP)/kind https://kind.sigs.k8s.io/dl/${KIND_VERS}/kind-linux-amd64
+	echo "${KIND_SHA256}  $(TMP)/kind" | sha256sum -c -
 	chmod +x $(TMP)/kind
 	sudo install -v -m511 ${TMP}/kind $(KUBASH_BIN)/kind
 	rm -Rf $(TMP)
@@ -571,9 +603,12 @@ rke: $(KUBASH_BIN)/rke
 $(KUBASH_BIN)/rke:
 	# https://rke.sigs.k8s.io/docs/user/quick-start/
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	curl -Lo $(TMP)/rke https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64
-	chmod +x $(TMP)/rke
-	sudo install -v -m511 ${TMP}/rke $(KUBASH_BIN)/rke
+	cd $(TMP) \
+	&& curl -sLO https://github.com/rancher/rke/releases/download/${RKE_VERS}/rke_linux-amd64 \
+	&& curl -sLO https://github.com/rancher/rke/releases/download/${RKE_VERS}/sha256sum.txt \
+	&& echo "$$(awk -v f="build/bin/rke_linux-amd64" '$$2 == f {print $$1}' sha256sum.txt)  rke_linux-amd64" | sha256sum -c -
+	chmod +x $(TMP)/rke_linux-amd64
+	sudo install -v -m511 ${TMP}/rke_linux-amd64 $(KUBASH_BIN)/rke
 	rm -Rf $(TMP)
 
 talosctl: $(KUBASH_BIN)/talosctl
@@ -592,16 +627,23 @@ arkade: /usr/local/bin/arkade
 
 /usr/local/bin/arkade:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://dl.get-arkade.dev | sudo sh
-	#chmod +x $(TMP)/arkade
-	#sudo install -v -m511 ${TMP}/arkade $(KUBASH_BIN)/arkade
+	cd $(TMP) \
+	&& curl -fsSLO https://github.com/alexellis/arkade/releases/download/${ARKADE_VERSION}/arkade \
+	&& curl -fsSLO https://github.com/alexellis/arkade/releases/download/${ARKADE_VERSION}/arkade.sha256 \
+	&& echo "$$(awk '{print $$1}' arkade.sha256)  arkade" | sha256sum -c - \
+	&& chmod +x arkade \
+	&& sudo install -v -m511 arkade /usr/local/bin/arkade
 	rm -Rf $(TMP)
 
 nomad: $(KUBASH_BIN)/nomad
 
 $(KUBASH_BIN)/nomad:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://releases.hashicorp.com/nomad/$(NOMAD_VERSION)/nomad_$(NOMAD_VERSION)_linux_amd64.zip | jar xv
+	cd $(TMP) \
+	&& curl -sLO https://releases.hashicorp.com/nomad/$(NOMAD_VERSION)/nomad_$(NOMAD_VERSION)_linux_amd64.zip \
+	&& curl -sLO https://releases.hashicorp.com/nomad/$(NOMAD_VERSION)/nomad_$(NOMAD_VERSION)_SHA256SUMS \
+	&& grep linux_amd64.zip nomad_$(NOMAD_VERSION)_SHA256SUMS | sha256sum -c - \
+	&& unzip nomad_$(NOMAD_VERSION)_linux_amd64.zip
 	chmod +x $(TMP)/nomad
 	sudo install -o $(USER) -g $(USER) -v -m511 ${TMP}/nomad $(KUBASH_BIN)/nomad
 	rm -Rf $(TMP)
@@ -610,7 +652,11 @@ waypoint: $(KUBASH_BIN)/waypoint
 
 $(KUBASH_BIN)/waypoint:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://releases.hashicorp.com/waypoint/$(WAYPOINT_VERSION)/waypoint_$(WAYPOINT_VERSION)_linux_amd64.zip | jar xv
+	cd $(TMP) \
+	&& curl -sLO https://releases.hashicorp.com/waypoint/$(WAYPOINT_VERSION)/waypoint_$(WAYPOINT_VERSION)_linux_amd64.zip \
+	&& curl -sLO https://releases.hashicorp.com/waypoint/$(WAYPOINT_VERSION)/waypoint_$(WAYPOINT_VERSION)_SHA256SUMS \
+	&& grep linux_amd64.zip waypoint_$(WAYPOINT_VERSION)_SHA256SUMS | sha256sum -c - \
+	&& unzip waypoint_$(WAYPOINT_VERSION)_linux_amd64.zip
 	chmod +x $(TMP)/waypoint
 	sudo install -o $(USER) -g $(USER) -v -m511 ${TMP}/waypoint $(KUBASH_BIN)/waypoint
 	rm -Rf $(TMP)
@@ -619,8 +665,11 @@ vault: $(KUBASH_BIN)/vault
 
 $(KUBASH_BIN)/vault:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://releases.hashicorp.com/vault/$(VAULT_VERSION)/vault_$(VAULT_VERSION)_linux_amd64.zip | jar xv
-	cd $(TMP) && ls -alh 
+	cd $(TMP) \
+	&& curl -sLO https://releases.hashicorp.com/vault/$(VAULT_VERSION)/vault_$(VAULT_VERSION)_linux_amd64.zip \
+	&& curl -sLO https://releases.hashicorp.com/vault/$(VAULT_VERSION)/vault_$(VAULT_VERSION)_SHA256SUMS \
+	&& grep linux_amd64.zip vault_$(VAULT_VERSION)_SHA256SUMS | sha256sum -c - \
+	&& unzip vault_$(VAULT_VERSION)_linux_amd64.zip
 	chmod +x $(TMP)/vault
 	sudo install -v -m511 ${TMP}/vault $(KUBASH_BIN)/vault
 	rm -Rf $(TMP)
@@ -629,12 +678,13 @@ consul: $(KUBASH_BIN)/consul
 
 $(KUBASH_BIN)/consul:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sLS https://releases.hashicorp.com/consul/$(CONSUL_VERSION)/consul_$(CONSUL_VERSION)_linux_amd64.zip | jar xv
-	cd $(TMP) && ls -alh 
+	cd $(TMP) \
+	&& curl -sLO https://releases.hashicorp.com/consul/$(CONSUL_VERSION)/consul_$(CONSUL_VERSION)_linux_amd64.zip \
+	&& curl -sLO https://releases.hashicorp.com/consul/$(CONSUL_VERSION)/consul_$(CONSUL_VERSION)_SHA256SUMS \
+	&& grep linux_amd64.zip consul_$(CONSUL_VERSION)_SHA256SUMS | sha256sum -c - \
+	&& unzip consul_$(CONSUL_VERSION)_linux_amd64.zip
 	chmod +x $(TMP)/consul
 	sudo install -v -m511 ${TMP}/consul $(KUBASH_BIN)/consul
-	  && chmod +x minio \
-	  && sudo install -v -m511 ${TMP}/minio $(KUBASH_BIN)/minio
 	rm -Rf $(TMP)
 
 mc: $(KUBASH_BIN)/mc
@@ -642,9 +692,11 @@ mc: $(KUBASH_BIN)/mc
 $(KUBASH_BIN)/mc:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	cd $(TMP) \
-	  && wget https://dl.min.io/client/mc/release/linux-amd64/mc \
-	  && chmod +x mc \
-	  && sudo install -v -m511 ${TMP}/mc $(KUBASH_BIN)/mc
+	&& curl -fsSLO https://github.com/minio/mc/releases/download/${MC_VERSION}/mc.linux-amd64.${MC_VERSION} \
+	&& curl -fsSLO https://github.com/minio/mc/releases/download/${MC_VERSION}/mc.linux-amd64.${MC_VERSION}.sha256sum \
+	&& echo "$$(awk '{print $$1}' mc.linux-amd64.${MC_VERSION}.sha256sum)  mc.linux-amd64.${MC_VERSION}" | sha256sum -c - \
+	&& chmod +x mc.linux-amd64.${MC_VERSION} \
+	&& sudo install -v -m511 mc.linux-amd64.${MC_VERSION} $(KUBASH_BIN)/mc
 	rm -Rf $(TMP)
 
 kubectl-minio: $(KUBASH_BIN)/kubectl-minio
@@ -652,46 +704,23 @@ kubectl-minio: $(KUBASH_BIN)/kubectl-minio
 $(KUBASH_BIN)/kubectl-minio:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	cd $(TMP) \
-		&& wget https://github.com/minio/operator/releases/download/v4.1.3/kubectl-minio_4.1.3_linux_amd64 -O kubectl-minio \
-	  && chmod +x kubectl-minio \
-	  && sudo install -v -m511 ${TMP}/kubectl-minio $(KUBASH_BIN)/kubectl-minio
+	&& wget https://github.com/minio/operator/releases/download/v${KUBECTL_MINIO_VERSION}/kubectl-minio_${KUBECTL_MINIO_VERSION}_linux_amd64 -O kubectl-minio \
+	&& echo "${KUBECTL_MINIO_SHA256}  kubectl-minio" | sha256sum -c - \
+	&& chmod +x kubectl-minio \
+	&& sudo install -v -m511 ${TMP}/kubectl-minio $(KUBASH_BIN)/kubectl-minio
 	rm -Rf $(TMP)
 
-minio: $(KUBASH_BIN)/minio mc kubectl-minio
-
-$(KUBASH_BIN)/minio:
-	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) \
-	  && wget https://dl.min.io/server/minio/release/linux-amd64/minio \
-	  && chmod +x minio \
-	  && sudo install -v -m511 ${TMP}/minio $(KUBASH_BIN)/minio
-	rm -Rf $(TMP)
-
-mc: $(KUBASH_BIN)/mc
-
-$(KUBASH_BIN)/mc:
-	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) \
-	  && wget https://dl.min.io/client/mc/release/linux-amd64/mc \
-	  && chmod +x mc \
-	  && sudo install -v -m511 ${TMP}/mc $(KUBASH_BIN)/mc
-	rm -Rf $(TMP)
-
-kubectl-minio: $(KUBASH_BIN)/kubectl-minio
-
-$(KUBASH_BIN)/kubectl-minio:
-	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) \
-		&& wget https://github.com/minio/operator/releases/download/v4.1.3/kubectl-minio_4.1.3_linux_amd64 -O kubectl-minio \
-	  && chmod +x kubectl-minio \
-	  && sudo install -v -m511 ${TMP}/kubectl-minio $(KUBASH_BIN)/kubectl-minio
-	rm -Rf $(TMP)
+minio: mc kubectl-minio
 
 velero: $(KUBASH_BIN)/velero
 
 $(KUBASH_BIN)/velero:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
-	cd $(TMP) && curl -sL https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERS}/velero-${VELERO_VERS}-linux-amd64.tar.gz | tar zxf -
+	cd $(TMP) \
+	&& curl -sLO https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERS}/velero-${VELERO_VERS}-linux-amd64.tar.gz \
+	&& curl -sLO https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERS}/CHECKSUM \
+	&& awk -v f="velero-${VELERO_VERS}-linux-amd64.tar.gz" '$$2 == f' CHECKSUM | sha256sum -c - \
+	&& tar zxf velero-${VELERO_VERS}-linux-amd64.tar.gz
 	#cd $(TMP) && ls -alh $(TMP)/velero-${VELERO_VERS}-linux-amd64
 	chmod +x $(TMP)/velero-${VELERO_VERS}-linux-amd64/velero
 	sudo install -v -m555 ${TMP}/velero-${VELERO_VERS}-linux-amd64/velero $(KUBASH_BIN)/velero
@@ -702,11 +731,12 @@ ceph: $(KUBASH_BIN)/ceph
 $(KUBASH_BIN)/ceph:
 	$(eval TMP := $(shell mktemp -d --suffix=kubashTMP))
 	cd $(TMP) && \
-	curl --silent --remote-name --location https://github.com/ceph/ceph/raw/octopus/src/cephadm/cephadm
+	curl --silent --remote-name --location https://raw.githubusercontent.com/ceph/ceph/${CEPHADM_COMMIT}/src/cephadm/cephadm \
+	&& echo "${CEPHADM_SHA256}  cephadm" | sha256sum -c -
 	chmod +x $(TMP)/cephadm
 	cd $(TMP) \
 	&& sudo ./cephadm add-repo --release octopus \
-	sudo ./cephadm install
+	&& sudo ./cephadm install
 	which cephadm
 
 hashicorp: waypoint consul vault nomad
