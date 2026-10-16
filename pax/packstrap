@@ -296,13 +296,7 @@ preps () {
 if [ $ID = 'debian' ]; then
     : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
 elif [ $ID = 'ubuntu' ]; then
-  if [ $UBUNTU_CODENAME = 'focal' ]; then
-    echo 'Focal is the OS'
     : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python3-pip vim htop iotop iftop zsh'}
-  else
-    echo 'Focal is not the OS'
-    : ${DEB_PACKAGES_TO_INSTALL:='ceph sysstat rsync fail2ban net-tools dnsutils python-pip  vim htop iotop iftop zsh ntp ceph-test'}
-  fi
 fi
 
 cat <<EOF > $TMP/inventory
@@ -444,8 +438,8 @@ install_zabbix_agent () {
 
   # Configure package repository
   if [ "$NAME" = 'Ubuntu' ]; then
-    wget https://repo.zabbix.com/zabbix/5.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_5.0-1%2B${UBUNTU_CODENAME}_all.deb 
-    sudo dpkg -i zabbix-release_5.0-1+${UBUNTU_CODENAME}_all.deb
+    wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-2%2Bubuntu${VERSION_ID}_all.deb
+    sudo dpkg -i zabbix-release_7.0-2+ubuntu${VERSION_ID}_all.deb
   elif [ "$NAME" = 'Debian' ]; then
     if [ "$VERSION_CODENAME" = 'buster' ]; then
       echo 'deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_10/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
@@ -556,14 +550,15 @@ official_docker_install () {
   set -e
   sudo apt-get -yqq install ca-certificates curl gnupg
   sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  OS_ID=$(. /etc/os-release && echo "$ID")
+  curl -fsSL https://download.docker.com/linux/$OS_ID/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   sudo chmod a+r /etc/apt/keyrings/docker.gpg
   
   # Add the repository to Apt sources:
   DPKG_ARCH=$(dpkg --print-architecture)
   OS_CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
   echo \
-    "deb [arch=$DPKG_ARCH signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+    "deb [arch=$DPKG_ARCH signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS_ID \
     $OS_CODENAME stable" | \
     sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
   apt-get update

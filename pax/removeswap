@@ -11,3 +11,11 @@ commenter '/dev/fd0' /etc/fstab
 commenter '/dev/mapper/centos-swap' /etc/fstab
 commenter '/dev/mapper/vagrant--vg-swap_1' /etc/fstab
 commenter '/dev/mapper/debian--9--vg-swap_1' /etc/fstab
+
+# Any other swap entry, whatever backs it: the list above
+# predates swap by UUID and swap files (Ubuntu's /swap.img),
+# and the kubelet refuses to start with swap on. Comment
+# every fstab line whose filesystem type is swap, and drop
+# the standard swap file if one was created.
+sed -i -E 's|^([^#][^[:space:]]*[[:space:]]+[^[:space:]]*[[:space:]]+swap[[:space:]].*)$|#\1|' /etc/fstab
+rm -f /swap.img
