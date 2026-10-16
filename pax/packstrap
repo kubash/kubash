@@ -361,23 +361,6 @@ install_docker_compose () {
 }
 
 install_default_docker () {
-  apt-get install -yqq --allow-downgrades \
-   docker-ce="$(apt-cache madison docker-ce | grep $DOCKER_PKG | head -1 | awk '{print $3}')" \
-   docker-compose="$(apt-cache madison docker-compose | grep $DOCKER_COMPOSE_PKG | head -1 | awk '{print $3}')" \
-   kubelet kubeadm kubectl
-
-  systemctl enable docker && systemctl start docker
-  systemctl enable kubelet && systemctl start kubelet
-
-  sudo rm -Rf /home/vagrant/.cache
-  install_pips
-
-  #edit /etc/sysconfig/docker file and add --insecure-registry 172.30.0.0/16 to the OPTIONS parameter.
-  #sed -i '/OPTIONS=.*/c\OPTIONS="--selinux-enabled --insecure-registry 172.30.0.0/16"' \
-  # /etc/sysconfig/docker
-}
-
-install_default_docker () {
   apt-get -yqq install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
