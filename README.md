@@ -19,10 +19,10 @@ Install with one easy line:
 curl -L https://raw.githubusercontent.com/kubash/kubash/master/bootstrap|bash
 ```
 
-To install the v1.16.0 release instead of the master branch:
+To install the v1.16.1 release instead of the master branch:
 
 ```
-curl -L https://raw.githubusercontent.com/kubash/kubash/v1.16.0/bootstrap|bash
+curl -L https://raw.githubusercontent.com/kubash/kubash/v1.16.1/bootstrap|bash
 ```
 
 Get started by making the example:

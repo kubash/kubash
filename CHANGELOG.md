@@ -1,5 +1,60 @@
 # Changelog
 
+## [v1.16.1] - 2026-10
+
+A fixes-and-proof release: both supported targets now have a
+real end-to-end boot test, and building them surfaced bugs
+that v1.16.0 shipped — most importantly, the noble image
+could not build at all, and secondary storage devices with
+generated UUIDs were mounted with `UUID=null` (issue #68,
+now closed; it was the repo's last open issue).
+
+### Added
+
+- End-to-end boot test (`.github/workflows/boot-test.yml`,
+  dispatch-only): builds the target's Packer image on a
+  KVM-enabled GitHub-hosted runner, boots a node from it,
+  kubeadm-inits a cluster, and asserts a Ready node.
+  Passing for both trixie and noble.
+- Netplan rendering for secondary network interfaces on
+  Ubuntu-family hosts: kubash now writes
+  `/etc/netplan/60-kubash-<iface>.yaml` (Debian hosts keep
+  ifupdown rendering).
+- Regression suites `.ci/storage.bats` (guest-side storage
+  mounts) and `.ci/qemu.bats` (host-side disk attach at
+  provision time). The bats suite is now 66 tests.
+
+### Fixed
+
+- Noble image build: eight fixes (GRUB boot command, SSH
+  handshake attempts, netplan-aware guest networking,
+  packstrap package list and per-OS Docker repo, Zabbix
+  repo, cleanup and swap-removal robustness). Noble builds
+  and boots green.
+- Trixie image build: five fixes found by the boot test
+  (preseed early_command failure handling,
+  `software-properties-common` removal on trixie, apt
+  keyrings directory, gnupg package, pip
+  `--break-system-packages`).
+- Storage (issue #68): devices 1–3 whose UUID was generated
+  at mount time were fsck'd, formatted, and recorded in
+  fstab with the literal `UUID=null`. The four copy-pasted
+  mount blocks are a single helper now; every device uses
+  its own UUID.
+- Makefile extras (Phase 4e-2): every remaining download is
+  upstream-checksum-verified or TOFU-pinned; the minio
+  server target was removed (its upstream distribution
+  endpoint is gone) along with other dead downloads.
+
+### Changed
+
+- Removed two shadowed duplicate function definitions
+  (the external-etcd kinit method and a fossil
+  `install_default_docker` in packstrap), verified
+  byte-identical behavior, and the dead fifth-storage-set
+  attach lines in qemu-provisioner (no CSV schema defines
+  a set 4).
+
 ## [v1.16.0] - 2026-10
 
 The first release since v1.15.3 (2019). Kubash was modernized
