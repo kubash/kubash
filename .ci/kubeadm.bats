@@ -261,6 +261,12 @@ single_primary_cluster() {
     --config "$BATS_TEST_TMPDIR/rendered-1.37.yaml"
   [ "$status" -eq 1 ]
   [[ "$output" == *'unknown flag: --config'* ]]
+  # kubeadm's --dry-run creates its scratch dir under
+  # /etc/kubernetes/tmp by default, which a non-root CI runner
+  # cannot create (exit 1, "could not create a temporary directory
+  # on dryrun"). Point it at the test tmp dir so the test is
+  # hermetic; the suite only ever passed as root without this.
+  export KUBEADM_INIT_DRYRUN_DIR="$BATS_TEST_TMPDIR/dryrun"
   # The replacement shape: etcd-ca, then the four etcd certs, each
   # accepting the same --config the alpha calls used.
   run "$KUBEADM137" init phase certs etcd-ca \
