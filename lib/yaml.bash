@@ -183,7 +183,7 @@ write_kubeadmcfg_yaml () {
   set_csv_columns
   while IFS="," read -r $csv_columns
   do
-    if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
+    if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' || "$K8S_role" == 'primary_etcd' ]]; then
       echo "${TAB_2}- '$K8S_ip1'" >> $do_etcd_tmp_para/servercertsans.line
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -192,7 +192,7 @@ write_kubeadmcfg_yaml () {
   echo "${TAB_2}- '127.0.0.1'" >> $do_etcd_tmp_para/peercertsans.line
   while IFS="," read -r $csv_columns
   do
-    if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' ]]; then
+    if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'master' || "$K8S_role" == 'primary_master' || "$K8S_role" == 'primary_etcd' ]]; then
       echo "${TAB_2}- '$K8S_ip1'" >> $do_etcd_tmp_para/peercertsans.line
     fi
   done <<< "$kubash_hosts_csv_slurped"
@@ -235,7 +235,7 @@ write_kubeadmcfg_yaml () {
         echo "${TAB_2}- https://${K8S_ip1}:2379" >> $do_etcd_tmp_para/external-endpoints.line
       fi
     else
-      if [[ "$K8S_role" == 'etcd' ]]; then
+      if [[ "$K8S_role" == 'etcd' || "$K8S_role" == 'primary_etcd' ]]; then
         echo "${TAB_2}- https://${K8S_ip1}:2379" >> $do_etcd_tmp_para/external-endpoints.line
       fi
     fi
@@ -362,7 +362,7 @@ write_kubeadmcfg_yaml () {
             kubeadmin_config_tmp=$(mktemp)
             my_master_ip=$my_master_ip \
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-            load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
+            load_balancer_ip=$(cat $KUBASH_CLUSTER_DIR/kube_master1 2>/dev/null || cat $KUBASH_CLUSTER_DIR/kube_primary) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
             ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
@@ -387,7 +387,7 @@ write_kubeadmcfg_yaml () {
             kubeadmin_config_tmp=$(mktemp)
             my_master_ip=$( cat $KUBASH_CLUSTER_DIR/kube_primary) \
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-            load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
+            load_balancer_ip=$(cat $KUBASH_CLUSTER_DIR/kube_master1 2>/dev/null || cat $KUBASH_CLUSTER_DIR/kube_primary) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
             ENDPOINTS_LINES=$( cat $do_etcd_tmp_para/${K8S_node}endpoints.line) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
@@ -434,7 +434,7 @@ write_kubeadmcfg_yaml () {
             kubeadmin_config_tmp=$(mktemp)
             my_master_ip=$my_master_ip \
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-            load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
+            load_balancer_ip=$(cat $KUBASH_CLUSTER_DIR/kube_master1 2>/dev/null || cat $KUBASH_CLUSTER_DIR/kube_primary) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
             ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/${K8S_node}endpoints.line ) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
@@ -472,7 +472,7 @@ write_kubeadmcfg_yaml () {
             kubeadmin_config_tmp=$(mktemp)
             my_master_ip=$my_master_ip \
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
-            load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
+            load_balancer_ip=$(cat $KUBASH_CLUSTER_DIR/kube_master1 2>/dev/null || cat $KUBASH_CLUSTER_DIR/kube_primary) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
             ENDPOINTS_LINES=$( cat $do_etcd_tmp_para/${K8S_node}endpoints.line) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \

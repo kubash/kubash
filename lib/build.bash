@@ -66,9 +66,16 @@ build_all_in_parallel () {
   fi
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     $PARALLEL  -j $PARALLEL_JOBS -- < $build_all_tmp_para/hopper
+    rm -Rf $build_all_tmp_para
   else
-    bash $build_all_tmp_para/hopper
+    # P-C6: as in copy_image_to_all_provisioning_hosts, run the
+    # hopper with -e so a failed build is not masked by a later
+    # line's success, and keep the hopper on failure.
+    if bash -e $build_all_tmp_para/hopper; then
+      rm -Rf $build_all_tmp_para
+    else
+      croak 1 "build_all_in_parallel: build failed; hopper kept at $build_all_tmp_para/hopper"
+    fi
   fi
-  rm -Rf $build_all_tmp_para
   squawk 1 'Done Building all targets'
 }

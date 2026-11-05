@@ -92,3 +92,45 @@ EOF
   [ "$kubeadm_apiVersion" = 'kubeadm.k8s.io/v1beta4' ]
   [ "$kubeadm_cfg_kind" = 'ClusterConfiguration' ]
 }
+
+@test "external etcd method passes -p on every ssh call (K-F5)" {
+  awk '/^etcd_kubernetes_13_ext_etcd_method \(\)/,/^}/' \
+    "$KUBASH_ROOT/lib/kinit.bash" > "$BATS_TEST_TMPDIR/ext-method.inc"
+  [ -s "$BATS_TEST_TMPDIR/ext-method.inc" ]
+  # Real ssh invocations only (squawk log lines excluded): every one
+  # must carry an explicit -p, since etcd/master hosts may listen on
+  # a non-22 sshPort and the bare form silently uses port 22.
+  # (grep -c exits 1 on a zero count, so `|| true` keeps the
+  # assignment itself from failing; the assertions below decide.)
+  bare_count=$(grep -E '(^|[|]) *ssh ' "$BATS_TEST_TMPDIR/ext-method.inc" \
+    | grep -v 'squawk' | grep -vc -- '-p' || true)
+  [ "$bare_count" -eq 0 ]
+  # Each host kind uses its own port array (command lines only).
+  etcd_ports=$(grep -E '(^|[|]) *ssh ' "$BATS_TEST_TMPDIR/ext-method.inc" \
+    | grep -v 'squawk' | grep -c 'ssh -p ${ETCDPORTS\[$i\]}' || true)
+  [ "$etcd_ports" -eq 2 ]
+  master_ports=$(grep -E '(^|[|]) *ssh ' "$BATS_TEST_TMPDIR/ext-method.inc" \
+    | grep -v 'squawk' | grep -c 'ssh -p ${MASTERPORTS\[$i\]}' || true)
+  [ "$master_ports" -eq 2 ]
+  etcd0_ports=$(grep -E '(^|[|]) *ssh ' "$BATS_TEST_TMPDIR/ext-method.inc" \
+    | grep -v 'squawk' | grep -c 'ssh -p ${ETCDPORTS\[0\]}' || true)
+  [ "$etcd0_ports" -eq 3 ]
+}
+
+@test "kubeadm alpha phase is gone from kinit and kattic (K-F6)" {
+  # `kubeadm alpha phase` is dead on 1.35-1.37: bare alpha prints only
+  # the experimental-sub-commands banner and --config is an unknown
+  # flag, so the cert/etcd steps it guarded silently did nothing.
+  run grep -rn 'alpha phase' "$KUBASH_ROOT/lib/kinit.bash" "$KUBASH_ROOT/lib/kattic.bash"
+  [ "$status" -eq 1 ]
+  [ "$output" = "" ]
+  run grep -c 'kubeadm init phase certs etcd-ca' "$KUBASH_ROOT/lib/kinit.bash"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+  run grep -c 'kubeadm init phase certs etcd-server' "$KUBASH_ROOT/lib/kinit.bash"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+  run grep -c 'kubeadm init phase etcd local' "$KUBASH_ROOT/lib/kattic.bash"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
+}

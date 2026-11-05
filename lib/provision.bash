@@ -31,6 +31,11 @@ provisioner () {
 
 copy_image_to_all_provisioning_hosts () {
   squawk 1 "copy_image_to_all_provisioning_hosts"
+  # P-C3: per-row base image name; never mutate the global
+  # KVM_BASE_IMG in the loop below (a coreos row would otherwise
+  # make every later non-coreos row copy/provision against
+  # kubash.img, which was never built for it).
+  local copy_base_img
 
   KUBASH_CSV_VER=$(cat $KUBASH_CSV_VER_FILE)
   test_kubash_csv_ver
@@ -40,14 +45,16 @@ copy_image_to_all_provisioning_hosts () {
   do
     squawk 9 " $K8S_provisionerHost $K8S_provisionerUser $K8S_provisionerPort $K8S_provisionerBasePath $K8S_os $K8S_virt"
     if [[ "$K8S_os" == "coreos" ]]; then
-      KVM_BASE_IMG=kubash.img
+      copy_base_img=kubash.img
+    else
+      copy_base_img=$KVM_BASE_IMG
     fi
     if [[ "$KVM_builderHost" == 'localhost' ]]; then
       if [[ "$K8S_provisionerHost" == 'localhost' ]]; then
         # this command can fail the or should take care of the edge case
         set +e
         echo 'If the first cp fails, ignore the error, we will attempt without the hardlink'
-        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img"
         set -e
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
@@ -55,7 +62,7 @@ copy_image_to_all_provisioning_hosts () {
         # this command can fail the or should take care of the edge case
         set +e
         echo 'If the first cp fails, ignore the error, we will attempt without the hardlink'
-        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG;ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\""
+        copyimagecommand2run="rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$copy_base_img;ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img\""
         set -e
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
@@ -65,7 +72,7 @@ copy_image_to_all_provisioning_hosts () {
         # this command can fail the or should take care of the edge case
         set +e
         echo 'If the first cp fails, ignore the error, we will attempt without the hardlink'
-        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG"
+        copyimagecommand2run="$PSEUDO cp -al $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img || $PSEUDO cp --reflink=auto $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img"
         set -e
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
@@ -73,7 +80,7 @@ copy_image_to_all_provisioning_hosts () {
         # this command can fail the or should take care of the edge case
         set +e
         echo 'If the first cp fails, ignore the error, we will attempt without the hardlink'
-        copyimagecommand2run="ssh -n -p $KVM_builderPort $K8S_builderUser@$K8S_builderHost 'rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provsionerPort\" $KVM_builderBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG; ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$KVM_BASE_IMG $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG\"'"
+        copyimagecommand2run="ssh -n -p $KVM_builderPort $KVM_builderUser@$KVM_builderHost 'rsync $KUBASH_RSYNC_OPTS \"ssh -p $K8S_provisionerPort\" $KVM_builderBasePath/$K8S_os-$copy_base_img $K8S_provisionerUser@$K8S_provisionerHost:$K8S_provisionerBasePath/$K8S_os-$copy_base_img; ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost \"cp -al $K8S_provisionerBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img || cp --reflink=auto $K8S_provisionerBasePath/$K8S_os-$copy_base_img $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$copy_base_img\"'"
         set -e
         squawk 7 "$copyimagecommand2run"
         echo  "$copyimagecommand2run" >> $copy_image_tmp_para/hopper
@@ -86,10 +93,18 @@ copy_image_to_all_provisioning_hosts () {
   fi
   if [[ "$PARALLEL_JOBS" -gt "1" ]] ; then
     $PARALLEL  -j $PARALLEL_JOBS -- < $copy_image_tmp_para/hopper
+    rm -Rf $copy_image_tmp_para
   else
-    bash $copy_image_tmp_para/hopper
+    # P-C6: run the hopper with -e so a failed copy aborts the run
+    # instead of being masked by a later line's success (plain bash
+    # exits with the LAST line's status only), and keep the hopper
+    # on failure as the only record of what was attempted.
+    if bash -e $copy_image_tmp_para/hopper; then
+      rm -Rf $copy_image_tmp_para
+    else
+      croak 1 "copy_image_to_all_provisioning_hosts: image copy failed; hopper kept at $copy_image_tmp_para/hopper"
+    fi
   fi
-  rm -Rf $copy_image_tmp_para
 }
 
 apparmor_fix_all_provisioning_hosts () {

@@ -35,10 +35,11 @@ setup() {
 # hostA: full static network2, no network3.
 # hostB: network2 without netmask/broadcast/gateway ('null'),
 #        network3 with only an ip ('null' elsewhere).
-# $1 is the os string written into both rows; with $2 = 'dhcp',
-# hostB's network2 is DHCP instead of sparse static.
+# $1 is the os string written into both rows (unless $3 names
+# hostB's os); with $2 = 'dhcp', hostB's network2 is DHCP
+# instead of sparse static.
 write_hosts_csv() {
-  python3 - "$KUBASH_HOSTS_CSV" "$1" "$2" <<'PYEOF'
+  python3 - "$KUBASH_HOSTS_CSV" "$1" "$2" "${3:-$1}" <<'PYEOF'
 import sys
 cols = ("node role cpu mem sshPort network1 mac1 ip1 rp1 sm1 bc1 gw1 "
         "pHost pUser pPort pBase os virt network2 mac2 ip2 rp2 sm2 bc2 gw2 "
@@ -55,7 +56,8 @@ base = dict(role='node', cpu='2', mem='2048', sshPort='22',
 a = dict(base, node='hostA', mac2='52:54:00:00:00:02', network2='net2',
          ip2='10.0.2.11', rp2='10.0.2.0', sm2='255.255.255.0',
          bc2='10.0.2.255', gw2='10.0.2.1')
-b = dict(base, node='hostB', ip1='10.0.1.12', mac2='52:54:00:00:00:03',
+os_b = sys.argv[4] if len(sys.argv) > 4 else sys.argv[2]
+b = dict(base, node='hostB', os=os_b, ip1='10.0.1.12', mac2='52:54:00:00:00:03',
          network2='net2', ip2='10.0.2.12', rp2='10.0.2.0',
          mac3='52:54:00:00:00:04', network3='net3', ip3='10.0.3.12')
 if len(sys.argv) > 3 and sys.argv[3] == 'dhcp':
@@ -136,4 +138,18 @@ PYEOF
   [ "$(netmask_to_prefix 255.255.0.0)" = '16' ]
   [ "$(netmask_to_prefix 255.0.0.0)" = '8' ]
   [ "$(netmask_to_prefix 255.255.255.252)" = '30' ]
+}
+
+@test "net: an unrecognised OS aborts the run instead of silently skipping (N-C5)" {
+  # the real croak exits; the harness stub only returns, so this
+  # test models the exit to prove the run stops at the bad host
+  croak() { exit 1; }
+  # hostA is centos (unrecognised), hostB is debian (would be
+  # configured if the loop continued past hostA)
+  write_hosts_csv centos '' debian-gnu
+  run configure_secondary_network_interfaces
+  [ "$status" -ne 0 ]
+  # hostB is never reached: no interface file was rendered for it
+  b_eth1=$(echo "$CAPTURE"/*10.0.1.12*eth1* 2>/dev/null)
+  [ ! -f "$b_eth1" ]
 }

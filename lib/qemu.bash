@@ -78,9 +78,36 @@ virsh_disk_attach () {
   fi
 }
 
+# P-C5: best-effort rollback for a failed qemu-provisioner run.
+# Runs from the EXIT trap qemu-provisioner installs; it only acts
+# when QEMU_PROVISION_CREATED_IMAGE is set, i.e. this run got past
+# qemu-img create, so a pre-existing domain/image is never touched.
+# Destroy/undefine are best-effort (a domain that was never defined
+# simply errors, swallowed here); the image is removed only when
+# this run created it.
+qemu_provision_cleanup () {
+  trap - EXIT
+  if [[ -n "${QEMU_PROVISION_CREATED_IMAGE:-}" ]]; then
+    if [[ "$K8S_provisionerHost" = "localhost" ]]; then
+      $PSEUDO virsh destroy "$K8S_node" >/dev/null 2>&1 || :
+      $PSEUDO virsh undefine "$K8S_node" >/dev/null 2>&1 || :
+      $PSEUDO rm -f "$QEMU_PROVISION_CREATED_IMAGE" >/dev/null 2>&1 || :
+    else
+      ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$PSEUDO virsh destroy $K8S_node" >/dev/null 2>&1 || :
+      ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$PSEUDO virsh undefine $K8S_node" >/dev/null 2>&1 || :
+      ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$PSEUDO rm -f $QEMU_PROVISION_CREATED_IMAGE" >/dev/null 2>&1 || :
+    fi
+  fi
+}
+
 qemu-provisioner () {
   squawk 1 "qemu-provisioner $*"
 
+  # P-C5: roll back this run's image/domain if provisioning fails
+  # below (bin/kubash runs under set -e, so a failure aborts the
+  # shell and this EXIT trap fires). Disarmed at the end on success.
+  QEMU_PROVISION_CREATED_IMAGE=
+  trap 'qemu_provision_cleanup' EXIT
   export K8S_node=$1
   export K8S_role=$2
   export K8S_cpuCount=$3
@@ -143,10 +170,27 @@ qemu-provisioner () {
 
   # Create VM for node
   qemunodeimg="$K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node.qcow2"
+  # P-C3: per-call base image name; never mutate the global
+  # KVM_BASE_IMG here (a coreos call would otherwise make a later
+  # non-coreos call in the same shell provision against kubash.img).
+  local qemu_base_img=$KVM_BASE_IMG
   if [[ "$K8S_os" == "coreos" ]]; then
-    KVM_BASE_IMG=kubash.img
+    qemu_base_img=kubash.img
   fi
-  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -F qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$KVM_BASE_IMG $qemunodeimg"
+  qemucmd2run="$PSEUDO qemu-img create -f qcow2 -F qcow2 -b $K8S_provisionerBasePath/$KUBASH_CLUSTER_NAME-k8s-$qemu_base_img $qemunodeimg"
+
+  # P-C5: refuse to provision over an already-defined domain instead
+  # of racing a re-run into the recreate-first paths (incl. the
+  # P-C1 disk wipe); tear the orphan down explicitly first.
+  if [[ "$K8S_provisionerHost" = "localhost" ]]; then
+    if $PSEUDO virsh dominfo "$K8S_node" >/dev/null 2>&1; then
+      croak 1 "qemu-provisioner: domain $K8S_node already exists on $K8S_provisionerHost; refusing to re-provision (remove it with virsh destroy/undefine first)"
+    fi
+  else
+    if ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$PSEUDO virsh dominfo $K8S_node" >/dev/null 2>&1; then
+      croak 1 "qemu-provisioner: domain $K8S_node already exists on $K8S_provisionerHost; refusing to re-provision (remove it with virsh destroy/undefine first)"
+    fi
+  fi
 
   if [[ "$K8S_os" == "coreos" ]]; then
     squawk 5 "Keyer"
@@ -235,6 +279,7 @@ qemu-provisioner () {
   if [[ "$K8S_provisionerHost" = "localhost" ]]; then
     squawk 5 "$qemucmd2run"
     $qemucmd2run
+    QEMU_PROVISION_CREATED_IMAGE=$qemunodeimg
     if [[ "$K8S_os" == "coreos" ]]; then
       squawk 5 "create domain.xml $virshcmd2run"
       chmod 775 $KUBASH_CLUSTERS_DIR/$KUBASH_CLUSTER_NAME/$K8S_node
@@ -267,6 +312,7 @@ qemu-provisioner () {
     # not localhost
     squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $qemucmd2run"
     ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$qemucmd2run"
+    QEMU_PROVISION_CREATED_IMAGE=$qemunodeimg
 
     if [[ "$K8S_os" == "coreos" ]]; then
       squawk 5 "create the domain.xml"
@@ -299,4 +345,6 @@ qemu-provisioner () {
     if [[ ! -z $K8S_storageType2 ]]; then virsh_disk_attach $K8S_storageType2 $K8S_storagePath2 $K8S_storageTarget2 $K8S_storageSize2; fi
     if [[ ! -z $K8S_storageType3 ]]; then virsh_disk_attach $K8S_storageType3 $K8S_storagePath3 $K8S_storageTarget3 $K8S_storageSize3; fi
   fi
+  # P-C5: provisioning succeeded; disarm the rollback trap.
+  trap - EXIT
 }

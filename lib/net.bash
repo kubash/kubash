@@ -109,8 +109,12 @@ configure_secondary_network_interfaces () {
     elif [[ $K8S_os =~ debian || $K8S_os =~ trixie ]]; then
       use_netplan=false
     else
-      squawk 1 "OS not supported by network configurator"
-      continue
+      # An OS the configurator does not know must stop the run:
+      # skipping it here used to end with 'secondary network
+      # interfaces configured' and exit 0, so a host silently
+      # got no secondary networking at all (N-C5). No new OS
+      # families are added here; that is a separate decision.
+      croak 1 "OS not supported by network configurator: $K8S_os"
     fi
     if [ "$K8S_network2" = 'null' ]; then
       squawk 7 "K8S_network2 is null"
