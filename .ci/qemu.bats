@@ -21,6 +21,7 @@ EOF
   cat > "$STUBBIN/ssh" <<EOF
 #!/bin/bash
 echo "SSH: \$*" >> "$STREAM"
+case "\$*" in *'test -f'*) [ -n "\$SSH_TESTF_FAIL" ] && exit 1 ;; esac
 exit 0
 EOF
   chmod +x "$STUBBIN/logstub" "$STUBBIN/ssh"
@@ -83,6 +84,27 @@ without_storage() {
   grep -q 'SSH: .*virsh attach-disk --domain node1 /img/probe-k8s-node1-vdb.raw --target vdb' "$STREAM"
   grep -q 'SSH: .*virsh attach-disk --domain node1 /img/probe-k8s-node1-vdc.qcow2 --target vdc' "$STREAM"
   [ "$(grep -c 'attach-disk' "$STREAM")" -eq 2 ]
+}
+
+@test "qemu: remote qcow2 attach reuses an existing disk, never recreates it" {
+  export K8S_provisionerHost=hypervisor1
+  with_storage
+  run provision_node
+  [ "$status" -eq 0 ]
+  # test -f succeeds (the stub's default): no create, just attach
+  run grep -q 'qemu-img create -f qcow2 /img/probe-k8s-node1-vdc.qcow2' "$STREAM"
+  [ "$status" -ne 0 ]
+  grep -q 'SSH: .*virsh attach-disk --domain node1 /img/probe-k8s-node1-vdc.qcow2 --target vdc' "$STREAM"
+}
+
+@test "qemu: remote qcow2 attach creates a missing disk exactly once" {
+  export K8S_provisionerHost=hypervisor1
+  export SSH_TESTF_FAIL=1
+  with_storage
+  run provision_node
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'qemu-img create -f qcow2 /img/probe-k8s-node1-vdc.qcow2' "$STREAM")" -eq 1 ]
+  grep -q 'SSH: .*virsh attach-disk --domain node1 /img/probe-k8s-node1-vdc.qcow2 --target vdc' "$STREAM"
 }
 
 @test "qemu: a host without storage attaches nothing (#68)" {

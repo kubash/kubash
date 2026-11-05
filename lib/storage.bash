@@ -63,6 +63,20 @@ lvm_extend_run () {
   sudo_command "$THIS_sshPort" "$THIS_user" "$THIS_ip1" "$command2run"
 }
 
+guest_uuid () {
+  # Prints the filesystem UUID of a device on the guest, or
+  # nothing when the device has no filesystem. Mirrors
+  # sudo_command's host dispatch, but returns stdout: routing
+  # this through sudo_command would pollute the capture, since
+  # squawk prints to stdout. Arguments: port, user, host, target.
+  local command2run="blkid -s UUID -o value /dev/$4"
+  if [[ "$3" == "localhost" ]]; then
+    $PSEUDO bash -l -c "$command2run" 2>/dev/null
+  else
+    ssh -n -p $1 $2@$3 "$PSEUDO bash -l -c '$command2run'" 2>/dev/null
+  fi
+}
+
 mount_one_storage_target () {
   # Mounts one storage device on the current host:
   # $1 storage path, $2 target device, $3 mount path ('lvm'
@@ -91,7 +105,13 @@ mount_one_storage_target () {
     command2run="fsck.ext4 -p /dev/${storage_target}"
     mkfs_uuid_opt="-U ${storage_uuid}"
   else
-    storage_uuid=$(uuidgen -r)
+    # A disk reused from an earlier provision may already carry a
+    # filesystem: reuse its UUID instead of generating a fresh
+    # one, or the fsck below fails and the disk gets reformatted.
+    storage_uuid=$(guest_uuid "$K8S_sshPort" "$K8S_user" "$K8S_ip1" "$storage_target")
+    if [[ -z $storage_uuid ]]; then
+      storage_uuid=$(uuidgen -r)
+    fi
     command2run="fsck.ext4 -p UUID=${storage_uuid}"
     mkfs_uuid_opt="-U ${storage_uuid}"
   fi

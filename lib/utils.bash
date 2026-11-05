@@ -209,20 +209,22 @@ get_major_minor_kube_version () {
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
   squawk 91 "get_major_minor_kube_version set e command"
   set +e
-  command2run="kubeadm version 2>/dev/null"
+  # kubeadm's full version struct gained EmulationMajor/Minor and
+  # MinCompatibilityMajor/Minor fields in 1.35+, which broke the
+  # old Major/Minor/GitVersion adjacency parse; -o short
+  # ("v1.36.5") is stable across versions, so parse that instead.
+  command2run="kubeadm version -o short 2>/dev/null"
   #command2run="kubeadm version 2>/dev/null |sed \'s/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/\'"
   #TEST_KUBEADM_VER=`sudo_command $this_port $this_user $this_host "$command2run"`
   TEST_KUBEADM_VER_STEP_1=$(ssh -p $this_port $this_user@$this_host "$command2run")
   #TEST_KUBEADM_VER_STEP_1=$(sudo_command $this_port $this_user $this_host "$command2run")
   squawk 91 "get_major_minor_kube_version step 1 output=$TEST_KUBEADM_VER_STEP_1"
-  TEST_KUBEADM_VER_STEP_2=$(echo $TEST_KUBEADM_VER_STEP_1 | grep -v -P '^#')
+  TEST_KUBEADM_VER_STEP_2=$(echo $TEST_KUBEADM_VER_STEP_1 | grep -v -P '^#' | tr -d 'v')
   squawk 91 "get_major_minor_kube_version step 2 output=$TEST_KUBEADM_VER_STEP_2"
-  TEST_KUBEADM_VER=$(echo $TEST_KUBEADM_VER_STEP_2 | sed 's/^.*Major:\"\([1234567890]*\)\", Minor:\"\([1234567890]*\)\", GitVersion:.*$/\1,\2/' )
-  squawk 91 "get_major_minor_kube_version step 3 output=$TEST_KUBEADM_VER"
   squawk 91 "get_major_minor_kube_version exports"
-  KUBE_MAJOR_VER=$(echo $TEST_KUBEADM_VER|cut -f1 -d,)
+  KUBE_MAJOR_VER=$(echo $TEST_KUBEADM_VER_STEP_2|cut -f1 -d.)
   export KUBE_MAJOR_VER
-  KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER|cut -f2 -d,)
+  KUBE_MINOR_VER=$(echo $TEST_KUBEADM_VER_STEP_2|cut -f2 -d.)
   export KUBE_MINOR_VER
   squawk 95 "kube major: $KUBE_MAJOR_VER kube minor: $KUBE_MINOR_VER"
   set -e

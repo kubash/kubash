@@ -55,6 +55,30 @@ setup() {
   [[ "$output" == *'34 is too old'* ]]
 }
 
+@test "get_major_minor_kube_version parses kubeadm -o short on 1.35-1.37" {
+  eval "$(sed -n '/^get_major_minor_kube_version ()/,/^}/p' "$KUBASH_ROOT/lib/utils.bash")"
+  squawk() { :; }
+  mkdir -p "$BATS_TEST_TMPDIR/bin"
+  cat > "$BATS_TEST_TMPDIR/bin/ssh" <<'EOF'
+#!/bin/bash
+echo "$KUBEADM_SHORT"
+EOF
+  chmod +x "$BATS_TEST_TMPDIR/bin/ssh"
+  export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+  # The old parse required Major/Minor/GitVersion adjacency in the
+  # full version struct, which 1.35+ output no longer has (it
+  # inserts Emulation/MinCompatibility fields); -o short is stable.
+  for v in 1.35.9 1.36.5 1.37.1; do
+    export KUBEADM_SHORT="v$v"
+    get_major_minor_kube_version user host name 22
+    # No set +e here on purpose: the function ends with set -e,
+    # and with errexit off a failing assertion below would pass
+    # vacuously in bats. A failure must abort the test.
+    [ "$KUBE_MAJOR_VER" = "1" ]
+    [ "$KUBE_MINOR_VER" = "$(echo "$v" | cut -d. -f2)" ]
+  done
+}
+
 @test "determine_api_version maps 1.35 and later to v1beta4" {
   eval "$(sed -n '/^determine_api_version ()/,/^}/p' "$KUBASH_ROOT/lib/kinit.bash")"
   squawk() { :; }

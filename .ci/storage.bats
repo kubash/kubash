@@ -10,7 +10,7 @@ setup() {
   KUBASH_ROOT="${KUBASH_ROOT:-$HOME/.kubash}"
   STREAM="$BATS_TEST_TMPDIR/stream.log"
   : > "$STREAM"
-  for fn in mount_all_other_targets mount_one_storage_target \
+  for fn in mount_all_other_targets mount_one_storage_target guest_uuid \
             lvm_creation_run lvm_extend_run check_first_device; do
     eval "$(sed -n "/^$fn ()/,/^}/p" "$KUBASH_ROOT/lib/storage.bash")"
   done
@@ -27,6 +27,25 @@ setup() {
     return 0
   }
   export K8S_lvm_vg=kubashvg
+  # guest_uuid runs blkid on the guest; the stubs below keep that
+  # deterministic: no UUID by default, EXISTING-UUID-9 when a test
+  # sets BLKID_EXISTS.
+  STUBBIN="$BATS_TEST_TMPDIR/bin"
+  mkdir -p "$STUBBIN"
+  cat > "$STUBBIN/silent" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  # guest_uuid takes the remote branch for these fixture hosts, so
+  # ssh must be stubbed too: silent unless BLKID_EXISTS is set.
+  cat > "$STUBBIN/ssh" <<'EOF'
+#!/bin/bash
+case "$*" in *blkid*) [ -n "$BLKID_EXISTS" ] && echo 'EXISTING-UUID-9' ;; esac
+exit 0
+EOF
+  chmod +x "$STUBBIN/silent" "$STUBBIN/ssh"
+  export PATH="$STUBBIN:$PATH"
+  export PSEUDO=silent
   # hostL: base + device1, both LVM (create, then extend).
   # hostM: base plain with a supplied UUID; device1 plain with a
   # 'null' UUID (the #68 bug case); device2 plain with a supplied
@@ -84,6 +103,20 @@ PYEOF
   run grep -q 'UUID=null' "$STREAM"
   [ "$status" -ne 0 ]
   run grep -q -- '-U null' "$STREAM"
+  [ "$status" -ne 0 ]
+}
+
+@test "storage: a reused disk keeps its existing UUID instead of reformatting" {
+  export BLKID_EXISTS=1
+  run mount_all_other_targets
+  [ "$status" -eq 0 ]
+  # the null-UUID device (hostM device 1) reuses the on-disk UUID:
+  # fsck and fstab carry it, no mkfs runs, uuidgen is never used
+  grep -q '^fsck.ext4 -p UUID=EXISTING-UUID-9$' "$STREAM"
+  grep -q 'UUID=EXISTING-UUID-9' "$STREAM"
+  run grep -q 'mkfs.ext4' "$STREAM"
+  [ "$status" -ne 0 ]
+  run grep -q 'FIXED-UUID-1234' "$STREAM"
   [ "$status" -ne 0 ]
 }
 

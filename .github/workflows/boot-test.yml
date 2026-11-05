@@ -69,7 +69,7 @@ jobs:
             *)
               echo "TARGET_OS=trixie" >> "$GITHUB_ENV"
               echo "TARGET_JSON=trixie${KUBE_VERSION}-13-amd64.json" >> "$GITHUB_ENV"
-              echo "TARGET_ARTIFACT=trixie${KUBE_VERSION}-13.7-amd64" >> "$GITHUB_ENV"
+              echo "TARGET_ARTIFACT=trixie${KUBE_VERSION}-13-amd64" >> "$GITHUB_ENV"
               echo "PROBE_PATH=debian-13/preseed.cfg" >> "$GITHUB_ENV"
               ;;
           esac

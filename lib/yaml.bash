@@ -368,7 +368,7 @@ write_kubeadmcfg_yaml () {
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
               > $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml
           fi
-        elif [[ $MAJOR_VER -eq 0 ]]; then
+        elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
           croak 3 'Major Version 0 unsupported'
         else
           croak 3 'Major Version Unknown'
@@ -393,7 +393,7 @@ write_kubeadmcfg_yaml () {
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
               > $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml
           fi
-        elif [[ $MAJOR_VER -eq 0 ]]; then
+        elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
           croak 3 'Major Version 0 unsupported'
         else
           croak 3 'Major Version Unknown'
@@ -440,7 +440,7 @@ write_kubeadmcfg_yaml () {
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
               > $do_etcd_tmp_para/${K8S_node}kubeadmcfg.yaml
           fi
-        elif [[ $MAJOR_VER -eq 0 ]]; then
+        elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
           croak 3 'Major Version 0 unsupported'
         else
           croak 3 'Major Version Unknown'
@@ -474,11 +474,11 @@ write_kubeadmcfg_yaml () {
             KUBERNETES_VERSION=$( cat $KUBASH_CLUSTER_DIR/kubernetes_version) \
             load_balancer_ip=$( cat $KUBASH_CLUSTER_DIR/kube_master1) \
             my_KUBE_CIDR=$my_KUBE_CIDR \
-            ENDPOINTS_LINES=$( cat $KUBASH_CLUSTER_DIR/endpoints.line) \
+            ENDPOINTS_LINES=$( cat $do_etcd_tmp_para/${K8S_node}endpoints.line) \
             envsubst  < $KUBASH_DIR/templates/kubeadm-config-external-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
               > $do_etcd_tmp_para/${K8S_node}-external-kubeadmcfg.yaml
           fi
-        elif [[ $MAJOR_VER -eq 0 ]]; then
+        elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
           croak 3 'Major Version 0 unsupported'
         else
           croak 3 'Major Version Unknown'
