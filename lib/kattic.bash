@@ -287,7 +287,7 @@ do_etcd () {
   done <<< "$kubash_hosts_csv_slurped"
 
   squawk 75 "create the manifests"
-  command2run="kubeadm alpha phase etcd local --config=/etc/kubernetes/kubeadmcfg.yaml"
+  command2run="kubeadm init phase etcd local --config=/etc/kubernetes/kubeadmcfg.yaml"
   if [[ "$MASTERS_AS_ETCD" == "true" ]]; then
     do_command_in_parallel_on_role "primary_master"          "$command2run"
     do_command_in_parallel_on_role "primary_etcd"            "$command2run"

@@ -444,7 +444,7 @@ prep_init_etcd_kubelet_download  () {
 
   command2run='netstat -ntpl'
   sudo_command $prep_init_etcd_kubelet_download_port $prep_init_etcd_kubelet_download_user $prep_init_etcd_kubelet_download_host "$command2run"
-  command2run='kubeadm  alpha phase certs etcd-ca'
+  command2run='kubeadm init phase certs etcd-ca'
   sudo_command $prep_init_etcd_kubelet_download_port $prep_init_etcd_kubelet_download_user $prep_init_etcd_kubelet_download_host "$command2run"
   command2run='ls -lh /etc/kubernetes/pki/etcd/ca.crt'
   #sudo_command $prep_init_etcd_kubelet_download_port $prep_init_etcd_kubelet_download_user $prep_init_etcd_kubelet_download_host "$command2run"
@@ -493,10 +493,10 @@ prep_etcd_gen_certs () {
   squawk 55 "prep_etcd_gen_certs port $prepetcdgencerts_port user $prepetcdgencerts_user host $prepetcdgencerts_host on master $prepetcdgencerts_primary_etcd_master_user '@' $prepetcdgencerts_primary_etcd_master : $prepetcdgencerts_primary_etcd_master_port"
   command2run="find /tmp/${prepetcdgencerts_host} -name ca.key -type f -delete -print \
     && find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete -print \
-    && kubeadm alpha phase certs etcd-server --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
-    && kubeadm alpha phase certs etcd-peer --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
-    && kubeadm alpha phase certs etcd-healthcheck-client --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
-    && kubeadm alpha phase certs apiserver-etcd-client --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
+    && kubeadm init phase certs etcd-server --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
+    && kubeadm init phase certs etcd-peer --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
+    && kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
+    && kubeadm init phase certs apiserver-etcd-client --config=/tmp/${prepetcdgencerts_host}/kubeadmcfg.yaml \
     && cp -R /etc/kubernetes/pki /tmp/${prepetcdgencerts_host}/"
   sudo_command $prepetcdgencerts_primary_etcd_master_port  $prepetcdgencerts_primary_etcd_master_user  $prepetcdgencerts_primary_etcd_master "$command2run"
   squawk 86 'cleanup non-reusable certificates'
@@ -1029,11 +1029,11 @@ EOF
     } >> $etcd_test_tmp/${HOST}/kubeadmcfg.yaml
   fi
     command2run='systemctl daemon-reload'
-    squawk 55 "ssh ${INIT_USER}@${HOST} $command2run"
-    ssh ${INIT_USER}@${HOST} "$command2run"
+    squawk 55 "ssh -p ${ETCDPORTS[$i]} ${INIT_USER}@${HOST} $command2run"
+    ssh -p ${ETCDPORTS[$i]} ${INIT_USER}@${HOST} "$command2run"
     command2run='systemctl restart kubelet'
-    squawk 55 "ssh ${INIT_USER}@${HOST} $command2run"
-    ssh ${INIT_USER}@${HOST} "$command2run"
+    squawk 55 "ssh -p ${ETCDPORTS[$i]} ${INIT_USER}@${HOST} $command2run"
+    ssh -p ${ETCDPORTS[$i]} ${INIT_USER}@${HOST} "$command2run"
   done
   for i in "${!MASTERHOSTS[@]}"; do
     HOST=${MASTERHOSTS[$i]}
@@ -1079,28 +1079,28 @@ apiVersion: kubelet.config.k8s.io/v1beta1
 cgroupDriver: systemd
 EOF
     command2run='systemctl daemon-reload'
-    squawk 55 "ssh ${INIT_USER}@${HOST} $command2run"
-    ssh ${INIT_USER}@${HOST} "$command2run"
+    squawk 55 "ssh -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} $command2run"
+    ssh -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "$command2run"
   done
 
   command2run='kubeadm init phase certs etcd-ca'
-  squawk 55 "ssh ${INIT_USER}@${ETCDHOSTS[0]} $command2run"
-  ssh ${INIT_USER}@${ETCDHOSTS[0]} "bash -l -c '$command2run'"
+  squawk 55 "ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} $command2run"
+  ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} "bash -l -c '$command2run'"
 
   squawk 5 "copy pki directory to host 0"
   command2run='tar zcf - pki'
   PREV_PWD=$(pwd)
   cd $etcd_test_tmp/${ETCDHOSTS[0]}/
-  squawk 56 "ssh ${INIT_USER}@${HOST} mkdir -p /etc/kubernetes && cd /etc/kubernetes;$command2run|tar pzxvf -"
-  ssh ${INIT_USER}@${ETCDHOSTS[0]} "mkdir -p /etc/kubernetes && cd /etc/kubernetes;bash -l -c '$command2run'"|tar pzxvf -
+  squawk 56 "ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} mkdir -p /etc/kubernetes && cd /etc/kubernetes;$command2run|tar pzxvf -"
+  ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} "mkdir -p /etc/kubernetes && cd /etc/kubernetes;bash -l -c '$command2run'"|tar pzxvf -
   cd $PREV_PWD
 
   for i in "${!ETCDHOSTS[@]}"; do
     HOST=${ETCDHOSTS[$i]}
     PREV_PWD=$(pwd)
     cd $etcd_test_tmp/
-    squawk 55 "tar zcf - ${HOST} | ssh ${INIT_USER}@${ETCDHOSTS[0]} cd /tmp; tar pzxvf -"
-    tar zcf - ${HOST} | ssh ${INIT_USER}@${ETCDHOSTS[0]} "cd /tmp; tar pzxvf -"
+    squawk 55 "tar zcf - ${HOST} | ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} cd /tmp; tar pzxvf -"
+    tar zcf - ${HOST} | ssh -p ${ETCDPORTS[0]} ${INIT_USER}@${ETCDHOSTS[0]} "cd /tmp; tar pzxvf -"
     cd $PREV_PWD
   done
 
@@ -1201,8 +1201,8 @@ EOF
     PREV_PWD=$(pwd)
     push_pki_ext_etcd_method  $K8S_user ${MASTERHOSTS[$i]} ${MASTERPORTS[$i]}
     cd $etcd_test_tmp/${HOST}
-    squawk 55 "tar zcf - kubeadmcfg.yaml | ssh ${INIT_USER}@${HOST} cd /etc/kubernetes; tar pzxvf -"
-    tar zcf - kubeadmcfg.yaml | ssh ${INIT_USER}@${HOST} "cd /etc/kubernetes; tar pzxvf -"
+    squawk 55 "tar zcf - kubeadmcfg.yaml | ssh -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} cd /etc/kubernetes; tar pzxvf -"
+    tar zcf - kubeadmcfg.yaml | ssh -p ${MASTERPORTS[$i]} ${INIT_USER}@${HOST} "cd /etc/kubernetes; tar pzxvf -"
     cd $PREV_PWD
   done
   for i in "${!MASTERHOSTS[@]}"; do
