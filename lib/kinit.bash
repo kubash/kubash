@@ -275,7 +275,7 @@ finish_etcd () {
       croak 3  'stubbed not working yet'
       #finish_etcd_kubelet_download $this_user $this_host $this_name $this_port
     fi
-  elif [[ $MAJOR_VER == 0 ]]; then
+  elif [[ $KUBE_MAJOR_VER == 0 ]]; then
     croak 3 'Major Version 0 unsupported'
   else
     croak 3 'Major Version Unknown'
@@ -421,7 +421,7 @@ prep_init_etcd () {
       prep_init_etcd_kubelet_download $prep_init_etcd_user $prep_init_etcd_host $prep_init_etcd_name $prep_init_etcd_port
       squawk 83 'End pre_init_etcd'
     fi
-  elif [[ $MAJOR_VER -eq 0 ]]; then
+  elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
     croak 3 'Major Version 0 unsupported'
   else
     croak 3 'Major Version Unknown'
@@ -648,7 +648,7 @@ prep_etcd () {
       prep_etcd_gen_certs $this_port $this_user $this_host $kube_primary_port $kube_primary_user $kube_primary
       #prep_etcd_gen_certs $this_port $this_user $this_host $this_port $kube_primary_user $kube_primary
     fi
-  elif [[ $MAJOR_VER -eq 0 ]]; then
+  elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
     croak 3 'Major Version 0 unsupported'
   else
     croak 3 'Major Version Unknown'
@@ -805,7 +805,7 @@ determine_api_version () {
       export kubeadm_apiVersion="kubeadm.k8s.io/v1beta4"
       kubeadm_cfg_kind=ClusterConfiguration
     fi
-  elif [[ $MAJOR_VER -eq 0 ]]; then
+  elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
     croak 3 'Major Version 0 unsupported'
   else
     croak 3 'Major Version Unknown'

@@ -388,7 +388,7 @@ do_masters_in_parallel () {
         envsubst  < $KUBASH_DIR/templates/kubeadm-config-${KUBE_MAJOR_VER}.${KUBE_MINOR_VER}.yaml \
           > $kubeadmin_config_tmp
       fi
-    elif [[ $MAJOR_VER -eq 0 ]]; then
+    elif [[ $KUBE_MAJOR_VER -eq 0 ]]; then
       croak 3 'Major Version 0 unsupported'
     else
       croak 3 'Major Version Unknown'

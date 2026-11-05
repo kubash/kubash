@@ -252,7 +252,7 @@
     "no_proxy": "{{env `no_proxy`}}",
     "preseed_path": "debian-13/preseed.cfg",
     "qemu_display": "none",
-    "template": "trixieREPLACEME_KUBE_VERSION-13.7-amd64",
+    "template": "trixieREPLACEME_KUBE_VERSION-13-amd64",
     "version": "TIMESTAMP"
   }
 }

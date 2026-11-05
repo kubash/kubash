@@ -61,9 +61,6 @@ virsh_disk_attach () {
     squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
     ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
   elif [[ $THIS_storageType == 'qcow2' ]]; then
-    virshcmd2run="$PSEUDO qemu-img create -f qcow2 $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2 $THIS_storageSize -o preallocation=$QEMU_PREALLOCATION"
-    squawk 5 "ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost $virshcmd2run"
-    ssh -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "$virshcmd2run"
     set +e
           ssh -q -n -p $K8S_provisionerPort $K8S_provisionerUser@$K8S_provisionerHost "test -f $THIS_storagePath/$KUBASH_CLUSTER_NAME-k8s-$K8S_node-$THIS_storageTarget.qcow2"
     if [[ $? -eq 0 ]]; then
